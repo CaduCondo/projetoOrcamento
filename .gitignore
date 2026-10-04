@@ -1,0 +1,7 @@
+*.xlsx
+*.xls
+seed.json
+historico.json
+orcamento-historico*.json
+orcamento-backup*.json
+*.csv
