@@ -138,9 +138,11 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 <div id="tip"></div>
 <div class="toast" id="toast">Salvo</div>
 
+<!--FBSDK-->
 <script>/*CHARTJS*/</script>
 <script>
 const SEED=/*SEED*/null;
+const FBCFG=/*FIREBASE*/null;
 const LEGACY='orcamento-app-v1';
 const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const MC=MESES.map(m=>m.slice(0,3));
@@ -166,6 +168,33 @@ function mig(s){if(!s.anos){const y=s.ano||2026;s.anos=[y];s.saldoIni={[y]:s.sal
 function blank(){const y=new Date().getFullYear(),c=(t,n,dia)=>({id:'c'+Math.random().toString(36).slice(2,8),tipo:t,nome:n,dia:dia||null});
   return{anos:[y],saldoIni:{},saldos:[],dividas:[],bens:[],data:{},cats:[c('receber','Salário',5),c('receber','Outras receitas'),c('pagar','Moradia',10),c('pagar','Contas (luz, água, internet)'),c('pagar','Mercado'),c('pagar','Transporte'),c('pagar','Saúde'),c('pagar','Lazer'),c('pagar','Outras despesas')]}}
 
+/* ---------- NUVEM (Firebase) — ativa só quando há configuração ---------- */
+const CLOUD=!!FBCFG&&typeof firebase!=='undefined';
+let fbAuth=null,fbDb=null,uid=null,saveTimer=null,flushP=Promise.resolve(),snap={meta:'',years:{}};
+if(CLOUD){firebase.initializeApp(FBCFG);fbAuth=firebase.auth();fbDb=firebase.firestore()}
+const metaOf=s=>({cats:s.cats,anos:s.anos,saldoIni:s.saldoIni,saldos:s.saldos,dividas:s.dividas,bens:s.bens});
+const yearsOf=s=>{const y={};for(const[k,v]of Object.entries(s.data)){const[c,yy,m]=k.split('|');(y[yy]??={})[c+'|'+m]=v}return y};
+const strYears=ys=>Object.fromEntries(Object.entries(ys).map(([y,v])=>[y,JSON.stringify(v)]));
+function status(t,err){const el=document.getElementById('toast');el.textContent=t;el.style.background=err?'#c2410c':'';el.style.color=err?'#fff':'';el.classList.add('on');clearTimeout(tt);if(!err&&t!=='Salvando…')tt=setTimeout(()=>el.classList.remove('on'),900)}
+function cloudFlush(){clearTimeout(saveTimer);saveTimer=null;if(!CLOUD||!uid||!S)return flushP;flushP=flushP.then(doFlush);return flushP}
+async function doFlush(){if(!uid||!S)return;
+  const base=fbDb.collection('users').doc(uid),batch=fbDb.batch(),meta=JSON.stringify(metaOf(S)),ys=yearsOf(S),cur=strYears(ys);let n=0;
+  if(meta!==snap.meta){batch.set(base.collection('meta').doc('main'),{json:meta});n++}
+  for(const y of Object.keys(cur))if(snap.years[y]!==cur[y]){batch.set(base.collection('years').doc(y),{json:cur[y]});n++}
+  for(const y of Object.keys(snap.years))if(!(y in cur)){batch.delete(base.collection('years').doc(y));n++}
+  if(!n){status('Salvo ✓');return}
+  status('Salvando…');
+  try{await batch.commit();snap={meta,years:cur};status('Salvo ✓')}catch(e){console.error(e);status('Erro ao salvar — verifique a conexão',true)}}
+async function cloudStart(u){uid=u.uid;user=u.email;
+  const base=fbDb.collection('users').doc(uid);
+  try{const[m,ys]=await Promise.all([base.collection('meta').doc('main').get(),base.collection('years').get()]);
+    let st;if(m.exists){st=JSON.parse(m.data().json);st.data={};ys.forEach(d=>{const o=JSON.parse(d.data().json);for(const[k,v]of Object.entries(o)){const[c,mm]=k.split('|');st.data[`${c}|${d.id}|${mm}`]=v}});st=mig(st)}else st=blank();
+    S=st;snap={meta:m.exists?JSON.stringify(metaOf(S)):'',years:m.exists?strYears(yearsOf(S)):{}};
+    const cy=new Date().getFullYear();selY=S.anos.includes(cy)?cy:S.anos[S.anos.length-1];selM=selY===cy?new Date().getMonth():0;tab='mes';render();
+    if(!m.exists)cloudFlush()
+  }catch(e){console.error(e);S=null;document.getElementById('app').innerHTML=`<div class="login"><h2>Não foi possível carregar</h2><p class="sub">${esc(e.code||e.message)}</p><p class="sub">Verifique a internet e as regras do Firestore.</p><button class="btn" onclick="location.reload()">Tentar de novo</button> <button class="btn dan" style="margin-top:8px" onclick="fbAuth.signOut()">Sair</button></div>`}}
+addEventListener('visibilitychange',()=>{if(document.hidden)cloudFlush()});addEventListener('pagehide',()=>cloudFlush());
+
 /* ---------- CONTAS LOCAIS ---------- */
 let user=null,S=null,loginMode='in';
 const b64e=a=>btoa(String.fromCharCode(...a)),b64d=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
@@ -175,11 +204,11 @@ const users=()=>{try{return JSON.parse(localStorage.getItem('orc-users')||'{}')}
 const setUsers=u=>localStorage.setItem('orc-users',JSON.stringify(u));
 const dkey=e=>'orc-data-'+e;
 function loadUser(e){try{const t=localStorage.getItem(dkey(e));if(t)return mig(JSON.parse(t))}catch{}return blank()}
-let tt;function save(){try{localStorage.setItem(dkey(user),JSON.stringify(S))}catch{}
+let tt;function save(){if(CLOUD){clearTimeout(saveTimer);saveTimer=setTimeout(cloudFlush,700);status('Salvando…');return}try{localStorage.setItem(dkey(user),JSON.stringify(S))}catch{}
   const t=document.getElementById('toast');t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),900)}
 function startSession(e,remember){user=e;S=loadUser(e);try{(remember?localStorage:sessionStorage).setItem('orc-sess',e)}catch{}
   selY=S.anos.includes(new Date().getFullYear())?new Date().getFullYear():S.anos[S.anos.length-1];selM=selY===new Date().getFullYear()?new Date().getMonth():0;tab='mes';render()}
-function logout(){try{localStorage.removeItem('orc-sess');sessionStorage.removeItem('orc-sess')}catch{}user=null;S=null;render()}
+function logout(){if(CLOUD){cloudFlush().then(()=>fbAuth.signOut());return}try{localStorage.removeItem('orc-sess');sessionStorage.removeItem('orc-sess')}catch{}user=null;S=null;render()}
 
 /* ---------- CÁLCULOS ---------- */
 let modo='real',tab='mes',selY=new Date().getFullYear(),selM=new Date().getMonth(),period='ano',catSel='';
@@ -221,17 +250,24 @@ function render(){chrome();destroyCharts();tip.style.display='none';const a=docu
 const seg=()=>`<div class="seg" title="Realizado = só itens marcados como pagos/recebidos. Previsto = tudo."><button data-modo="real" class="${modo==='real'?'on':''}">Realizado</button><button data-modo="prev" class="${modo==='prev'?'on':''}">Previsto</button></div>`;
 
 /* ---------- LOGIN ---------- */
-function vLogin(){const first=!Object.keys(users()).length,up=loginMode==='up',rs=loginMode==='reset',hasSeed=!!SEED;
-  return `<form class="login" id="lf"><h2>💰 Meu Orçamento</h2><div class="sub">${up?'Criar conta':rs?'Definir nova senha':'Entrar'}</div>
+function vLogin(){const first=!CLOUD&&!Object.keys(users()).length,up=loginMode==='up',rs=loginMode==='reset',hasSeed=!!SEED,pw=!(CLOUD&&rs);
+  return `<form class="login" id="lf"><h2>💰 Meu Orçamento</h2><div class="sub">${up?'Criar conta':rs?(CLOUD?'Redefinir senha':'Definir nova senha'):'Entrar'}</div>
   <label>E-mail<input type="email" id="lem" required autocomplete="username"></label>
-  <label>${rs?'Nova senha':'Senha'}<input type="password" id="lpw" required minlength="6" autocomplete="${up||rs?'new-password':'current-password'}"></label>
-  ${up||rs?`<label>Confirmar senha<input type="password" id="lpw2" required minlength="6" autocomplete="new-password"></label>`:''}
+  ${pw?`<label>${rs?'Nova senha':'Senha'}<input type="password" id="lpw" required minlength="6" autocomplete="${up||rs?'new-password':'current-password'}"></label>`:''}
+  ${(up||rs)&&pw?`<label>Confirmar senha<input type="password" id="lpw2" required minlength="6" autocomplete="new-password"></label>`:''}
   ${up&&first&&(hasSeed||localStorage.getItem(LEGACY))?`<label class="row" style="flex-direction:row;align-items:center;color:var(--ink)"><input type="checkbox" id="limp" checked class="ok"> Trazer os dados que já estão preenchidos (planilha 2026 e o que você lançou)</label>`:''}
-  <label class="row" style="flex-direction:row;align-items:center;color:var(--ink)"><input type="checkbox" id="lrem" class="ok"> Manter conectado neste navegador</label>
-  <div class="err" id="lerr"></div><button class="btn">${up?'Criar conta':rs?'Salvar nova senha e entrar':'Entrar'}</button>
+  ${CLOUD?'':`<label class="row" style="flex-direction:row;align-items:center;color:var(--ink)"><input type="checkbox" id="lrem" class="ok"> Manter conectado neste navegador</label>`}
+  <div class="err" id="lerr"></div><button class="btn">${up?'Criar conta':rs?(CLOUD?'Enviar link por e-mail':'Salvar nova senha e entrar'):'Entrar'}</button>
   <p class="sub" style="margin-top:14px">${up||rs?'<a data-lm="in">Voltar para entrar</a>':'Primeira vez? <a data-lm="up">Criar conta</a> · <a data-lm="reset">Esqueci minha senha</a>'}</p>
-  <p class="sub">${rs?'A nova senha vale para a conta deste e-mail <b>neste navegador</b> e os dados são mantidos. Atenção: como não há servidor, isto não é uma proteção forte — qualquer pessoa com acesso a este navegador pode redefinir.':'Contas ficam só neste navegador. Faça backup em Ajustes.'}</p></form>`}
-async function doLogin(){const e=lem.value.trim().toLowerCase(),p=lpw.value,err=t=>lerr.textContent=t,us=users();
+  <p class="sub">${CLOUD?'Seus dados ficam salvos na sua conta e acompanham você em qualquer aparelho.':rs?'A nova senha vale para a conta deste e-mail <b>neste navegador</b> e os dados são mantidos. Atenção: como não há servidor, isto não é uma proteção forte — qualquer pessoa com acesso a este navegador pode redefinir.':'Contas ficam só neste navegador. Faça backup em Ajustes.'}</p></form>`}
+const AUTHMSG={'auth/email-already-in-use':'Este e-mail já tem conta.','auth/weak-password':'Senha fraca: use ao menos 6 caracteres.','auth/invalid-email':'E-mail inválido.','auth/invalid-credential':'E-mail ou senha incorretos.','auth/wrong-password':'E-mail ou senha incorretos.','auth/user-not-found':'E-mail ou senha incorretos.','auth/too-many-requests':'Muitas tentativas. Aguarde um pouco e tente de novo.','auth/network-request-failed':'Sem conexão com a internet.'};
+async function doCloudLogin(){const e=document.getElementById('lem').value.trim().toLowerCase(),p=document.getElementById('lpw')?.value||'',err=(t,ok)=>{const x=document.getElementById('lerr');x.style.color=ok?'var(--pos)':'';x.textContent=t};
+  try{
+    if(loginMode==='reset'){await fbAuth.sendPasswordResetEmail(e);return err('Se existir uma conta com esse e-mail, enviamos um link para redefinir a senha. Confira também o spam.',true)}
+    if(loginMode==='up'){if(p!==document.getElementById('lpw2').value)return err('As senhas não conferem.');await fbAuth.createUserWithEmailAndPassword(e,p)}
+    else await fbAuth.signInWithEmailAndPassword(e,p)
+  }catch(x){err(AUTHMSG[x.code]||'Erro: '+(x.code||x.message))}}
+async function doLogin(){if(CLOUD)return doCloudLogin();const e=lem.value.trim().toLowerCase(),p=lpw.value,err=t=>lerr.textContent=t,us=users();
   if(!crypto?.subtle)return err('Este navegador não suporta a criptografia necessária.');
   if(loginMode==='up'){if(us[e])return err('Este e-mail já tem conta neste navegador.');if(p!==lpw2.value)return err('As senhas não conferem.');
     const salt=b64e(crypto.getRandomValues(new Uint8Array(16)));us[e]={salt,hash:await hashPw(p,salt)};setUsers(us);
@@ -437,7 +473,7 @@ function vAj(){
    <div class="row"><label class="row">Saldo inicial de ${selY}: <input id="si" class="money" inputmode="decimal" placeholder="${fmtN(iniY(selY))||'0,00'}" value="${S.saldoIni[selY]!=null?fmtN(S.saldoIni[selY])||'0,00':''}" size="14"></label></div>
    <p class="hint">Deixe em branco para continuar de onde o ano anterior terminou. Na planilha 2026 havia “TOTAL ACUMULADO 90000” em janeiro.</p></div></div>
   <div class="panel"><h2>Backup e exportação</h2><div style="padding:12px 14px">
-   <p class="hint">Seus dados ficam guardados neste navegador, na sua conta. Baixe um backup de vez em quando.</p>
+   <p class="hint">${CLOUD?'Seus dados ficam salvos na sua conta online. Mesmo assim, baixe um backup de vez em quando.':'Seus dados ficam guardados neste navegador, na sua conta. Baixe um backup de vez em quando.'}</p>
    <div class="row"><button class="btn" id="bk">Baixar backup (.json)</button>
    <label class="btn sec">Restaurar backup<input type="file" id="rs" accept=".json" hidden></label>
    <button class="btn sec" id="csv">Exportar para Excel (.csv)</button></div>
@@ -581,7 +617,9 @@ function mergeImport(o){const hasY=y=>Object.keys(S.data).some(k=>k.split('|')[1
   Object.entries(o.saldoIni||{}).forEach(([y,v])=>S.saldoIni[y]=v);
   save();render();alert(`Importado: anos ${o.anos.join(', ')}.`)}
 /* ---------- BOOT ---------- */
-(function(){let e=null;try{e=sessionStorage.getItem('orc-sess')||localStorage.getItem('orc-sess')}catch{}
+(function(){if(CLOUD){document.getElementById('app').innerHTML='<p class="hint" style="padding:60px 0;text-align:center">Carregando…</p>';
+  fbAuth.onAuthStateChanged(u=>{if(u){if(!S||uid!==u.uid)cloudStart(u)}else{uid=null;user=null;S=null;render()}});return}
+  let e=null;try{e=sessionStorage.getItem('orc-sess')||localStorage.getItem('orc-sess')}catch{}
   if(e&&users()[e])startSession(e,!!localStorage.getItem('orc-sess'));else render()})();
 </script>
 </body>
