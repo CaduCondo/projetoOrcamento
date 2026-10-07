@@ -13,7 +13,7 @@ async function criarConta(app, email = EMAIL) {
   app.click('[data-lm="up"]');
   app.type('#lem', email); app.type('#lpw', SENHA); app.type('#lpw2', SENHA);
   app.submit('#lf');
-  await app.waitFor(() => app.ev('user') === email && app.ev('S') && app.$('#qf'), 4000, 'conta criada e tela carregada');
+  await app.waitFor(() => app.ev('user') === email && app.ev('S') && app.$('[data-newcat]'), 4000, 'conta criada e tela carregada');
 }
 
 test('nuvem: login sem "manter conectado" e com textos da nuvem', async () => {
@@ -35,7 +35,7 @@ test('nuvem: criar conta grava meta; lançar grava só o ano alterado', async ()
   assert.equal(Object.keys(db.docs).filter(k => k.includes('/years/')).length, 0, 'sem lançamentos ainda');
   const y = app.ev('selY'), m = app.ev('selM');
   const merc = app.ev("S.cats.find(c=>c.nome==='Mercado').id");
-  app.ev(`Combobox.set('qc','${merc}')`); app.type('#qv', '2500'); app.submit('#qf');
+  app.click(`[data-open="${merc}|${y}|${m}"]`); app.type('#nv', '2500'); app.type('#nd', 'x'); app.click('[data-add]'); app.click('[data-close]');
   await app.waitFor(() => db.docs[`users/uid1/years/${y}`], 3000, 'ano gravado');
   assert.deepEqual(db.lastOps, [`set:users/uid1/years/${y}`], 'só o documento do ano mudou (meta ficou igual)');
   assert.ok(db.docs[`users/uid1/years/${y}`].json.includes('"v":25'));
@@ -56,7 +56,7 @@ test('nuvem: entrar de novo (outro aparelho) traz os dados; cada usuário só v�
   a.close();
   // "outro aparelho": nova janela, mesma nuvem; a sessão do Firebase continua
   const b = abrir(db);
-  await b.waitFor(() => b.ev('user') === EMAIL && b.$('#qf'), 4000, 'abriu já logado');
+  await b.waitFor(() => b.ev('user') === EMAIL && b.$('[data-newcat]'), 4000, 'abriu já logado');
   assert.equal(b.ev(`V('${merc}',${y},${m},'real')`), 77, 'dados chegaram do outro aparelho');
   // sair e entrar com outra conta: não vê nada da primeira
   b.click('[data-logout]');

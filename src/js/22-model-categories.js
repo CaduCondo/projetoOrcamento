@@ -14,8 +14,7 @@ function catStats(){const st={},n=nowIdx();
 /* "ativa" = usada nos últimos 24 meses (ou ainda sem nenhum lançamento) */
 const isActive=(c,st)=>{const x=st[c.id];return !x||x.last>=nowIdx()-23};
 const lastLabel=i=>`${MC[i%12].toLowerCase()}/${Math.floor(i/12)}`;
-/* categorias exibidas na tela Mês/Ano: as usadas no ano; num ano vazio, as ativas */
-const visCats=(t,y)=>{const st=catStats();return cats(t).filter(c=>yearEmpty(y)?isActive(c,st):(yearHas(c,y)||!st[c.id]))};
+/* quais categorias aparecem em cada mês/ano: veja visCats em 24-model-schedule.js */
 
 /* move todos os lançamentos de src para dst e remove src */
 function mergeCat(src,dst){

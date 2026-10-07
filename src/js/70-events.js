@@ -7,11 +7,15 @@ function addYear(){const def=Math.max(...S.anos)+1,v=parseInt(prompt('Qual ano d
   if(v>=1990&&v<=2100){if(!S.anos.includes(v)){S.anos.push(v);S.anos.sort((a,b)=>a-b);save()}selY=v;selM=0;render()}}
 function confirmDeleteCat(id){const c=catById(id),nl=catStats()[id]?.n||0;
   if(confirm(nl?`Excluir “${c.nome}” e os ${nl} lançamentos dela (em todos os anos)? Para juntar com outra categoria, use Mesclar.`:`Excluir “${c.nome}”?`)){deleteCat(id);save();render()}}
-function createCatFromPanel(){const input=document.getElementById('ncn'),n=input.value.trim().replace(/\s+/g,' ');if(!n){input.focus();return}
-  addCat(document.getElementById('nct').value,n);save();catUI.q=n;catUI.filtro='ativas';render()}
-function quickAdd(){const c=Combobox.get('qc'),v=parseV(el('qv').value),d=el('qd').value.trim();
-  if(!c){el('qcin').focus();return}if(!v){el('qv').focus();return}
-  ens(c,selY,selM).items.push({v,d,ok:el('qk').checked});save();render();el('qcin').focus()}
+/* nome/dia alterados direto na linha de Ajustes: valem do mês selecionado em diante (com "Desfazer") */
+function inlineCatEdit(id,patchObj){const c=catById(id),novo={nome:patchObj.nome??c.nome,dia:patchObj.dia===undefined?c.dia:patchObj.dia};
+  if(novo.nome===c.nome&&(novo.dia||null)===(c.dia||null))return;
+  const antes=JSON.stringify(S);
+  try{ if(aliveFrom(c,selY,selM)){reviseCat(id,novo,scopeOf(c),selY,selM);
+        snackbar(`Mudança vale de ${MESES[selM].toLowerCase()}/${selY} em diante; o passado não mudou.`,'Desfazer',()=>{S=JSON.parse(antes);save();render()})}
+       else renameCatEverywhere(id,novo);              // versão já encerrada: corrige direto
+    save();render()}
+  catch(e){alert(e.message);render()}}
 function exportBackup(){download(`orcamento-backup-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(S,null,1),'application/json')}
 function exportCsv(){const rows=[['Ano','Tipo','Categoria',...MESES,'Total']],num=x=>x.toFixed(2).replace('.',',');
   S.anos.forEach(y=>S.cats.forEach(c=>{const v=MESES.map((_,m)=>V(c.id,y,m,'real'));rows.push([y,c.tipo,c.nome,...v.map(num),num(v.reduce((a,b)=>a+b,0))])}));
@@ -32,8 +36,7 @@ document.getElementById('hr').addEventListener('change',e=>{if(e.target.id==='ys
 /* ---- busca de categorias (Ajustes) e escolha no combobox ---- */
 document.addEventListener('input',e=>{if(e.target.id==='cq'){catUI.q=e.target.value;catUI.lim=40;renderCatList()}});
 document.addEventListener('cbpick',e=>{const{id,cid}=e.detail;
-  if(id==='qc')document.getElementById('qv')?.focus();
-  else if(id==='cs'){catSel=cid;render()}
+  if(id==='cs'){catSel=cid;render()}
   else if(id==='mg')MergeDialog.picked(cid)});
 
 /* ---- arrastar linhas da tela Mês para reordenar ---- */
@@ -54,11 +57,11 @@ app.addEventListener('click',e=>{const t=e.target;let b;
   else if(b=t.closest('[data-open]')){const{c,y,m}=parseKey(b.dataset.open);hideTip();openCell(c,y,m)}
   else if(b=t.closest('[data-la]')){S[b.dataset.la].push({nome:'Novo item',valor:0});save();render()}
   else if(b=t.closest('[data-ld]')){const[k,i]=b.dataset.ld.split('|');S[k].splice(+i,1);save();render()}
-  else if(b=t.closest('[data-sc]')){Combobox.set('qc',b.dataset.sc);document.getElementById('qv').focus()}
   else if(b=t.closest('[data-cf]')){const[k,v]=b.dataset.cf.split('|');catUI[k]=v;catUI.lim=40;render()}
   else if(t.closest('[data-cmore]')){catUI.lim+=40;renderCatList()}
   else if(b=t.closest('[data-cmerge]'))MergeDialog.open(b.dataset.cmerge)
-  else if(t.closest('[data-cnew]'))createCatFromPanel()
+  else if(b=t.closest('[data-newcat]'))CategoryDialog.openNew(b.dataset.newcat)
+  else if(b=t.closest('[data-cedit]'))CategoryDialog.openEdit(b.dataset.cedit)
   else if(b=t.closest('[data-cdel]'))confirmDeleteCat(b.dataset.cdel)
   else if(t.id==='bk')exportBackup()
   else if(t.id==='csv')exportCsv()});
@@ -66,7 +69,7 @@ app.addEventListener('click',e=>{const t=e.target;let b;
 /* ---- formulários ---- */
 app.addEventListener('submit',e=>{e.preventDefault();
   if(e.target.id==='lf')doLogin();
-  else if(e.target.id==='qf')quickAdd()});
+  });
 
 /* ---- campos alterados ---- */
 app.addEventListener('change',e=>{const t=e.target,d=t.dataset;
@@ -74,7 +77,7 @@ app.addEventListener('change',e=>{const t=e.target,d=t.dataset;
   else if(t.id==='si'){if(t.value.trim()==='')delete S.saldoIni[selY];else S.saldoIni[selY]=parseV(t.value);save()}
   else if(d.ln){const[k,i]=d.ln.split('|');S[k][i].nome=t.value;save()}
   else if(d.lv){const[k,i]=d.lv.split('|');S[k][i].valor=parseV(t.value);save();render()}
-  else if(d.cn){catById(d.cn).nome=t.value;save()}
-  else if(d.cd){catById(d.cd).dia=parseInt(t.value)||null;save()}
+  else if(d.cn)inlineCatEdit(d.cn,{nome:t.value})
+  else if(d.cd)inlineCatEdit(d.cd,{dia:parseInt(t.value)||null})
   else if(t.id==='imp'&&t.files[0])importFile(t.files[0],t)
   else if(t.id==='rs'&&t.files[0])restoreFile(t.files[0])});
