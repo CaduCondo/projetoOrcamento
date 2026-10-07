@@ -117,3 +117,6 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 .cr input.cn:hover,.cr input.cn:focus{border-color:var(--line);background:var(--bg)}
 .cr input.cd{width:100%;text-align:center}
 @media(max-width:760px){.cr{grid-template-columns:10px 1fr auto auto}.cr .xs{display:none}}
+
+.envbar{background:#f59e0b;color:#1c2430;text-align:center;font-size:13px;font-weight:600;padding:5px 10px}
+.envbar[hidden]{display:none}

@@ -2,6 +2,9 @@
 /* ---------- GRÁFICOS ---------- */
 let CH=[];const destroyCharts=()=>{CH.forEach(c=>c.destroy());CH=[]};
 const PAL=['#2f6fed','#f59e0b','#10b981','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16','#f97316','#64748b'];
+/* configurações de gráfico usadas em mais de um lugar */
+const donutCfg=(labels,data)=>({type:'doughnut',data:{labels,datasets:[{data,backgroundColor:PAL}]},options:{maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>` ${c.label}: ${R$(c.parsed)}`}},legend:{position:'right'}}}});
+const stackedCfg=(labels,datasets,ax,tip)=>({type:'bar',data:{labels,datasets},options:{maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true,...ax}},plugins:{tooltip:tip}}});
 function heat(){const y=selY,L=lastActive(y);const rows=cats('pagar').map(c=>({c,v:MC.map((_,m)=>V(c.id,y,m))})).filter(r=>r.v.some(x=>x>0));
   if(!rows.length)return'<p class="hint">Sem dados.</p>';
   return `<div class="heat"><table><tr><th>Categoria</th>${MC.slice(0,L+1).map(m=>`<th class="n">${m}</th>`).join('')}<th class="n">Total</th></tr>${rows.map(r=>{const mx=Math.max(...r.v.slice(0,L+1),1);
@@ -58,22 +61,22 @@ function drawCharts(){
   const hb=(id,arr,color)=>mk(id,{type:'bar',data:{labels:arr.map(x=>x.n),datasets:[{data:arr.map(x=>x.v),backgroundColor:color}]},options:{indexAxis:'y',maintainAspectRatio:false,scales:{x:ax},plugins:{...noleg,tooltip:{callbacks:{label:c=>' '+fmt(c.parsed.x)}}}}});
   const pt=catTot('pagar');hb('c6',pt,PAL[3]);
   const top8=pt.slice(0,8),oth=sum(pt.slice(8).map(x=>x.v));
-  mk('c7',{type:'doughnut',data:{labels:[...top8.map(x=>x.n),...(oth?['Outras']:[])],datasets:[{data:[...top8.map(x=>x.v),...(oth?[oth]:[])],backgroundColor:PAL}]},options:{maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.parsed)}`}},legend:{position:'right'}}}});
+  mk('c7',donutCfg([...top8.map(x=>x.n),...(oth?['Outras']:[])],[...top8.map(x=>x.v),...(oth?[oth]:[])]));
   const g={},all=[];cats('pagar').forEach(c=>ms2.forEach(m=>itemsOf(c.id,y,m).forEach(i=>{if(/sem detalhe/.test(i.d)||i.v<=0)return;const k=(i.d||c.nome).trim().toLowerCase();g[k]=(g[k]||0)+i.v;all.push({n:`${i.d||c.nome} (${c.nome} · ${MC[m]})`,v:i.v})})));
   hb('c8',Object.entries(g).map(([n,v])=>({n,v})).sort((a,b)=>b.v-a.v).slice(0,20),PAL[1]);
   hb('c9',all.sort((a,b)=>b.v-a.v).slice(0,15),PAL[4]);
   const top=pt.slice(0,8).map(x=>x.n),cid=n=>cats('pagar').find(c=>c.nome===n).id;
   const ds=top.map((n,i)=>({label:n,backgroundColor:PAL[i],data:ms.map(m=>V(cid(n),y,m))}));
   ds.push({label:'Outras',backgroundColor:PAL[9],data:ms.map(m=>sum(cats('pagar').filter(c=>!top.includes(c.nome)).map(c=>V(c.id,y,m))))});
-  mk('c10',{type:'bar',data:{labels:lab,datasets:ds},options:{maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true,...ax}},plugins:{tooltip:tip}}});
+  mk('c10',stackedCfg(lab,ds,ax,tip));
   const nm=Math.max(1,ms2.filter(m=>MT('receber',y,m,'prev')>0).length);hb('c11',pt.map(x=>({n:x.n,v:x.v/nm})),PAL[5]);
   const dias=Array.from({length:31},(_,i)=>i+1),byDia=dias.map(d=>sum(cats('pagar').filter(c=>c.dia===d).map(c=>sum(ms2.map(m=>V(c.id,y,m))))));
   const semDia=sum(cats('pagar').filter(c=>!c.dia).map(c=>sum(ms2.map(m=>V(c.id,y,m)))));
   mk('c12',{type:'bar',data:{labels:[...dias,'s/ dia'],datasets:[{data:[...byDia,semDia],backgroundColor:PAL[3]}]},options:{maintainAspectRatio:false,scales:{y:ax},plugins:{...noleg,tooltip:{callbacks:{label:c=>' '+fmt(c.parsed.y)}}}}});
   const rc=catTot('receber');
-  mk('c13',{type:'doughnut',data:{labels:rc.map(x=>x.n),datasets:[{data:rc.map(x=>x.v),backgroundColor:PAL}]},options:{maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.parsed)}`}},legend:{position:'right'}}}});
-  mk('c14',{type:'bar',data:{labels:lab,datasets:cats('receber').filter(c=>ms.some(m=>V(c.id,y,m)>0)).map((c,i)=>({label:c.nome,backgroundColor:PAL[i%10],data:ms.map(m=>V(c.id,y,m))}))},options:{maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true,...ax}},plugins:{tooltip:tip}}});
-  const cc=S.cats.find(c=>c.id===catSel);
+  mk('c13',donutCfg(rc.map(x=>x.n),rc.map(x=>x.v)));
+  mk('c14',stackedCfg(lab,cats('receber').filter(c=>ms.some(m=>V(c.id,y,m)>0)).map((c,i)=>({label:c.nome,backgroundColor:PAL[i%10],data:ms.map(m=>V(c.id,y,m))})),ax,tip));
+  const cc=catById(catSel);
   if(cc)mk('c15',{type:'bar',data:{labels:lab,datasets:[{label:cc.nome,data:ms.map(m=>V(cc.id,y,m)),backgroundColor:cc.tipo==='pagar'?PAL[3]:PAL[2]}]},options:{maintainAspectRatio:false,scales:{y:ax},plugins:{...noleg,tooltip:tip}}});
   const tot=t=>S.anos.map(a=>sum(MC.map((_,m)=>MT(t,a,m))));
   mk('c16',{type:'bar',data:{labels:S.anos,datasets:[{label:'Receber',data:tot('receber'),backgroundColor:PAL[2]},{label:'Pagar',data:tot('pagar'),backgroundColor:PAL[3]},{label:'Saldo',data:S.anos.map((a,i)=>tot('receber')[i]-tot('pagar')[i]),backgroundColor:PAL[0]}]},options:{maintainAspectRatio:false,scales:{y:ax},plugins:{tooltip:tip}}});

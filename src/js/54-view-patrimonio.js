@@ -11,5 +11,5 @@ function vPat(){const s=S.saldos.reduce((x,i)=>x+i.valor,0),d=S.dividas.reduce((
   <div style="margin-top:16px">${list('bens','Bens e valores','Migrado do bloco contas/casa/ape da planilha. Renomeie como quiser.')}</div>`}
 function drawPat(){Chart.defaults.color=getComputedStyle(document.documentElement).getPropertyValue('--mut').trim();
   const s=S.saldos.filter(i=>i.valor>0),d=S.dividas.filter(i=>i.valor>0);
-  CH.push(new Chart(document.getElementById('p1'),{type:'doughnut',data:{labels:s.map(i=>i.nome),datasets:[{data:s.map(i=>i.valor),backgroundColor:PAL}]},options:{maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>` ${c.label}: ${R$(c.parsed)}`}},legend:{position:'right'}}}}));
+  CH.push(new Chart(document.getElementById('p1'),donutCfg(s.map(i=>i.nome),s.map(i=>i.valor))));
   CH.push(new Chart(document.getElementById('p2'),{type:'bar',data:{labels:d.map(i=>i.nome),datasets:[{data:d.map(i=>i.valor),backgroundColor:PAL[3]}]},options:{indexAxis:'y',maintainAspectRatio:false,scales:{x:{ticks:{callback:K}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+R$(c.parsed.x)}}}}}))}

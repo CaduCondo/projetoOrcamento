@@ -3,9 +3,9 @@
 const dlg=document.getElementById('dlg');let cur=null;
 function openCell(cid,y,m){cur={cid,y,m};drawDlg();if(!dlg.open)dlg.showModal()}
 function totals(){dlg.querySelector('#dr').textContent=fmtC(V(cur.cid,cur.y,cur.m,'real'));dlg.querySelector('#dp').textContent=fmtC(V(cur.cid,cur.y,cur.m,'prev'))}
-const fmtC=n=>S.cats.find(c=>c.id===cur.cid).tipo==='pagar'?RP(n):R$(n);
+const fmtC=n=>moneyFor(catById(cur.cid).tipo,n);
 function prevCellRef(){let y=cur.y,m=cur.m-1;if(m<0){m=11;y--}return[y,m]}
-function drawDlg(){const c=S.cats.find(x=>x.id===cur.cid),x=ens(cur.cid,cur.y,cur.m),[py,pm]=prevCellRef(),hasPrev=(cellOf(cur.cid,py,pm)?.items||[]).length;
+function drawDlg(){const c=catById(cur.cid),x=ens(cur.cid,cur.y,cur.m),[py,pm]=prevCellRef(),hasPrev=(cellOf(cur.cid,py,pm)?.items||[]).length;
   dlg.innerHTML=`<div class="dh"><div><h3>${esc(c.nome)} · ${MESES[cur.m]} de ${cur.y}</h3><div class="sub">${c.tipo==='pagar'?'A pagar':'A receber'} — marque o que já foi ${c.tipo==='pagar'?'pago':'recebido'}; só isso entra no total</div></div><button class="btn sec" data-close>Fechar</button></div>
   <div class="db">${x.items.length?x.items.map((i,k)=>`<div class="item ${i.info?'info':i.ok?'':'prev'}"><input type="checkbox" class="ok" data-ik="${k}" ${i.ok&&!i.info?'checked':''} ${i.info?'disabled':''} title="${c.tipo==='pagar'?'Pago':'Recebido'}"><input class="money" data-iv="${k}" value="${fmtN(i.v)}" inputmode="decimal" aria-label="valor"><input data-id="${k}" value="${esc(i.d)}" placeholder="descrição" aria-label="descrição"><button data-info="${k}" class="cc ${i.info?'on':''}" title="Marcar como já incluso na fatura do cartão (informativo, não soma)">💳</button><button data-del="${k}" title="Remover">✕</button></div>`).join(''):'<p class="hint">Nenhum item ainda. Adicione abaixo.</p>'}
    <div class="item" style="margin-top:10px"><input type="checkbox" class="ok" id="nk" checked title="Já ${c.tipo==='pagar'?'pago':'recebido'}"><input id="nv" class="money" placeholder="0,00" inputmode="decimal"><input id="nd" placeholder="descrição (Enter para adicionar)"><span></span><button class="btn" style="padding:4px" data-add title="Adicionar">＋</button></div></div>

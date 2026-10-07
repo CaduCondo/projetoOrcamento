@@ -1,7 +1,7 @@
 /* Tela Ano */
 /* ---------- ANO ---------- */
 function vAno(){const y=selY,head=`<tr><th>Categoria</th>${MC.map(m=>`<th class="n">${m}</th>`).join('')}<th class="n">Total</th></tr>`;
-  const F=(t,v)=>t==='pagar'?RP(v):R$(v),fn=v=>v.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  const F=moneyFor,fn=v=>v.toLocaleString('pt-BR',{minimumFractionDigits:2});
   const rows=t=>visCats(t,y).map(c=>{let s=0;const tds=MC.map((_,m)=>{const v=V(c.id,y,m);s+=v;const cls=v?(t==='pagar'?'neg':'pos'):'zero';
     return `<td class="n"><button class="val ${cls}" data-open="${c.id}|${y}|${m}" data-tipcell="${c.id}|${y}|${m}">${v?(t==='pagar'?'-':'')+fn(v):'–'}</button></td>`}).join('');
     return `<tr><td data-tipcat="${c.id}|${y}|0">${esc(c.nome)}</td>${tds}<td class="n"><b class="${t==='pagar'?'neg':'pos'}">${F(t,s)}</b></td></tr>`}).join('');

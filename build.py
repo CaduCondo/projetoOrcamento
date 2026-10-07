@@ -11,20 +11,21 @@ import argparse, glob, json, os
 
 SDK_VERSION = '10.12.5'
 
-def build(env, out):
+def build(env, out, vendor=True):
     def read(path):
         with open(path, encoding='utf-8') as f:
             return f.read()
     html = read('src/index.html')
     js = '\n'.join(read(p) for p in sorted(glob.glob('src/js/*.js')))
     html = html.replace('/*CSS*/', read('src/css/styles.css'))
-    html = html.replace('/*CHARTJS*/', read('src/vendor/chart.js').replace('</script>', '<\\/script>'))
+    html = html.replace('/*CHARTJS*/', (read('src/vendor/chart.js') if vendor else '').replace('</script>', '<\\/script>'))
     sdk = ''
     if env in ('dev', 'prod'):
         cfg = json.loads(read(f'src/config/firebase.{env}.json'))
         js = js.replace('/*FIREBASE*/null', json.dumps(cfg))
         sdk = ''.join(f'<script src="https://www.gstatic.com/firebasejs/{SDK_VERSION}/firebase-{n}-compat.js"></script>\n'
                       for n in ('app', 'auth', 'firestore'))
+    js = js.replace('/*FIREBASE*/null', 'null')  # no modo local não há Firebase (nos outros, já foi trocado acima)
     js = js.replace("/*ENV*/'local'", json.dumps(env)).replace('/*SEED*/null', 'null')
     html = html.replace('<!--FBSDK-->', sdk).replace('/*APP*/', js.replace('</script>', '<\\/script>'))
     if env == 'dev':
@@ -38,5 +39,6 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--env', choices=['local', 'dev', 'prod'], default='local')
     ap.add_argument('--out', default='dist/index.html')
+    ap.add_argument('--no-vendor', action='store_true', help='só para testes: não embute o Chart.js')
     a = ap.parse_args()
-    print(f'{a.out} gerado ({a.env}, {build(a.env, a.out)} bytes)')
+    print(f'{a.out} gerado ({a.env}, {build(a.env, a.out, not a.no_vendor)} bytes)')

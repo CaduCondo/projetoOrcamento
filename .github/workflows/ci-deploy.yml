@@ -1,0 +1,68 @@
+name: Testes e publicação
+
+# A cada envio ao GitHub: roda os testes. Se for na main ou na dev e os testes passarem,
+# publica o site: PRODUÇÃO na raiz (branch main) e TESTE em /dev/ (branch dev).
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    name: Testes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: npm test
+
+  publicar:
+    name: Publicar site
+    needs: testes
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          path: dev
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Montar o site (produção na raiz, teste em /dev/)
+        run: |
+          mkdir -p _site/dev
+          (cd main && python build.py --env prod --out ../_site/index.html)
+          (cd dev  && python build.py --env dev  --out ../_site/dev/index.html)
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4

@@ -6,7 +6,7 @@ function vAj(){
    <div class="row"><label class="row">Saldo inicial de ${selY}: <input id="si" class="money" inputmode="decimal" placeholder="${fmtN(iniY(selY))||'0,00'}" value="${S.saldoIni[selY]!=null?fmtN(S.saldoIni[selY])||'0,00':''}" size="14"></label></div>
    <p class="hint">Deixe em branco para continuar de onde o ano anterior terminou. Na planilha 2026 havia “TOTAL ACUMULADO 90000” em janeiro.</p></div></div>
   <div class="panel"><h2>Backup e exportação</h2><div style="padding:12px 14px">
-   <p class="hint">${CLOUD?'Seus dados ficam salvos na sua conta online. Mesmo assim, baixe um backup de vez em quando.':'Seus dados ficam guardados neste navegador, na sua conta. Baixe um backup de vez em quando.'}</p>
+   <p class="hint">${backend.backupHint}</p>
    <div class="row"><button class="btn" id="bk">Baixar backup (.json)</button>
    <label class="btn sec">Restaurar backup<input type="file" id="rs" accept=".json" hidden></label>
    <button class="btn sec" id="csv">Exportar para Excel (.csv)</button></div>
