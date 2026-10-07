@@ -10,9 +10,11 @@ const PY = process.platform === 'win32' ? 'python' : 'python3';
 
 /* gera dist/test-<env>.html (sem o Chart.js, que não roda sem canvas) e devolve o HTML */
 function buildHtml(env) {
-  const out = path.join('dist', `test-${env}.html`);
+  const out = path.join('dist', `test-${env}-${process.pid}.html`);      // um arquivo por processo: os testes rodam em paralelo
   execFileSync(PY, ['build.py', '--env', env, '--no-vendor', '--out', out], { cwd: ROOT, stdio: 'pipe' });
-  return fs.readFileSync(path.join(ROOT, out), 'utf8');
+  const html = fs.readFileSync(path.join(ROOT, out), 'utf8');
+  fs.rmSync(path.join(ROOT, out), { force: true });
+  return html;
 }
 
 class FakeChart {

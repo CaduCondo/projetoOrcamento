@@ -30,9 +30,10 @@ test('privacidade: nenhum e-mail real no código (só exemplos)', () => {
 
 test('build: os três ambientes montam sem sobras de marcadores', () => {
   for (const env of ['local', 'dev', 'prod']) {
-    const out = path.join('dist', `repo-${env}.html`);
+    const out = path.join('dist', `repo-${env}-${process.pid}.html`);
     execFileSync(process.platform === 'win32' ? 'python' : 'python3', ['build.py', '--env', env, '--out', out], { cwd: ROOT, stdio: 'pipe' });
     const html = read(out);
+    fs.rmSync(path.join(ROOT, out), { force: true });
     for (const marcador of ['/*CSS*/', '/*APP*/', '/*CHARTJS*/', '/*SEED*/', '/*FIREBASE*/', "/*ENV*/", '<!--FBSDK-->'])
       assert.ok(!html.includes(marcador), `${env}: sobrou ${marcador}`);
     assert.ok(html.includes(`const ENV="${env}"`) || html.includes(`const ENV='${env}'`), `${env}: ENV não definido`);
