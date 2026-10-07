@@ -5,3 +5,5 @@ historico.json
 orcamento-historico*.json
 orcamento-backup*.json
 *.csv
+dist/
+node_modules/
