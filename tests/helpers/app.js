@@ -61,6 +61,8 @@ function openApp(opts) {
       throw new Error('tempo esgotado esperando: ' + what);
     },
     sleep: ms => new Promise(r => setTimeout(r, ms)),
+    /* escolhe uma opção de rádio como numa pessoa clicando (só avisa mudança se ela não estava marcada) */
+    pickStorage(v) { const r = d.querySelector(`input[name=stg][value=${v}]`); if (r.checked) return false; r.checked = true; r.dispatchEvent(new w.Event('change', { bubbles: true })); return true; },
     /* cópia do armazenamento do navegador (para abrir o app de novo "no mesmo aparelho") */
     snapshotStorage() { const o = {}; for (let i = 0; i < w.localStorage.length; i++) { const k = w.localStorage.key(i); o[k] = w.localStorage.getItem(k); } return o; },
     /* escolhe um arquivo num <input type=file> (o app só usa file.text()) */

@@ -114,6 +114,14 @@ test('janela de itens: previsto x realizado, cartão (💳) e total', async () =
   assert.equal(app.ev(`V('${merc}',${y},${mth},'prev')`), 200);
   app.click('[data-del="0"]');                                     // remove o primeiro (100)
   assert.equal(app.ev(`V('${merc}',${y},${mth},'prev')`), 100);
+  // quantidade de itens: fica ao lado ESQUERDO do valor (não embaixo do nome)
+  app.type('#nv', '1000'); app.type('#nd', 'mais um'); app.click('[data-add]'); app.click('[data-close]');
+  const linha = app.$(`tr[data-cat="${merc}"]`);
+  const qtd = app.ev(`cellOf('${merc}',${y},${mth}).items.length`);
+  assert.ok(qtd > 1);
+  assert.equal(linha.querySelector('td.n .cnt').textContent.trim(), `${qtd} itens`, 'o contador está na célula do valor');
+  assert.doesNotMatch(linha.cells[1].textContent, /itens/, 'e não mais embaixo do nome');
+  assert.ok(linha.querySelector('td.n .cnt').nextElementSibling.classList.contains('val'), 'logo antes do botão do valor');
   app.close();
 });
 

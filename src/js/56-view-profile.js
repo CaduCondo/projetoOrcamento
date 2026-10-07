@@ -14,11 +14,11 @@ const avatar=(p,email,cls='')=>p&&p.foto?`<img class="avatar ${cls}" src="${p.fo
 const TXT_NUVEM='Seus dados ficam guardados com segurança na sua conta e aparecem em qualquer aparelho onde você entrar com seu e-mail e senha. Só você e o administrador do sistema (que apenas visualiza, nunca altera, e só para dar suporte) conseguem vê-los.';
 const TXT_LOCAL='Seus lançamentos não vão para a nuvem: ficam num arquivo CSV (abre no Excel) neste aparelho. Ninguém do sistema consegue ver esses dados — guardamos só o seu cadastro (e-mail, nome e esta escolha). Você só vê seus dados nos aparelhos onde tiver o arquivo; para usar em outro lugar, leve o arquivo e carregue em Ajustes → Carregar arquivo (.csv).';
 
-function storageCard(){const local=profile.storage==='local',fs=DeviceStore.fsSupported();
+function storageCard(){const local=profile.storage==='local',cloud=profile.storage==='cloud',fs=DeviceStore.fsSupported();   // sem escolha ainda: nenhuma das duas fica marcada
   return `<div class="panel full"><h2>Onde guardar meus dados</h2><div class="pbody">
     ${profile.storage?'':`<p class="warnbox">Você ainda não escolheu. Por enquanto seus dados estão guardados <b>na nuvem</b>.</p>`}
     <div class="stg">
-     <label class="stgopt ${local?'':'on'}"><input type="radio" name="stg" value="cloud" ${local?'':'checked'}>
+     <label class="stgopt ${cloud?'on':''}"><input type="radio" name="stg" value="cloud" ${cloud?'checked':''}>
       <div><b>No banco de dados (nuvem)</b> <span class="info" title="${esc(TXT_NUVEM)}">ⓘ</span>
        <p>Seus dados ficam guardados com segurança na sua conta e aparecem em <b>qualquer aparelho</b> onde você entrar com seu e-mail e senha.</p>
        <p class="sub">Protegidos por regras de segurança: <b>só você</b> e o <b>administrador do sistema</b> conseguem vê-los — e o administrador apenas visualiza (nunca altera), só para dar suporte.</p></div></label>

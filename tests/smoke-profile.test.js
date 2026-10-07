@@ -41,11 +41,19 @@ test('cadastro: aviso para completar, validações e salvar; o aviso some quando
   assert.equal(db.docs['profiles/uid1'].email, EMAIL);
   assert.match(app.$('.userchip').textContent, /Carlos/, 'o topo mostra o primeiro nome');
   assert.match(app.$('#notice').textContent, /escolher onde guardar/, 'ainda falta escolher o armazenamento');
+  // enquanto não escolhe, NENHUMA opção vem marcada (senão clicar na que já parece marcada não faria nada)
+  assert.equal(app.$('input[name=stg]:checked'), null, 'nenhuma opção marcada antes de escolher');
+  assert.match(app.$('.warnbox').textContent, /ainda não escolheu/);
   // escolher "nuvem" explicitamente encerra a pendência
-  app.click('input[name=stg][value=cloud]'); app.$('input[name=stg][value=cloud]').dispatchEvent(new app.w.Event('change', { bubbles: true }));
+  const commits = db.commits;
+  assert.equal(app.pickStorage('cloud'), true, 'clicar em "nuvem" agora tem efeito');
   await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'janela de escolha'); app.choose('enviar');
   await app.waitFor(() => db.docs['profiles/uid1'].storage === 'cloud', 3000, 'escolha salva');
   assert.equal(app.$('#notice').textContent.trim(), '', 'aviso sumiu');
+  assert.equal(app.$('.warnbox'), null, 'a faixa "você ainda não escolheu" some');
+  assert.ok(app.$('input[name=stg][value=cloud]').checked, 'a opção escolhida fica marcada');
+  assert.equal(db.commits, commits, 'quem já estava na nuvem não reenvia os dados');
+  assert.equal(app.pickStorage('cloud'), false, 'clicar de novo na mesma opção não faz nada');
   app.close();
 });
 
@@ -99,7 +107,7 @@ test('PRIVACIDADE — escolher "só neste aparelho": cria a cópia, apaga a nuve
   await app.ev('backend.flush()');
   assert.ok(db.docs['users/uid1/meta/main'] && Object.keys(db.docs).some(k => k.includes('/years/')), 'antes: dados na nuvem');
   app.click('.userchip');
-  app.click('input[name=stg][value=local]'); app.$('input[name=stg][value=local]').dispatchEvent(new app.w.Event('change', { bubbles: true }));
+  app.pickStorage('local');
   await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'janela de escolha');
   assert.match(app.$('#dlg4').textContent, /deixam de ser enviados para a nuvem/);
   app.choose('apagar');
@@ -122,7 +130,7 @@ test('PRIVACIDADE — escolher "só neste aparelho": cria a cópia, apaga a nuve
 test('PRIVACIDADE — entrar em OUTRO aparelho nunca puxa dados da nuvem; mostra o aviso com o passo a passo', async () => {
   const db = createDb(); const a = abrir(db); await criarConta(a);
   lancar(a, '7700', 'segredo'); await a.ev('backend.flush()');
-  a.click('.userchip'); a.click('input[name=stg][value=local]'); a.$('input[name=stg][value=local]').dispatchEvent(new a.w.Event('change', { bubbles: true }));
+  a.click('.userchip'); a.pickStorage('local');
   await a.waitFor(() => a.$('#dlg4').hasAttribute('open'), 2000, 'janela'); a.choose('manter');   // mantém a cópia antiga na nuvem
   await a.waitFor(() => db.docs['profiles/uid1'].storage === 'local', 3000, 'escolha salva');
   assert.ok(db.docs['users/uid1/meta/main'], 'a cópia antiga foi mantida na nuvem (por escolha)');
@@ -152,12 +160,12 @@ test('PRIVACIDADE — entrar em OUTRO aparelho nunca puxa dados da nuvem; mostra
 
 test('voltar para a nuvem: envia os dados, avisa e atualiza o cadastro', async () => {
   const db = createDb(); const app = abrir(db); await criarConta(app);
-  app.click('.userchip'); app.click('input[name=stg][value=local]'); app.$('input[name=stg][value=local]').dispatchEvent(new app.w.Event('change', { bubbles: true }));
+  app.click('.userchip'); app.pickStorage('local');
   await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'janela'); app.choose('apagar');
   await app.waitFor(() => db.docs['profiles/uid1'].storage === 'local', 3000, 'local');
   lancar(app, '1000', 'volta'); await app.ev('backend.flush()');
   assert.ok(!Object.keys(db.docs).some(k => k.startsWith('users/')));
-  app.click('.userchip'); app.click('input[name=stg][value=cloud]'); app.$('input[name=stg][value=cloud]').dispatchEvent(new app.w.Event('change', { bubbles: true }));
+  app.click('.userchip'); app.pickStorage('cloud');
   await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'janela'); assert.match(app.$('#dlg4').textContent, /administrador/); app.choose('enviar');
   await app.waitFor(() => db.docs['profiles/uid1'].storage === 'cloud' && Object.keys(db.docs).some(k => k.includes('/years/')), 3000, 'enviado');
   assert.ok(JSON.stringify(db.docs).includes('volta'), 'os lançamentos chegaram à nuvem');
@@ -167,7 +175,7 @@ test('voltar para a nuvem: envia os dados, avisa e atualiza o cadastro', async (
 test('arquivo no computador: grava a cada mudança e NÃO sobrescreve o arquivo antes de lê-lo', async () => {
   const db = createDb(), h = fakeHandle();
   const a = openApp({ html, setup: w => { install(w, db); w.showSaveFilePicker = async () => h; } }); await criarConta(a);
-  a.click('.userchip'); a.click('input[name=stg][value=local]'); a.$('input[name=stg][value=local]').dispatchEvent(new a.w.Event('change', { bubbles: true }));
+  a.click('.userchip'); a.pickStorage('local');
   await a.waitFor(() => a.$('#dlg4').hasAttribute('open'), 2000, 'janela'); a.choose('apagar');
   await a.waitFor(() => h.writes > 0, 3000, 'arquivo gravado');
   assert.ok(h.content.startsWith('﻿Meu Orçamento;'), 'o arquivo é o CSV');

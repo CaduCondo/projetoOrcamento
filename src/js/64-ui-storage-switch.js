@@ -33,8 +33,8 @@ const StorageSwitch={
         <p>Eles ficam protegidos por regras de segurança: só você e o administrador do sistema (apenas para visualizar, nunca alterar, e só para suporte) conseguem vê-los.</p>`,
       opcoes:[{id:'enviar',label:'Sim, enviar para a nuvem',cls:''},{id:'',label:'Cancelar',cls:'dan'}]});
     if(!ch)return;
-    const fs=new FirestoreStore(backend.db,backend.uid);
-    try{await fs.read();await fs.write(S)}catch(e){alert('Não consegui enviar para a nuvem: '+(e.code||e.message)+'. Nada foi alterado.');return}
+    const jaNaNuvem=backend.store instanceof FirestoreStore,fs=jaNaNuvem?backend.store:new FirestoreStore(backend.db,backend.uid);   // quem ainda não tinha escolhido já está na nuvem
+    if(!jaNaNuvem){try{await fs.read();await fs.write(S)}catch(e){alert('Não consegui enviar para a nuvem: '+(e.code||e.message)+'. Nada foi alterado.');return}}
     profile.storage='cloud';
     try{await backend.saveProfile(profile)}catch(e){alert('Os dados foram enviados, mas não consegui salvar sua escolha: '+(e.code||e.message));return}
     backend.store=fs;noticeClear();
