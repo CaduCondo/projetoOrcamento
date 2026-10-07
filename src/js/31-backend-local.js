@@ -38,18 +38,18 @@ class LocalBackend {
 
   /* entrar / criar conta / redefinir senha (lê os campos da tela de login) */
   async login(){
-    const e=lem.value.trim().toLowerCase(),p=lpw.value,err=t=>lerr.textContent=t,us=this.users();
+    const e=el('lem').value.trim().toLowerCase(),p=el('lpw').value,err=t=>el('lerr').textContent=t,us=this.users();
     if(!crypto?.subtle)return err('Este navegador não suporta a criptografia necessária.');
     if(loginMode==='up'){
-      if(us[e])return err('Este e-mail já tem conta neste navegador.');if(p!==lpw2.value)return err('As senhas não conferem.');
+      if(us[e])return err('Este e-mail já tem conta neste navegador.');if(p!==el('lpw2').value)return err('As senhas não conferem.');
       us[e]=await this.credential(p);this.setUsers(us);
       const first=Object.keys(us).length===1;
-      if(first&&document.getElementById('limp')?.checked){let st=null;try{const t=localStorage.getItem(LEGACY);if(t)st=JSON.parse(t)}catch{}
+      if(first&&el('limp')?.checked){let st=null;try{const t=localStorage.getItem(LEGACY);if(t)st=JSON.parse(t)}catch{}
         localStorage.setItem(this.dkey(e),JSON.stringify(mig(st||(SEED?structuredClone(SEED):blank()))))}
       else localStorage.setItem(this.dkey(e),JSON.stringify(blank()))}
     else if(loginMode==='reset'){
-      if(!us[e])return err('Não existe conta com este e-mail neste navegador.');if(p!==lpw2.value)return err('As senhas não conferem.');
+      if(!us[e])return err('Não existe conta com este e-mail neste navegador.');if(p!==el('lpw2').value)return err('As senhas não conferem.');
       us[e]=await this.credential(p);this.setUsers(us)}
     else{const u=us[e];if(!u||await this.hash(p,u.salt)!==u.hash)return err(u?'Senha incorreta.':'Não existe conta com este e-mail neste navegador.')}
-    this.startSession(e,lrem.checked)}
+    this.startSession(e,el('lrem').checked)}
 }

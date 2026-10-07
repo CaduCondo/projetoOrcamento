@@ -47,11 +47,11 @@ class CloudBackend {
     this.auth.onAuthStateChanged(u=>{if(u){if(!S||this.uid!==u.uid)this.start(u)}else{this.uid=null;user=null;S=null;loginMode='in';render()}})}
 
   /* entrar / criar conta / redefinir senha (lê os campos da tela de login) */
-  async login(){const e=document.getElementById('lem').value.trim().toLowerCase(),p=document.getElementById('lpw')?.value||'',
-      err=(t,ok)=>{const x=document.getElementById('lerr');x.style.color=ok?'var(--pos)':'';x.textContent=t};
+  async login(){const e=el('lem').value.trim().toLowerCase(),p=el('lpw')?.value||'',
+      err=(t,ok)=>{const x=el('lerr');x.style.color=ok?'var(--pos)':'';x.textContent=t};
     try{
       if(loginMode==='reset'){await this.auth.sendPasswordResetEmail(e);return err('Se existir uma conta com esse e-mail, enviamos um link para redefinir a senha. Confira também o spam.',true)}
-      if(loginMode==='up'){if(p!==document.getElementById('lpw2').value)return err('As senhas não conferem.');await this.auth.createUserWithEmailAndPassword(e,p)}
+      if(loginMode==='up'){if(p!==el('lpw2').value)return err('As senhas não conferem.');await this.auth.createUserWithEmailAndPassword(e,p)}
       else await this.auth.signInWithEmailAndPassword(e,p)
     }catch(x){err(AUTHMSG[x.code]||'Erro: '+(x.code||x.message))}}
 }

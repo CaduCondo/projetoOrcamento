@@ -9,9 +9,9 @@ function confirmDeleteCat(id){const c=catById(id),nl=catStats()[id]?.n||0;
   if(confirm(nl?`Excluir “${c.nome}” e os ${nl} lançamentos dela (em todos os anos)? Para juntar com outra categoria, use Mesclar.`:`Excluir “${c.nome}”?`)){deleteCat(id);save();render()}}
 function createCatFromPanel(){const input=document.getElementById('ncn'),n=input.value.trim().replace(/\s+/g,' ');if(!n){input.focus();return}
   addCat(document.getElementById('nct').value,n);save();catUI.q=n;catUI.filtro='ativas';render()}
-function quickAdd(){const c=Combobox.get('qc'),v=parseV(qv.value),d=qd.value.trim();
-  if(!c){document.getElementById('qcin').focus();return}if(!v){qv.focus();return}
-  ens(c,selY,selM).items.push({v,d,ok:qk.checked});save();render();document.getElementById('qcin').focus()}
+function quickAdd(){const c=Combobox.get('qc'),v=parseV(el('qv').value),d=el('qd').value.trim();
+  if(!c){el('qcin').focus();return}if(!v){el('qv').focus();return}
+  ens(c,selY,selM).items.push({v,d,ok:el('qk').checked});save();render();el('qcin').focus()}
 function exportBackup(){download(`orcamento-backup-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(S,null,1),'application/json')}
 function exportCsv(){const rows=[['Ano','Tipo','Categoria',...MESES,'Total']],num=x=>x.toFixed(2).replace('.',',');
   S.anos.forEach(y=>S.cats.forEach(c=>{const v=MESES.map((_,m)=>V(c.id,y,m,'real'));rows.push([y,c.tipo,c.nome,...v.map(num),num(v.reduce((a,b)=>a+b,0))])}));

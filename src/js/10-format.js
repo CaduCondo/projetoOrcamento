@@ -9,5 +9,7 @@ function parseV(t){t=String(t).trim().replace(/R\$|\s/g,'');if(!t)return 0;const
   if(t.includes(','))t=t.replace(/\./g,'').replace(',','.');else if(/^\d{1,3}(\.\d{3})+$/.test(t))t=t.replace(/\./g,'');
   const v=parseFloat(t);return isNaN(v)?0:(neg?-v:v)}
 const normName=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+/* atalho para buscar um elemento da tela pelo id */
+const el=id=>document.getElementById(id);
 /* chave de uma célula: "idCategoria|ano|mês" */
 const parseKey=k=>{const[c,y,m]=k.split('|');return{c,y:+y,m:+m}};
