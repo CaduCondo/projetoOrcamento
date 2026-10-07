@@ -7,7 +7,7 @@
 
 Padrão: --env local --out dist/index.html
 """
-import argparse, glob, json, os
+import argparse, glob, json, os, shutil
 
 SDK_VERSION = '10.12.5'
 
@@ -33,6 +33,8 @@ def build(env, out, vendor=True):
     os.makedirs(os.path.dirname(out) or '.', exist_ok=True)
     with open(out, 'w', encoding='utf-8') as f:
         f.write(html)
+    if os.path.basename(out) == 'index.html':          # site de verdade: leva junto manifesto, ícones e service worker
+        shutil.copytree('src/static', os.path.dirname(out) or '.', dirs_exist_ok=True)
     return len(html)
 
 if __name__ == '__main__':

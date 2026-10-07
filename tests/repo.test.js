@@ -69,3 +69,25 @@ test('regras do Firestore: estrutura segura (a prova completa está em tests/rul
   for (const l of escritas) assert.ok(!/isAdmin\(\)/.test(l), 'administrador não escreve: ' + l.trim());
   assert.equal((r.match(/match \//g) || []).length, 4, 'databases, admins, profiles e users — mais nada');
 });
+
+test('PWA: manifesto válido, ícones existem e a casca da página aponta para eles', () => {
+  const man = JSON.parse(read('src/static/manifest.webmanifest'));
+  assert.equal(man.display, 'standalone');
+  assert.ok(man.name && man.short_name && man.start_url === './' && man.scope === './');
+  for (const i of man.icons) assert.ok(fs.existsSync(path.join(ROOT, 'src', 'static', i.src)), 'ícone ausente: ' + i.src);
+  assert.ok(man.icons.some(i => i.sizes === '192x192') && man.icons.some(i => i.sizes === '512x512'), 'ícones 192 e 512');
+  assert.ok(man.icons.some(i => i.purpose === 'maskable'), 'ícone adaptável (Android)');
+  const html = read('src/index.html');
+  assert.match(html, /rel="manifest"/);
+  assert.match(html, /apple-touch-icon/);
+  assert.match(html, /theme-color/);
+  assert.match(read('src/static/sw.js'), /origin/, 'o service worker só mexe em arquivos do próprio site');
+});
+
+test('PWA: o build do site leva manifesto, ícones e service worker junto do index.html', () => {
+  const dir = path.join('dist', `site-${process.pid}`);
+  execFileSync(process.platform === 'win32' ? 'python' : 'python3', ['build.py', '--env', 'prod', '--out', path.join(dir, 'index.html')], { cwd: ROOT, stdio: 'pipe' });
+  for (const f of ['index.html', 'sw.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png'])
+    assert.ok(fs.existsSync(path.join(ROOT, dir, f)), 'faltou no site: ' + f);
+  fs.rmSync(path.join(ROOT, dir), { recursive: true, force: true });
+});
