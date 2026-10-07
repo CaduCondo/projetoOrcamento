@@ -16,7 +16,8 @@ Para desenvolver, testar e publicar: veja [docs/DESENVOLVIMENTO.md](docs/DESENVO
 
 ```bash
 npm install        # uma vez
-npm test           # 39 testes automáticos
+npm test           # 78 testes automáticos
+npm run test:rules # 8 testes das regras de segurança (precisa de Java)
 npm run build:dev  # monta dist/index.html (ambiente de teste)
 npm run serve      # http://localhost:8000
 ```

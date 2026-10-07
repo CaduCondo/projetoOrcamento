@@ -219,3 +219,14 @@ test('Ajustes: baixar CSV e carregar de volta (substituir ou juntar)', async () 
   assert.deepEqual(app.dom.errors || [], []);
   app.close();
 });
+
+test('regras do banco desatualizadas: o app abre mesmo assim e explica o que fazer', async () => {
+  const db = createDb(); db.profilesDenied = true;
+  const app = abrir(db); await criarConta(app);
+  assert.match(app.$('#notice').textContent, /regras de segurança do banco estão desatualizadas/);
+  assert.match(app.$('#notice').textContent, /firestore\.rules/);
+  assert.ok(app.$('[data-newcat]'), 'a tela principal abriu');
+  lancar(app, '2500', 'funciona'); await app.ev('backend.flush()');
+  assert.ok(JSON.stringify(db.docs).includes('funciona'), 'os lançamentos continuam sendo salvos');
+  app.close();
+});

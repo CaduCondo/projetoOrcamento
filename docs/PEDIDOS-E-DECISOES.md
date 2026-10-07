@@ -46,7 +46,17 @@ Legenda: ✅ feito e em produção · 🧪 feito no ambiente de teste (`dev`) ·
 - Código **dividido em arquivos pequenos** por assunto, reaproveitando trechos, em vez de um arquivo gigante. ✅
 - **Documentar tudo** o que foi pedido e como fazer cada procedimento (este arquivo e o [PASSO-A-PASSO.md](PASSO-A-PASSO.md)). 🧪
 
-## 5. Pedidos novos (a implementar) — detalhes e decisões
+## 5. Pedidos novos — detalhes, decisões e situação
+
+| Pedido | Situação |
+|---|---|
+| 5.1 Perfil (cadastro) | 🧪 no ambiente de teste |
+| 5.2 Nuvem × arquivo local + CSV | 🧪 no ambiente de teste |
+| 5.3 Administrador (somente leitura) | 🧪 no teste — precisa das regras novas publicadas e do documento `admins` (PASSO-A-PASSO §10) |
+| 5.4 Categorias pela tela Mês | 🧪 no ambiente de teste |
+| 5.5 Celular responsivo | 🧪 menu fixo embaixo, topo enxuto, botões maiores; PWA e app de loja 📋 |
+| 5.6 Kanban e testes | ✅ kanban por etiquetas · 📋 Cypress/BDD com relatório |
+| 5.7 Extrato do banco / app nas lojas | respondido; 📋 importar OFX/CSV |
 
 ### 5.1 Perfil (cadastro do usuário)
 - Acessível clicando no **e-mail** (ou na **foto**, quando houver) no topo da página.
@@ -74,6 +84,9 @@ Legenda: ✅ feito e em produção · 🧪 feito no ambiente de teste (`dev`) ·
 - Só o usuário do dono vê os dados de outros: escolhe num **combo** (mostra o **nome**, ou o e-mail se não houver nome) e vê tudo em **modo somente leitura**
   (bloqueado para alteração, para não mudar nada sem querer).
 - Ao lado de cada nome, um ícone de **olho**: **aberto** = a pessoa guarda os dados na nuvem (visíveis); **riscado** = guarda só localmente (dados **não** existem no banco para o administrador ver).
+- **Como foi feito:** botão **👥 Usuários** (só aparece para administradores) → lista com busca; clicar abre os dados da pessoa em **modo somente leitura**
+  (faixa azul no topo e todos os campos bloqueados). Travas: as regras do banco só deixam o administrador *ler*; `save()` e as gravações ficam desligados; antes de entrar,
+  o que estava pendente do próprio administrador é gravado; nada da pessoa é misturado com os dados do administrador.
 - **Transparência:** a explicação mostrada ao usuário que escolhe a nuvem deve dizer que os dados ficam protegidos por regras de segurança e que **somente ele e o administrador do sistema (apenas leitura, para suporte)** podem vê-los — não é verdade dizer "ninguém tem acesso".
 
 ### 5.4 Categorias: incluir pela tela Mês
@@ -85,6 +98,10 @@ Legenda: ✅ feito e em produção · 🧪 feito no ambiente de teste (`dev`) ·
 - **Regra de ouro das alterações:** qualquer mudança (nome, dia, abrangência) vale **do mês atual em diante**; o passado **não muda**.
   Ex.: em abril, "Salário · ano todo · dia 5" vira "Salário Empresa X · deste mês em diante · dia 10": jan–mar continuam "Salário, dia 5".
 - "Abrangência" é só controle de **apresentação** da categoria na tabela; não é dado que apareça nas planilhas.
+- **Como foi feito:** cada categoria pode ter uma *vigência* (de que mês até que mês aparece). Alterar nome, dia ou abrangência a partir do mês escolhido
+  **encerra a versão antiga no mês anterior** e cria uma nova versão daquele mês em diante (os lançamentos dali em diante vão para a nova). Isso preserva o passado
+  e permite *Desfazer*. Há também "Em todos os meses (corrigir um erro)" para ajustar, por exemplo, um acento no nome sem dividir o histórico.
+- Categorias importadas das planilhas continuam como antes (aparecem onde têm lançamentos).
 
 ### 5.5 Celular
 - O sistema inteiro deve ser **totalmente responsivo** (usável no celular).

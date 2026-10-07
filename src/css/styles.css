@@ -4,7 +4,7 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,Segoe UI,Roboto,sans-serif}
 header{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
 .wrap{max-width:1180px;margin:0 auto;padding:0 16px}
-.top{display:flex;align-items:center;gap:14px;padding:10px 0;flex-wrap:wrap}
+.top{display:flex;align-items:center;gap:14px;padding:10px 16px;flex-wrap:wrap}
 h1{font-size:18px;margin:0}
 nav{display:flex;gap:4px;flex-wrap:wrap}
 nav button{border:0;background:none;color:var(--mut);padding:8px 12px;border-radius:8px;font:inherit;cursor:pointer}
@@ -116,7 +116,14 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 .cr input.cn{border-color:transparent;background:transparent;padding:5px 7px;width:100%}
 .cr input.cn:hover,.cr input.cn:focus{border-color:var(--line);background:var(--bg)}
 .cr input.cd{width:100%;text-align:center}
-@media(max-width:760px){.cr{grid-template-columns:10px 1fr auto auto}.cr .xs{display:none}}
+.cact{display:contents}
+@media(max-width:760px){
+  .cr{grid-template-columns:10px 1fr 64px;gap:8px 10px;padding:10px 4px}
+  .cr .xs{display:none}
+  .cr .vig{grid-column:1/-1;margin-left:20px}
+  .cr .cact{display:flex;grid-column:1/-1;gap:8px;margin-left:20px}
+  .cr .cact .btn{flex:1}.cr .cact .btn.dan{flex:0 0 52px}
+}
 
 .envbar{background:#f59e0b;color:#1c2430;text-align:center;font-size:13px;font-weight:600;padding:5px 10px}
 .envbar[hidden]{display:none}
@@ -166,3 +173,44 @@ fieldset.scope.off{opacity:.45}
 .df.stack{flex-direction:column;align-items:stretch}.df.stack .btn{width:100%;text-align:center;white-space:normal}
 dialog .txt{font-size:14px}
 @media(max-width:860px){.pgrid,.stg{grid-template-columns:1fr}}
+
+/* administrador: lista de usuários e faixa de somente leitura */
+.robar{background:var(--acc2);border:2px solid var(--acc);border-radius:12px;padding:10px 14px;margin:12px 0 0;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:14px;position:sticky;top:0;z-index:20}
+.robar svg{vertical-align:-4px;color:var(--acc)}
+.ulist{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.urow{display:flex;gap:12px;align-items:center;text-align:left;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--ink);font:inherit;cursor:pointer}
+.urow:hover{border-color:var(--acc);background:var(--acc2)}
+.urow.dim{opacity:.7}
+.urow .un{display:flex;flex-direction:column;min-width:0}.urow .un b,.urow .un .sub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eye{display:inline-flex;flex:none}.eye.on{color:var(--pos)}.eye.off{color:var(--mut)}
+.legend{margin:8px 0;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+label.btn.off{opacity:.5;pointer-events:none}
+button:disabled,input:disabled,select:disabled{opacity:.6;cursor:not-allowed}
+
+/* ---------- CELULAR ---------- */
+nav .ti{display:none}
+@media(max-width:700px){
+  body{padding-bottom:78px}
+  header{position:static}
+  .top{gap:8px;padding:10px 16px}
+  h1{font-size:17px}
+  .right{width:100%;margin-left:0;justify-content:space-between;gap:8px}
+  .userchip{max-width:44%}
+  /* menu fixo embaixo, como nos aplicativos */
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);gap:0;padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
+  nav button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;font-size:11px;border-radius:10px;min-width:0}
+  nav button .tl{overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  nav .ti{display:block;font-size:20px;line-height:1}
+  .toast,.snack{bottom:88px}
+  /* toque confortável */
+  .btn,.chip,.seg button{min-height:40px}
+  .btn.sm{padding:8px 12px;font-size:14px}
+  .chip{padding:8px 14px}
+  input,select,textarea{font-size:16px}
+  .card .v{font-size:clamp(17px,5.6vw,22px);white-space:nowrap}
+  dialog{max-height:92vh;width:94vw}
+  .db{max-height:62vh}
+  .userchip .uname{max-width:80px}
+}
+
+.stgopt input[type=radio]{width:20px;height:20px;flex:none}

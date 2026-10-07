@@ -55,11 +55,16 @@ test('ambientes: dev e prod usam projetos Firebase diferentes', () => {
   assert.doesNotMatch(prod.projectId, /-dev$/);
 });
 
-test('regras do Firestore: cada pessoa só acessa os próprios dados e o resto é bloqueado', () => {
+test('regras do Firestore: estrutura segura (a prova completa está em tests/rules, no emulador)', () => {
   const r = read('firestore.rules');
-  assert.match(r, /match \/users\/\{uid\}\/\{document=\*\*\}/);
-  assert.match(r, /request\.auth\.uid == uid/);
+  for (const m of ['match /users/{uid}/{document=**}', 'match /profiles/{uid}', 'match /admins/{uid}']) assert.ok(r.includes(m), m);
   assert.doesNotMatch(r, /if true/);
   assert.doesNotMatch(r, /allow read, write;/);
-  assert.equal((r.match(/match \//g) || []).length, 2, 'só as regras de databases e de users');
+  assert.match(r, /match \/admins\/\{uid\}[\s\S]*?allow write: if false;/, 'ninguém grava em admins pelo site');
+  // nenhuma regra de escrita pode depender só de ser administrador
+  const escritas = r.split(/\r?\n/).filter(l => /^\s*allow\s+(write|create|update|delete)/.test(l));
+  assert.ok(escritas.length >= 5);
+  for (const l of escritas) assert.ok(/isOwner\(uid\)|if false/.test(l), 'escrita sem dono: ' + l.trim());
+  for (const l of escritas) assert.ok(!/isAdmin\(\)/.test(l), 'administrador não escreve: ' + l.trim());
+  assert.equal((r.match(/match \//g) || []).length, 4, 'databases, admins, profiles e users — mais nada');
 });

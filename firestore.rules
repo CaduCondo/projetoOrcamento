@@ -1,10 +1,42 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Cada pessoa só lê e grava os próprios dados.
-    match /users/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
     }
+    // Administrador = quem tem um documento em admins/{uid}. Esse documento só pode ser criado À MÃO,
+    // no console do Firebase, pelo dono do sistema: ninguém consegue se tornar administrador pelo site.
+    function isAdmin() {
+      return request.auth != null
+          && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Lista de administradores: cada pessoa só consegue ver o PRÓPRIO documento (para saber se é admin). Ninguém grava.
+    match /admins/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if false;
+    }
+
+    // Cadastro (perfil): o dono lê e grava; o administrador só LÊ.
+    // O e-mail gravado precisa ser o da conta (ninguém finge ser outra pessoa na lista do administrador).
+    match /profiles/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['email', 'nome', 'nascimento', 'profissao', 'foto', 'storage', 'lembretes', 'criadoEm'])
+          && request.resource.data.email == request.auth.token.email
+          && request.resource.data.get('foto', '').size() <= 130000;
+      allow delete: if isOwner(uid);
+    }
+
+    // Lançamentos de quem escolheu guardar na NUVEM: o dono lê e grava; o administrador só LÊ.
+    // (Quem escolhe guardar só no aparelho não tem nenhum documento aqui.)
+    match /users/{uid}/{document=**} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create, update: if isOwner(uid) && request.resource.data.keys().hasOnly(['json']);
+      allow delete: if isOwner(uid);
+    }
+
     // Todo o resto é bloqueado.
   }
 }

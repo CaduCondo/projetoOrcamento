@@ -34,14 +34,14 @@ function storageCard(){const local=profile.storage==='local',fs=DeviceStore.fsSu
       <p class="hint">${fs?'No computador (Chrome ou Edge) você escolhe onde o arquivo fica e o sistema lembra. O navegador pode pedir sua autorização ao abrir de novo.':'Neste navegador não dá para escolher a pasta do arquivo: o sistema guarda uma cópia aqui e você usa “Baixar CSV” para levar seus dados para outro aparelho.'}</p></div>`:''}
   </div></div>`}
 
-function vPerfil(){const p=profile,hoje=new Date().toISOString().slice(0,10);
+function vPerfil(){const p=profile,mail=viewing?viewing.email:user,hoje=new Date().toISOString().slice(0,10);
   return `<div class="pgrid">
    <div class="panel"><h2>Meu cadastro</h2><div class="pbody">
-    <div class="prow-photo">${avatar(p,user,'lg')}<div class="col">
+    <div class="prow-photo">${avatar(p,mail,'lg')}<div class="col">
       <label class="btn sec sm">Escolher foto<input type="file" id="pff" accept="image/*" hidden></label>
       ${p.foto?'<button type="button" class="btn dan sm" data-pf="foto-remover">Remover foto</button>':''}
       <span class="hint">A foto aparece no topo, no lugar do e-mail.</span></div></div>
-    <label class="f">E-mail<input id="pfe" value="${esc(user)}" readonly></label>
+    <label class="f">E-mail<input id="pfe" value="${esc(mail)}" readonly></label>
     <label class="f">Nome<input id="pfn" maxlength="80" autocomplete="name" value="${esc(p.nome)}" placeholder="Como você quer ser chamado"></label>
     <label class="f">Data de nascimento<input id="pfb" type="date" max="${hoje}" value="${esc(p.nascimento)}"></label>
     <label class="f">Profissão<input id="pfp" maxlength="60" value="${esc(p.profissao)}" placeholder="ex.: analista de sistemas"></label>
@@ -59,7 +59,7 @@ function vPerfil(){const p=profile,hoje=new Date().toISOString().slice(0,10);
   </div>`}
 
 /* texto de "como está o arquivo" na caixa do modo aparelho */
-async function fillDeviceStatus(){const box=el('dvstatus'),ds=backend.store;if(!box||!(ds instanceof DeviceStore))return;
+async function fillDeviceStatus(){const box=el('dvstatus'),ds=backend.store;if(!box||readOnly||!(ds instanceof DeviceStore))return;
   const nome=await ds.fileName(),copia=ds.readCopy(),quando=copia?new Date(copia.at).toLocaleString('pt-BR'):null;
   box.innerHTML=(nome?`Arquivo escolhido: <b>${esc(nome)}</b> — ${ds.fileSynced?'conectado ✓':'precisa da sua autorização para abrir (use o aviso no topo ou “Escolher / trocar o arquivo”)'}.`
     :DeviceStore.fsSupported()?'Nenhum arquivo escolhido ainda: por enquanto os dados ficam numa cópia neste navegador. Clique em “Escolher / trocar o arquivo”.':'Os dados ficam numa cópia neste navegador (e você baixa o CSV quando quiser).')

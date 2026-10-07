@@ -1,5 +1,6 @@
 /* Estado global da aplicação, migração de dados antigos e conta nova em branco */
 let user=null,S=null;                       // e-mail logado e os dados dele
+let readOnly=false,viewing=null;            // administrador vendo os dados de outra pessoa (somente leitura)
 let modo='real',tab='mes',period='ano',catSel='',loginMode='in';
 let selY=new Date().getFullYear(),selM=new Date().getMonth();
 

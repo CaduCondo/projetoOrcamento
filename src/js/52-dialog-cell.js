@@ -11,7 +11,7 @@ function drawDlg(){const c=catById(cur.cid),x=ens(cur.cid,cur.y,cur.m),[py,pm]=p
    <div class="item" style="margin-top:10px"><input type="checkbox" class="ok" id="nk" checked title="Já ${c.tipo==='pagar'?'pago':'recebido'}"><input id="nv" class="money" placeholder="0,00" inputmode="decimal"><input id="nd" placeholder="descrição (Enter para adicionar)"><span></span><button class="btn" style="padding:4px" data-add title="Adicionar">＋</button></div></div>
   <div class="df"><div><span class="sub">${c.tipo==='pagar'?'Pago':'Recebido'}</span><div class="big" id="dr"></div><div class="sub">Previsto: <span id="dp"></span></div></div>
    <div class="row" style="margin:0"><button class="btn sec sm" data-allok>Marcar todos</button>${hasPrev?`<button class="btn sec sm" data-copyprev title="Copia os itens de ${MESES[pm]} como previsão">Copiar do mês anterior</button>`:''}</div></div>`;
-  totals();setTimeout(()=>dlg.querySelector('#nv')?.focus(),0)}
+  totals();if(readOnly)lockUi(dlg);else setTimeout(()=>dlg.querySelector('#nv')?.focus(),0)}
 function addItem(){const v=parseV(dlg.querySelector('#nv').value),d=dlg.querySelector('#nd').value.trim();if(!v&&!d)return;
   ens(cur.cid,cur.y,cur.m).items.push({v,d,ok:dlg.querySelector('#nk').checked});save();drawDlg()}
 dlg.addEventListener('click',e=>{const t=e.target,x=cur&&ens(cur.cid,cur.y,cur.m);

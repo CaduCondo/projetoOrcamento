@@ -6,6 +6,7 @@ class LocalBackend {
   /* ---- textos e comportamentos que a tela de login consulta ---- */
   get isCloud(){return false}
   get showRemember(){return true}
+  get isAdmin(){return false}
   get storageChoice(){return false}                     // sem nuvem: os dados ficam sempre neste navegador
   get resetNeedsPassword(){return true}
   get resetTitle(){return 'Definir nova senha'}

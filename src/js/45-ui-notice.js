@@ -8,6 +8,8 @@ const NOTICES={
   naoachou:()=>({cls:'warn',acoes:[['Ir para Ajustes','ajustes'],['Entendi','dismiss']],
     html:`<b>Não encontramos seus dados neste aparelho.</b> Você escolheu guardar seus dados em arquivo, e o arquivo não está aqui — talvez você o tenha salvo em outro aparelho (computador ou celular).
       <br>Para carregar agora: <b>1)</b> abra <b>Ajustes</b>, <b>2)</b> clique em <b>Carregar arquivo (.csv)</b>, <b>3)</b> escolha o arquivo. Pronto!`}),
+  regras:()=>({cls:'warn',acoes:[['Entendi','dismiss']],
+    html:`<b>As regras de segurança do banco estão desatualizadas.</b> Você consegue usar o sistema, mas o seu cadastro (nome, foto e a escolha de onde guardar os dados) ainda não pode ser salvo. Quem administra o sistema precisa publicar o arquivo <b>firestore.rules</b> no Firebase (veja docs/PASSO-A-PASSO.md, procedimento 2).`}),
   permissao:()=>({cls:'warn',acoes:[['Permitir acesso ao arquivo','autorizar'],['Depois','dismiss']],
     html:`<b>O navegador precisa da sua autorização</b> para ler e gravar o seu arquivo de dados. Enquanto isso, seus lançamentos ficam guardados nesta cópia do navegador.`}),
   'arquivo-nao-lido':()=>({cls:'warn',acoes:[['Permitir e carregar o arquivo','autorizar'],['Depois','dismiss']],
@@ -26,7 +28,7 @@ function noticeFromLoad(r){
   else if(r.aviso==='permissao')setNotice('permissao');
   else if(r.aviso==='erro-arquivo')setNotice('erro-arquivo',r.detalhe)}
 function renderNotice(){const box=el('notice');if(!box)return;
-  if(!notice||!user||!NOTICES[notice.tipo]){box.innerHTML='';return}
+  if(!notice||!user||readOnly||!NOTICES[notice.tipo]){box.innerHTML='';return}
   const n=NOTICES[notice.tipo]();
   box.innerHTML=`<div class="notice ${n.cls}" role="status"><div class="nt">${n.html}</div><div class="na">${n.acoes.map(([l,a],i)=>`<button type="button" class="btn ${i?'sec':''} sm" data-na="${a}">${esc(l)}</button>`).join('')}</div></div>`}
 

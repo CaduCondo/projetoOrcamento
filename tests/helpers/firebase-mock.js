@@ -37,6 +37,7 @@ function install(w, db) {
     collection: n => ref(p + '/' + n),
     doc: n => ref(p + '/' + n),
     async get() {
+      if (db.profilesDenied && p.startsWith('profiles/')) throw { code: 'permission-denied' };
       if (p.split('/').length % 2 === 0) { const d = db.docs[p]; return { exists: d !== undefined, id: p.split('/').pop(), data: () => d, ref: ref(p) }; }
       const depth = p.split('/').length + 1;
       const ks = Object.keys(db.docs).filter(k => k.startsWith(p + '/') && k.split('/').length === depth);

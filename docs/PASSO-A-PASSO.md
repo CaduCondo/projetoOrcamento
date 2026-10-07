@@ -82,7 +82,7 @@ Quem programa (você pode pedir ao Claude) segue sempre este caminho:
 6. Se algo der errado na produção: reverter o *merge* (`git revert`) e enviar — os testes e a publicação rodam de novo.
 
 ## 6. Rodar o sistema e os testes no seu computador
-Precisa de Node.js 22 e Python 3.
+Precisa de Node.js 22 e Python 3 (e Java 21+ só para `npm run test:rules`).
 ```
 npm install          # uma vez
 npm test             # roda todos os testes (leva ~6 segundos)
@@ -107,11 +107,26 @@ Faça backup de vez em quando, mesmo com os dados na nuvem.
 - **Modo local (sem Firebase):** a mesma opção define uma senha nova *neste navegador* mantendo os dados (não é uma proteção forte).
 
 ## 10. Tornar-se administrador
-*(disponível quando a função de administrador for entregue — issue no GitHub)*
-O administrador é definido **no banco**, por você, no console do Firebase (ninguém consegue se tornar administrador pelo site):
+O administrador é definido **no banco**, por você, no console do Firebase (ninguém consegue se tornar administrador pelo site). Ele vê o botão **👥 Usuários** no topo
+e consegue **ver** (nunca alterar) os dados de quem guarda na nuvem:
 1. Crie sua conta no ambiente (procedimento 3) e anote seu **UID**: Firebase → **Authentication → Usuários** → coluna *UID de usuário*.
 2. Firebase → **Firestore → Dados → Iniciar coleção** → ID da coleção `admins` → ID do documento = **seu UID** → adicione um campo qualquer (ex.: `ativo` = `true`) → **Salvar**.
 3. Publique as regras novas (procedimento 2). Repita nos dois projetos (teste e produção; os UIDs são diferentes).
+4. Saia e entre de novo no site. Aparece **👥 Usuários** no topo. Na lista: **olho aberto** = a pessoa guarda na nuvem (você consegue ver);
+   **olho riscado** = a pessoa guarda só no aparelho (não existem dados dela no sistema). Para voltar aos seus dados: **Voltar aos meus dados**.
+5. Para **tirar** um administrador: apague o documento dele em `admins`.
+
+## 10b. Escolher onde guardar os dados (para quem usa o app)
+No topo, clique no seu **nome/foto** → **Onde guardar meus dados**:
+- **Nuvem:** dados em qualquer aparelho. Só você e o administrador (somente leitura, para suporte) conseguem ver.
+- **Neste aparelho (arquivo CSV):** os lançamentos **não vão para a nuvem**; ficam num arquivo CSV (Excel). No computador (Chrome/Edge) você escolhe onde o arquivo fica;
+  no celular o app guarda uma cópia no navegador e você usa **Baixar CSV**.
+- Ao trocar para "neste aparelho" o app pergunta se apaga a cópia que está na nuvem. Para voltar à nuvem, o app envia os dados de novo.
+- Abriu o app em **outro aparelho** e escolheu "arquivo"? Aparece o aviso "não encontramos seus dados neste aparelho": vá em **Ajustes → Carregar arquivo (.csv)** e escolha o arquivo.
+
+## 10c. Conferir a segurança do banco
+`npm run test:rules` roda 8 testes das regras no emulador oficial do Firebase (precisa de Java; leva ~10 s): ninguém lê dados de outra pessoa, o administrador só lê,
+ninguém vira administrador pelo site. A publicação automática também roda esses testes.
 
 ## 11. Kanban e issues no GitHub
 Veja [KANBAN.md](KANBAN.md): cada tarefa é uma *issue*; o estado é indicado pelas etiquetas `backlog` → `wip` → `done`, e a prioridade por `P0`…`P3`.
