@@ -13,8 +13,8 @@ test('privacidade: nenhuma planilha ou arquivo de dados pessoais versionado', ()
   const files = tracked();
   const planilhas = files.filter(f => /\.(xlsx|xls|csv)$/i.test(f));
   assert.deepEqual(planilhas, [], 'planilhas não podem ir para o GitHub');
-  const jsons = files.filter(f => f.endsWith('.json') && !/^src\/config\/firebase\.(dev|prod)\.json$/.test(f) && !/^package(-lock)?\.json$/.test(f));
-  assert.deepEqual(jsons, [], 'só configs do Firebase e package*.json podem ser .json');
+  const jsons = files.filter(f => f.endsWith('.json') && !/^src\/config\/firebase\.(dev|prod)\.json$/.test(f) && !/^(package(-lock)?|firebase)\.json$/.test(f));
+  assert.deepEqual(jsons, [], 'só as configs do Firebase (src/config, firebase.json do emulador) e package*.json podem ser .json');
 });
 
 test('privacidade: nenhum e-mail real no código (só exemplos)', () => {
