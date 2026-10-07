@@ -1,42 +1,64 @@
-/* Backend NUVEM: login com Firebase Auth e dados no Firestore (users/{uid}/meta e users/{uid}/years/{ano}).
-   Grava só os documentos que mudaram, com pequena espera (debounce) para agrupar edições. */
+/* Backend NUVEM: login e cadastro (perfil) no Firebase; os lançamentos vão para o armazém escolhido pela pessoa:
+   FirestoreStore (banco de dados) ou DeviceStore (arquivo no aparelho — nunca toca no banco).
+   Grava com pequena espera (debounce) para agrupar edições. */
 const AUTHMSG={'auth/email-already-in-use':'Este e-mail já tem conta.','auth/weak-password':'Senha fraca: use ao menos 6 caracteres.','auth/invalid-email':'E-mail inválido.',
   'auth/invalid-credential':'E-mail ou senha incorretos.','auth/wrong-password':'E-mail ou senha incorretos.','auth/user-not-found':'E-mail ou senha incorretos.',
   'auth/too-many-requests':'Muitas tentativas. Aguarde um pouco e tente de novo.','auth/network-request-failed':'Sem conexão com a internet.'};
+const PWDMSG={'auth/wrong-password':'A senha atual está incorreta.','auth/invalid-credential':'A senha atual está incorreta.','auth/weak-password':'Senha fraca: use ao menos 6 caracteres.',
+  'auth/requires-recent-login':'Por segurança, saia, entre de novo e tente outra vez.','auth/too-many-requests':'Muitas tentativas. Aguarde um pouco e tente de novo.','auth/network-request-failed':'Sem conexão com a internet.'};
 
 class CloudBackend {
   constructor(){firebase.initializeApp(FBCFG);this.auth=firebase.auth();this.db=firebase.firestore();
-    this.uid=null;this.timer=null;this.chain=Promise.resolve();this.snap={meta:'',years:{}}}
+    this.uid=null;this.store=null;this.timer=null;this.chain=Promise.resolve()}
 
-  /* ---- textos e comportamentos que a tela de login consulta ---- */
+  /* ---- textos e comportamentos que as telas consultam ---- */
   get isCloud(){return true}
   get showRemember(){return false}
   get resetNeedsPassword(){return false}
   get resetTitle(){return 'Redefinir senha'}
   get resetButton(){return 'Enviar link por e-mail'}
-  get backupHint(){return 'Seus dados ficam salvos na sua conta online. Mesmo assim, baixe um backup de vez em quando.'}
-  loginNote(){return 'Seus dados ficam salvos na sua conta e acompanham você em qualquer aparelho.'}
+  get storageChoice(){return true}                       // a tela de perfil oferece a escolha nuvem × aparelho
+  get backupHint(){return storesInCloud(profile||defaultProfile())?'Seus dados ficam salvos na sua conta online. Mesmo assim, baixe um backup de vez em quando.':'Seus dados ficam só neste aparelho (arquivo CSV). Baixe o arquivo de vez em quando e guarde uma cópia.'}
+  loginNote(){return 'Seu cadastro fica salvo na sua conta. Onde guardar seus lançamentos (nuvem ou só no aparelho) você escolhe no seu perfil.'}
   canImportLegacy(){return false}
 
-  /* ---- gravação ---- */
-  userDoc(){return this.db.collection('users').doc(this.uid)}
-  save(){clearTimeout(this.timer);this.timer=setTimeout(()=>this.flush(),700);status('Salvando…')}
-  flush(){clearTimeout(this.timer);this.timer=null;if(!this.uid||!S)return this.chain;this.chain=this.chain.then(()=>this.write());return this.chain}
-  async write(){if(!this.uid||!S)return;
-    const base=this.userDoc(),batch=this.db.batch(),cur=serializeState(S);let n=0;
-    if(cur.meta!==this.snap.meta){batch.set(base.collection('meta').doc('main'),{json:cur.meta});n++}
-    for(const y of Object.keys(cur.years))if(this.snap.years[y]!==cur.years[y]){batch.set(base.collection('years').doc(y),{json:cur.years[y]});n++}
-    for(const y of Object.keys(this.snap.years))if(!(y in cur.years)){batch.delete(base.collection('years').doc(y));n++}
-    if(!n){status('Salvo ✓');return}
-    status('Salvando…');
-    try{await batch.commit();this.snap=cur;status('Salvo ✓')}catch(e){console.error(e);status('Erro ao salvar — verifique a conexão',true)}}
+  /* ---- perfil (cadastro) ---- */
+  profileDoc(uid){return this.db.collection('profiles').doc(uid||this.uid)}
+  async loadProfile(){const d=await this.profileDoc().get();return d.exists?d.data():null}
+  async saveProfile(p){await this.profileDoc().set({...p,email:user})}
+  async changePassword(atual,nova){const u=this.auth.currentUser;
+    try{await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email,atual));await u.updatePassword(nova)}
+    catch(e){throw new Error(PWDMSG[e.code]||'Erro: '+(e.code||e.message))}}
 
-  /* ---- carregar os dados do usuário que entrou ---- */
-  async start(u){this.uid=u.uid;user=u.email;const base=this.userDoc();
-    try{const[m,ys]=await Promise.all([base.collection('meta').doc('main').get(),base.collection('years').get()]);
-      if(m.exists){const yj={};ys.forEach(d=>yj[d.id]=d.data().json);S=deserializeState(m.data().json,yj);this.snap=serializeState(S)}
-      else{S=blank();this.snap={meta:'',years:{}}}
-      loginMode='in';initSelection();render();if(!m.exists)this.flush()
+  /* ---- escolher o armazém conforme o perfil ---- */
+  makeStore(){return storesInCloud(profile)?new FirestoreStore(this.db,this.uid):new DeviceStore(this.uid)}
+
+  /* ---- gravação ---- */
+  save(){clearTimeout(this.timer);this.timer=setTimeout(()=>this.flush(),700);status('Salvando…')}
+  flush(){clearTimeout(this.timer);this.timer=null;if(!this.uid||!S||!this.store)return this.chain;this.chain=this.chain.then(()=>this.write());return this.chain}
+  async write(){if(!this.uid||!S||!this.store)return;const store=this.store;status('Salvando…');
+    try{const r=await store.write(S);
+      if(store instanceof DeviceStore){
+        if(r.arquivo==='ok'||r.arquivo==='sem-arquivo'){status(r.arquivo==='ok'?'Salvo no arquivo ✓':'Salvo neste aparelho ✓');if(r.arquivo==='ok')noticeClear('arquivo')}
+        else{status('Salvo neste aparelho ✓ (arquivo não atualizado)');setNotice(r.arquivo==='permissao'?'permissao':r.arquivo==='nao-lido'?'arquivo-nao-lido':'arquivo-erro')}
+        if(!r.copia)status('Não consegui salvar neste aparelho — baixe o CSV agora',true)}
+      else status('Salvo ✓')
+    }catch(e){console.error(e);status('Erro ao salvar — verifique a conexão',true)}}
+
+  /* ---- carregar os dados de quem entrou ---- */
+  async start(u){this.uid=u.uid;user=u.email;
+    try{
+      const salvo=await this.loadProfile(),novo=!salvo;profile=normProfile(salvo);if(novo)profile.criadoEm=new Date().toISOString();
+      this.store=this.makeStore();noticeClear();
+      let st=null;
+      if(this.store instanceof DeviceStore){const r=await this.store.load();st=r.state;noticeFromLoad(r)}
+      else st=await this.store.read();
+      S=st||blank();
+      if(profilePending(profile,true))profile.lembretes=(profile.lembretes||0)+1;
+      if(novo||profilePending(profile,true))await this.saveProfile(profile);
+      if(shouldRemind(profile,true)&&!notice)setNotice('perfil');
+      loginMode='in';initSelection();render();
+      if(!st&&this.store instanceof FirestoreStore)this.flush()      // 1º acesso na nuvem: cria os documentos iniciais
     }catch(e){console.error(e);S=null;
       document.getElementById('app').innerHTML=`<div class="login"><h2>Não foi possível carregar</h2><p class="sub">${esc(e.code||e.message)}</p><p class="sub">Verifique a internet e as regras do Firestore.</p><button class="btn" onclick="location.reload()">Tentar de novo</button> <button class="btn dan" style="margin-top:8px" onclick="backend.auth.signOut()">Sair</button></div>`}}
 
@@ -44,7 +66,7 @@ class CloudBackend {
   logout(){this.flush().then(()=>this.auth.signOut())}
   boot(){document.getElementById('app').innerHTML='<p class="hint" style="padding:60px 0;text-align:center">Carregando…</p>';
     addEventListener('visibilitychange',()=>{if(document.hidden)this.flush()});addEventListener('pagehide',()=>this.flush());
-    this.auth.onAuthStateChanged(u=>{if(u){if(!S||this.uid!==u.uid)this.start(u)}else{this.uid=null;user=null;S=null;loginMode='in';render()}})}
+    this.auth.onAuthStateChanged(u=>{if(u){if(!S||this.uid!==u.uid)this.start(u)}else{this.uid=null;this.store=null;user=null;S=null;profile=null;noticeClear();loginMode='in';render()}})}
 
   /* entrar / criar conta / redefinir senha (lê os campos da tela de login) */
   async login(){const e=el('lem').value.trim().toLowerCase(),p=el('lpw')?.value||'',

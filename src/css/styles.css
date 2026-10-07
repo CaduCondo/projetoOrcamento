@@ -139,3 +139,30 @@ fieldset.scope.off{opacity:.45}
 .vig{font-size:12px;color:var(--ink);background:var(--acc2);border-radius:999px;padding:3px 10px;white-space:nowrap;justify-self:start}
 .snack{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:12px;display:flex;gap:12px;align-items:center;z-index:70;max-width:min(92vw,520px);font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
 .snack[hidden]{display:none}
+
+/* cadastro, avisos e escolha de armazenamento */
+.userchip{display:inline-flex;align-items:center;gap:8px;background:none;border:1px solid var(--line);border-radius:999px;padding:3px 12px 3px 3px;color:var(--ink);font:inherit;cursor:pointer;max-width:200px}
+.userchip:hover{border-color:var(--acc);background:var(--acc2)}
+.userchip .uname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.avatar{width:30px;height:30px;border-radius:50%;object-fit:cover;background:var(--acc);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none}
+.avatar.lg{width:76px;height:76px;font-size:30px}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pgrid .full{grid-column:1/-1}
+.pbody{padding:14px}
+.prow-photo{display:flex;gap:14px;align-items:center;margin-bottom:14px}
+.prow-photo .col{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.okmsg{color:var(--pos);font-size:13px;min-height:18px}
+.warnbox{background:rgba(245,158,11,.15);border:1px solid var(--warn);border-radius:10px;padding:10px 12px;font-size:13px;margin:0 0 12px}
+.stg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stgopt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer}
+.stgopt.on{border-color:var(--acc);background:var(--acc2)}
+.stgopt input{margin-top:4px;accent-color:var(--acc)}
+.stgopt p{margin:6px 0 0;font-size:13px}
+.devbox{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.notice{border-radius:12px;padding:12px 14px;margin:12px 0 0;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:14px}
+.notice.info{background:var(--acc2);border:1px solid var(--acc)}
+.notice.warn{background:rgba(245,158,11,.14);border:1px solid var(--warn)}
+.notice .nt{flex:1;min-width:240px}.notice .na{display:flex;gap:8px;flex-wrap:wrap}
+.df.stack{flex-direction:column;align-items:stretch}.df.stack .btn{width:100%;text-align:center;white-space:normal}
+dialog .txt{font-size:14px}
+@media(max-width:860px){.pgrid,.stg{grid-template-columns:1fr}}

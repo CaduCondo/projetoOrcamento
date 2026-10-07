@@ -6,6 +6,7 @@ class LocalBackend {
   /* ---- textos e comportamentos que a tela de login consulta ---- */
   get isCloud(){return false}
   get showRemember(){return true}
+  get storageChoice(){return false}                     // sem nuvem: os dados ficam sempre neste navegador
   get resetNeedsPassword(){return true}
   get resetTitle(){return 'Definir nova senha'}
   get resetButton(){return 'Salvar nova senha e entrar'}
@@ -24,6 +25,14 @@ class LocalBackend {
     return b64e(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:b64d(salt),iterations:150000},k,256)))}
   async credential(pw){const salt=b64e(crypto.getRandomValues(new Uint8Array(16)));return{salt,hash:await this.hash(pw,salt)}}
 
+  /* ---- cadastro (perfil) e senha ---- */
+  readProfile(email){try{return JSON.parse(localStorage.getItem('orc-profile-'+email))}catch{return null}}
+  async loadProfile(){return this.readProfile(user)}
+  async saveProfile(p){localStorage.setItem('orc-profile-'+user,JSON.stringify(p))}
+  async changePassword(atual,nova){const us=this.users(),u=us[user];
+    if(!u||await this.hash(atual,u.salt)!==u.hash)throw new Error('A senha atual está incorreta.');
+    us[user]=await this.credential(nova);this.setUsers(us)}
+
   /* ---- dados ---- */
   loadUser(email){try{const t=localStorage.getItem(this.dkey(email));if(t)return mig(JSON.parse(t))}catch{}return blank()}
   save(){try{localStorage.setItem(this.dkey(user),JSON.stringify(S))}catch{}status('Salvo ✓')}
@@ -31,8 +40,10 @@ class LocalBackend {
   /* ---- sessão ---- */
   startSession(email,remember){user=email;S=this.loadUser(email);
     try{(remember?localStorage:sessionStorage).setItem('orc-sess',email)}catch{}
+    profile=normProfile(this.readProfile(email));if(profilePending(profile,false)){profile.lembretes=(profile.lembretes||0)+1;localStorage.setItem('orc-profile-'+email,JSON.stringify(profile))}
+    noticeClear();if(shouldRemind(profile,false))setNotice('perfil');
     loginMode='in';initSelection();render()}
-  logout(){try{localStorage.removeItem('orc-sess');sessionStorage.removeItem('orc-sess')}catch{}user=null;S=null;loginMode='in';render()}
+  logout(){try{localStorage.removeItem('orc-sess');sessionStorage.removeItem('orc-sess')}catch{}user=null;S=null;profile=null;noticeClear();loginMode='in';render()}
   boot(){let e=null;try{e=sessionStorage.getItem('orc-sess')||localStorage.getItem('orc-sess')}catch{}
     if(e&&this.users()[e])this.startSession(e,!!localStorage.getItem('orc-sess'));else render()}
 

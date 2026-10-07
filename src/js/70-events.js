@@ -1,5 +1,4 @@
 /* Eventos da tela: um ouvinte por tipo de evento, que reconhece o botão/campo pelos atributos data-* */
-const app=document.getElementById('app');
 
 /* ---- ações usadas pelos eventos ---- */
 const hideTip=()=>{tip.style.display='none'};
@@ -17,9 +16,15 @@ function inlineCatEdit(id,patchObj){const c=catById(id),novo={nome:patchObj.nome
     save();render()}
   catch(e){alert(e.message);render()}}
 function exportBackup(){download(`orcamento-backup-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(S,null,1),'application/json')}
-function exportCsv(){const rows=[['Ano','Tipo','Categoria',...MESES,'Total']],num=x=>x.toFixed(2).replace('.',',');
-  S.anos.forEach(y=>S.cats.forEach(c=>{const v=MESES.map((_,m)=>V(c.id,y,m,'real'));rows.push([y,c.tipo,c.nome,...v.map(num),num(v.reduce((a,b)=>a+b,0))])}));
-  download('orcamento.csv','﻿'+rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(';')).join('\n'),'text/csv')}
+function exportCsv(){download(`meu-orcamento-${new Date().toISOString().slice(0,10)}.csv`,csvFileText(S),'text/csv;charset=utf-8')}
+/* carrega um CSV do Meu Orçamento: substitui tudo ou junta os anos do arquivo */
+async function importCsvFile(file,input){
+  try{const{state}=csvToState(await file.text());
+    const ch=await askChoice({titulo:'Carregar este arquivo',texto:`<p>O arquivo tem lançamentos de <b>${state.anos.join(', ')}</b>.</p>`,
+      opcoes:[{id:'substituir',label:'Substituir todos os meus dados pelos do arquivo',cls:''},{id:'juntar',label:'Juntar: os anos do arquivo substituem os mesmos anos daqui',cls:'sec'},{id:'',label:'Cancelar',cls:'dan'}]});
+    if(ch==='substituir'){S=state;initSelection();if(backend.store instanceof DeviceStore)backend.store.fileSynced=true;save();render();snackbar('Arquivo carregado.')}
+    else if(ch==='juntar'){applyImport({anos:state.anos,saldoIni:state.saldoIni,cats:state.cats,data:state.data});save();render();snackbar('Anos do arquivo juntados aos seus dados.')}
+  }catch(e){alert(e.message)}finally{input.value=''}}
 function mergeImport(o){const clash=importClashYears(o);
   if(clash.length&&!confirm(`Os anos ${clash.join(', ')} já têm lançamentos e serão SUBSTITUÍDOS pelos do arquivo. Continuar?`))return;
   applyImport(o);save();render();alert(`Importado: anos ${o.anos.join(', ')}.`)}
@@ -29,6 +34,7 @@ function restoreFile(file){readJsonFile(file,s=>s.cats&&s.data).then(s=>{S=mig(s
 /* ---- menu e cabeçalho ---- */
 document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){tab=b.dataset.tab;render()}});
 document.getElementById('hr').addEventListener('click',e=>{
+  const tb=e.target.closest('[data-tab]');if(tb){tab=tb.dataset.tab;render();return}
   if(e.target.closest('[data-logout]'))logout();
   else if(e.target.closest('[data-addyear]'))addYear()});
 document.getElementById('hr').addEventListener('change',e=>{if(e.target.id==='ysel'){selY=+e.target.value;render()}});
@@ -80,4 +86,5 @@ app.addEventListener('change',e=>{const t=e.target,d=t.dataset;
   else if(d.cn)inlineCatEdit(d.cn,{nome:t.value})
   else if(d.cd)inlineCatEdit(d.cd,{dia:parseInt(t.value)||null})
   else if(t.id==='imp'&&t.files[0])importFile(t.files[0],t)
+  else if(t.id==='csvin'&&t.files[0]&&tab==='aj')importCsvFile(t.files[0],t)
   else if(t.id==='rs'&&t.files[0])restoreFile(t.files[0])});

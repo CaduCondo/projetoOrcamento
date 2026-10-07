@@ -248,6 +248,33 @@ test('esqueci a senha (local): nova senha mantém os dados', async () => {
   app.close();
 });
 
+test('cadastro no modo local: salvo no navegador, sem escolha de nuvem, e troca de senha', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  assert.match(app.$('#notice').textContent, /Complete seu cadastro/);
+  assert.doesNotMatch(app.$('#notice').textContent, /escolher onde guardar/, 'sem nuvem não há o que escolher');
+  app.click('.userchip');
+  assert.equal(app.ev('tab'), 'perfil');
+  assert.equal(app.$('input[name=stg]'), null, 'sem a escolha nuvem x aparelho');
+  app.type('#pfn', 'Ana Paula Souza'); app.type('#pfb', '1990-05-01'); app.type('#pfp', 'Contadora'); app.click('[data-pf="salvar"]');
+  await app.waitFor(() => /Cadastro salvo/.test(app.$('#pfok').textContent), 3000, 'salvou');
+  assert.equal(JSON.parse(app.w.localStorage.getItem('orc-profile-' + EMAIL)).nome, 'Ana Paula Souza');
+  assert.equal(app.$('#notice').textContent.trim(), '', 'cadastro completo: o aviso some');
+  assert.match(app.$('.userchip').textContent, /Ana/);
+  // trocar senha
+  app.type('#pwa', 'errada1'); app.type('#pwn', 'outrasenha'); app.type('#pwc', 'outrasenha'); app.click('[data-pw="trocar"]');
+  await app.waitFor(() => /atual está incorreta/.test(app.$('#pwerr').textContent), 3000, 'senha atual errada');
+  app.type('#pwa', SENHA); app.click('[data-pw="trocar"]');
+  await app.waitFor(() => /Senha alterada/.test(app.$('#pwok').textContent), 3000, 'trocou');
+  app.click('[data-logout]');
+  app.type('#lem', EMAIL); app.type('#lpw', SENHA); app.submit('#lf');
+  await app.waitFor(() => /Senha incorreta/.test(app.$('#lerr').textContent), 3000, 'senha antiga recusada');
+  app.type('#lpw', 'outrasenha'); app.submit('#lf');
+  await app.waitFor(() => app.ev('user') === EMAIL, 4000, 'entrou com a nova');
+  assert.match(app.$('.userchip').textContent, /Ana/, 'o cadastro continua lá');
+  app.close();
+});
+
 test('sem erros de script durante os fluxos', async () => {
   const app = openApp({ html });
   await entrar(app);

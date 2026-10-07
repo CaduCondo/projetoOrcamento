@@ -35,6 +35,7 @@ function openApp(opts) {
       w.HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
       w.HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); this.dispatchEvent(new w.Event('close')); };
       w.URL.createObjectURL = () => 'blob:fake';
+      if (opts.storage) for (const [k, v] of Object.entries(opts.storage)) w.localStorage.setItem(k, v);   // simula o mesmo aparelho
       if (opts.setup) opts.setup(w);
       w.addEventListener('error', e => { (dom.errors ||= []).push(e.message); });
     },
@@ -58,10 +59,29 @@ function openApp(opts) {
       throw new Error('tempo esgotado esperando: ' + what);
     },
     sleep: ms => new Promise(r => setTimeout(r, ms)),
+    /* cópia do armazenamento do navegador (para abrir o app de novo "no mesmo aparelho") */
+    snapshotStorage() { const o = {}; for (let i = 0; i < w.localStorage.length; i++) { const k = w.localStorage.key(i); o[k] = w.localStorage.getItem(k); } return o; },
+    /* escolhe um arquivo num <input type=file> (o app só usa file.text()) */
+    chooseFile(sel, text, name = 'arquivo.csv') {
+      const el = d.querySelector(sel); Object.defineProperty(el, 'files', { value: [{ name, text: async () => text }], configurable: true });
+      el.dispatchEvent(new w.Event('change', { bubbles: true }));
+    },
+    /* responde a janela de escolha (askChoice) clicando no botão pelo id (ex.: 'apagar') */
+    choose(id) { const b = d.querySelector(`#dlg4 [data-ch="${id}"]`); if (!b) throw new Error('opção não encontrada: ' + id); b.dispatchEvent(new w.MouseEvent('click', { bubbles: true })); },
     text: () => d.body.textContent,
     close: () => w.close(),
   };
   return api;
 }
 
-module.exports = { buildHtml, openApp, FakeChart };
+/* "alça" de arquivo falsa (File System Access API) para testar o arquivo no computador */
+function fakeHandle(content = '', perm = 'granted') {
+  const h = { name: 'meu-orcamento.csv', content, perm, writes: 0, pending: '' };
+  h.queryPermission = async () => h.perm;
+  h.requestPermission = async () => { h.perm = 'granted'; return 'granted'; };
+  h.getFile = async () => ({ text: async () => h.content });
+  h.createWritable = async () => ({ write: async t => { h.pending = t; }, close: async () => { h.content = h.pending; h.writes++; } });
+  return h;
+}
+
+module.exports = { buildHtml, openApp, FakeChart, fakeHandle };
