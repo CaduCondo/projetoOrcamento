@@ -1,10 +1,10 @@
 /* Backend NUVEM: login e cadastro (perfil) no Firebase; os lançamentos vão para o armazém escolhido pela pessoa:
    FirestoreStore (banco de dados) ou DeviceStore (arquivo no aparelho — nunca toca no banco).
    Grava com pequena espera (debounce) para agrupar edições. */
-const AUTHMSG={'auth/email-already-in-use':'Este e-mail já tem conta.','auth/weak-password':'Senha fraca: use ao menos 6 caracteres.','auth/invalid-email':'E-mail inválido.',
+const AUTHMSG={'auth/password-does-not-meet-requirements':'A senha não atende às regras de segurança: use maiúscula, minúscula, números e um caractere especial (mínimo 6).','auth/email-already-in-use':'Este e-mail já tem conta.','auth/weak-password':'Senha fraca: use ao menos 6 caracteres.','auth/invalid-email':'E-mail inválido.',
   'auth/invalid-credential':'E-mail ou senha incorretos.','auth/wrong-password':'E-mail ou senha incorretos.','auth/user-not-found':'E-mail ou senha incorretos.',
   'auth/too-many-requests':'Muitas tentativas. Aguarde um pouco e tente de novo.','auth/network-request-failed':'Sem conexão com a internet.'};
-const PWDMSG={'auth/wrong-password':'A senha atual está incorreta.','auth/invalid-credential':'A senha atual está incorreta.','auth/weak-password':'Senha fraca: use ao menos 6 caracteres.',
+const PWDMSG={'auth/password-does-not-meet-requirements':'A senha não atende às regras de segurança: use maiúscula, minúscula, números e um caractere especial (mínimo 6).','auth/wrong-password':'A senha atual está incorreta.','auth/invalid-credential':'A senha atual está incorreta.','auth/weak-password':'Senha fraca: use ao menos 6 caracteres.',
   'auth/requires-recent-login':'Por segurança, saia, entre de novo e tente outra vez.','auth/too-many-requests':'Muitas tentativas. Aguarde um pouco e tente de novo.','auth/network-request-failed':'Sem conexão com a internet.'};
 
 class CloudBackend {
