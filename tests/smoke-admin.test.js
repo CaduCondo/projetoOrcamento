@@ -4,7 +4,7 @@ const { buildHtml, openApp } = require('./helpers/app');
 const { createDb, install } = require('./helpers/firebase-mock');
 
 const html = buildHtml('prod');
-const SENHA = 'segredo123';
+const SENHA = 'Segredo#123';
 const abrir = db => openApp({ html, setup: w => install(w, db) });
 
 async function criarConta(app, email) {

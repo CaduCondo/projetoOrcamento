@@ -216,3 +216,11 @@ nav .ti{display:none}
 .stgopt input[type=radio]{width:20px;height:20px;flex:none}
 
 .cnt{font-size:12px;color:var(--mut);margin-right:6px;white-space:nowrap}
+
+/* regras da senha: X vermelho vira V verde */
+.pwrules{list-style:none;margin:6px 0 4px;padding:0;font-size:13px}
+.pwrules li{display:flex;gap:8px;align-items:baseline;padding:2px 0}
+.pwrules li b{width:14px;text-align:center;font-weight:700}
+.pwrules li.bad{color:var(--neg)}
+.pwrules li.ok{color:var(--pos)}
+.btn:disabled{opacity:.45;cursor:not-allowed}

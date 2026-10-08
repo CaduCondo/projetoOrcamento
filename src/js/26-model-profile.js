@@ -32,7 +32,7 @@ const cleanProfile=p=>({...p,nome:(p.nome||'').trim().replace(/\s+/g,' '),profis
 /* validação de nova senha (exibida na tela de perfil) */
 function validateNewPassword(atual,nova,confirma){
   if(!atual)return'Digite sua senha atual.';
-  if((nova||'').length<6)return'A nova senha precisa ter ao menos 6 caracteres.';
+  const falta=passwordChecks(nova,confirma).find(r=>!r.ok&&r.id!=='same');if(falta)return falta.erro;
   if(nova!==confirma)return'A confirmação não confere com a nova senha.';
   if(nova===atual)return'A nova senha precisa ser diferente da atual.';
   return null}

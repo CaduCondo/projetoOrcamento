@@ -52,7 +52,7 @@ Depois **apague a conta de teste**: Authentication → **Usuários** → ⋮ →
 **Como conferir:** os testes do repositório garantem o conteúdo do arquivo; no Firebase, a aba Regras deve mostrar a data/hora da publicação.
 
 ## 3. Criar a sua conta e importar o histórico
-1. Abra o site (produção: `https://caducondo.github.io/projetoOrcamento/`; teste: `.../dev/`) → **Criar conta** → e-mail e senha (mín. 6 caracteres).
+1. Abra o site (produção: `https://caducondo.github.io/projetoOrcamento/`; teste: `.../dev/`) → **Criar conta** → e-mail e senha. A senha precisa cumprir a lista que aparece na tela (cada linha começa com X vermelho e vira V verde): mínimo 6 caracteres, 1 letra maiúscula, 1 minúscula, 2 números, 1 caractere especial e as duas senhas idênticas. O botão só habilita quando tudo estiver verde. A mesma lista vale em Meu Cadastro → Trocar senha.
 2. Vá em **Ajustes** → **Importar anos anteriores (.json)** → escolha o arquivo `historico.json`
    (como gerá-lo: procedimento [4](#4-atualizar-o-historico-quando-a-planilha-mudar)).
 3. Se algum ano já tiver lançamentos, o app avisa que será **substituído**; confirme só se a planilha for a "verdade" daquele ano.

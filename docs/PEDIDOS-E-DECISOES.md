@@ -119,6 +119,9 @@ Legenda: ✅ feito e em produção · 🧪 feito no ambiente de teste (`dev`) ·
 
 ---
 
+### 5.8 Senha forte (issue #29)
+Pedido: ao criar conta e em Meu Cadastro → Trocar senha, mostrar uma lista de regras; cada linha começa com **X vermelho** e vira **V verde** quando atendida; o botão só habilita com tudo verde. Regras: mínimo 6 caracteres; 1 letra maiúscula; 1 minúscula; 2 números; 1 caractere especial; senhas idênticas. Implementado em `src/js/27-model-password.js` (regras, fonte única) e `47-ui-password.js` (tela). A validação também roda ao enviar (não depende só do botão). Observação: regra no navegador pode ser contornada por quem mexe no código; para blindar de verdade, ativar a política de senha no Firebase Authentication.
+
 ## 6. Princípios que combinamos
 - **Privacidade primeiro:** planilhas, backups e dados pessoais **nunca** vão para o GitHub (repositório público).
 - **Honestidade com o usuário:** o que a tela promete é o que o sistema faz.

@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const SRC = path.join(__dirname, '..', '..', 'src', 'js');
-const MODEL_FILES = ['00-config.js', '10-format.js', '20-model-state.js', '21-model-calc.js', '22-model-categories.js', '23-model-serialize.js', '24-model-schedule.js', '25-model-csv.js'];
+const MODEL_FILES = ['00-config.js', '10-format.js', '20-model-state.js', '21-model-calc.js', '22-model-categories.js', '23-model-serialize.js', '24-model-schedule.js', '25-model-csv.js', '27-model-password.js'];
 
 class FakeDate extends Date {
   constructor(...a) { if (a.length) super(...a); else super(2026, 9, 15); }
@@ -20,7 +20,7 @@ function loadModel() {
   key, cellOf, ens, itemsOf, V, cats, MT, SAL, iniY, acum, hasData, lastActive, prevMonths,
   catById, addCat, catStats, isActive, lastLabel, visCats, yearHas, yearEmpty,
   mergeCat, reorderCats, deleteCat, importClashYears, applyImport,
-  serializeState, deserializeState,
+  serializeState, deserializeState, PASSWORD_RULES, passwordChecks, passwordOk, passwordProblem,
   stateToCsv, csvFileText, csvToState, parseCsv,
   ym, ymOf, fromYm, aliveFrom, showsInMonth, showsInYear, scopeVis, scopeOf, scopeLabel, validateCat, createCat, reviseCat,
   get S(){return S}, set S(v){S=v},

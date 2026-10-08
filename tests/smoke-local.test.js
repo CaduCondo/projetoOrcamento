@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const { buildHtml, openApp, FakeChart } = require('./helpers/app');
 
 const html = buildHtml('local');
-const EMAIL = 'pessoa@exemplo.com', SENHA = 'segredo123';
+const EMAIL = 'pessoa@exemplo.com', SENHA = 'Segredo#123';
 const nbsp = s => s.replace(/ /g, ' ');
 
 /* cria a conta e espera a tela principal */
@@ -247,7 +247,7 @@ test('esqueci a senha (local): nova senha mantém os dados', async () => {
   app.ev(`ens('${merc}',${y},${mth}).items.push({v:9,d:'x',ok:true})`); app.ev('save()');
   app.click('[data-logout]');
   app.click('[data-lm="reset"]');
-  app.type('#lem', EMAIL); app.type('#lpw', 'novaSenha1'); app.type('#lpw2', 'novaSenha1'); app.submit('#lf');
+  app.type('#lem', EMAIL); app.type('#lpw', 'Nova#Senha12'); app.type('#lpw2', 'Nova#Senha12'); app.submit('#lf');
   await app.waitFor(() => app.ev('user') === EMAIL, 4000, 'entrar após redefinir');
   assert.equal(app.ev(`V('${merc}',${y},${mth},'real')`), 9);
   app.click('[data-logout]');
@@ -270,14 +270,14 @@ test('cadastro no modo local: salvo no navegador, sem escolha de nuvem, e troca 
   assert.equal(app.$('#notice').textContent.trim(), '', 'cadastro completo: o aviso some');
   assert.match(app.$('.userchip').textContent, /Ana/);
   // trocar senha
-  app.type('#pwa', 'errada1'); app.type('#pwn', 'outrasenha'); app.type('#pwc', 'outrasenha'); app.click('[data-pw="trocar"]');
+  app.type('#pwa', 'errada1'); app.type('#pwn', 'Outra#Senha12'); app.type('#pwc', 'Outra#Senha12'); app.click('[data-pw="trocar"]');
   await app.waitFor(() => /atual está incorreta/.test(app.$('#pwerr').textContent), 3000, 'senha atual errada');
   app.type('#pwa', SENHA); app.click('[data-pw="trocar"]');
   await app.waitFor(() => /Senha alterada/.test(app.$('#pwok').textContent), 3000, 'trocou');
   app.click('[data-logout]');
   app.type('#lem', EMAIL); app.type('#lpw', SENHA); app.submit('#lf');
   await app.waitFor(() => /Senha incorreta/.test(app.$('#lerr').textContent), 3000, 'senha antiga recusada');
-  app.type('#lpw', 'outrasenha'); app.submit('#lf');
+  app.type('#lpw', 'Outra#Senha12'); app.submit('#lf');
   await app.waitFor(() => app.ev('user') === EMAIL, 4000, 'entrou com a nova');
   assert.match(app.$('.userchip').textContent, /Ana/, 'o cadastro continua lá');
   app.close();
@@ -288,5 +288,40 @@ test('sem erros de script durante os fluxos', async () => {
   await entrar(app);
   for (const t of ['ano', 'graf', 'pat', 'aj', 'mes']) app.click(`[data-tab="${t}"]`);
   assert.deepEqual(app.dom.errors || [], []);
+  app.close();
+});
+
+test('criar conta: lista de regras da senha troca de X vermelho para V verde e só então libera o botão', async () => {
+  const app = openApp({ html });
+  app.click('[data-lm="up"]');
+  const li = id => app.$(`#pwr-login [data-r="${id}"]`);
+  assert.equal(app.$$('#pwr-login li').length, 6);
+  assert.ok(app.$$('#pwr-login li').every(l => l.classList.contains('bad') && l.querySelector('b').textContent === 'X'), 'tudo começa X vermelho');
+  assert.equal(app.$('#lbtn').disabled, true);
+  app.type('#lpw', 'B');
+  assert.ok(li('upper').classList.contains('ok') && li('upper').querySelector('b').textContent === 'V', 'digitar "B" acende a maiúscula');
+  assert.ok(li('lower').classList.contains('bad'));
+  app.type('#lpw', 'Segredo#12'); app.type('#lpw2', 'Segredo#1');
+  assert.equal(app.$('#lbtn').disabled, true, 'confirmação diferente: continua travado');
+  assert.ok(li('same').classList.contains('bad'));
+  app.type('#lpw2', 'Segredo#12');
+  assert.ok(app.$$('#pwr-login li').every(l => l.classList.contains('ok') && l.querySelector('b').textContent === 'V'));
+  assert.equal(app.$('#lbtn').disabled, false, 'tudo verde: libera');
+  app.type('#lpw', 'Segredo#1');
+  assert.equal(app.$('#lbtn').disabled, true, 'voltou a faltar algo: trava de novo');
+  app.close();
+});
+
+test('Meu Cadastro: a troca de senha tem a mesma lista e o botão só libera com tudo verde', async () => {
+  const app = openApp({ html });
+  app.click('[data-lm="up"]');
+  app.type('#lem', EMAIL); app.type('#lpw', SENHA); app.type('#lpw2', SENHA); app.submit('#lf');
+  await app.waitFor(() => app.ev('user') === EMAIL, 4000, 'conta criada');
+  app.click('.userchip');
+  assert.equal(app.$$('#pwr-perfil li').length, 6);
+  assert.equal(app.$('[data-pw="trocar"]').disabled, true);
+  app.type('#pwn', 'Nova#Senha12'); app.type('#pwc', 'Nova#Senha12');
+  assert.ok(app.$$('#pwr-perfil li').every(l => l.classList.contains('ok')));
+  assert.equal(app.$('[data-pw="trocar"]').disabled, false);
   app.close();
 });

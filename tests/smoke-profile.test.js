@@ -4,7 +4,7 @@ const { buildHtml, openApp, fakeHandle } = require('./helpers/app');
 const { createDb, install } = require('./helpers/firebase-mock');
 
 const html = buildHtml('prod');
-const EMAIL = 'cadu@exemplo.com', SENHA = 'segredo123';
+const EMAIL = 'cadu@exemplo.com', SENHA = 'Segredo#123';
 const abrir = (db, extra = {}) => openApp({ html, setup: w => { install(w, db); if (extra.setup) extra.setup(w); }, storage: extra.storage });
 const nbsp = s => s.replace(/ /g, ' ');
 
@@ -90,13 +90,16 @@ test('trocar senha: validações, erro da senha atual e sucesso (a nova passa a 
   const db = createDb(); const app = abrir(db); await criarConta(app);
   app.click('.userchip');
   const tentar = async (a, n, c) => { app.type('#pwa', a); app.type('#pwn', n); app.type('#pwc', c); app.click('[data-pw="trocar"]'); await app.sleep(40); return app.$('#pwerr').textContent + '|' + app.$('#pwok').textContent; };
-  assert.match(await tentar('', 'novasenha', 'novasenha'), /senha atual/);
-  assert.match(await tentar(SENHA, '123', '123'), /ao menos 6/);
-  assert.match(await tentar(SENHA, 'novasenha', 'outra'), /não confere/);
+  assert.match(await tentar('', 'Nova#Senha12', 'Nova#Senha12'), /senha atual/);
+  await tentar(SENHA, '123', '123');
+  assert.equal(app.$('[data-pw="trocar"]').disabled, true, 'senha fraca: botão desabilitado');
+  assert.equal(app.$$('#pwr-perfil li.ok').length, 2, 'só "2 números" e "idênticas" estão verdes');
+  await tentar(SENHA, 'Nova#Senha12', 'Diferente#12');
+  assert.equal(app.$('[data-pw="trocar"]').disabled, true, 'confirmação diferente: botão desabilitado');
   assert.match(await tentar(SENHA, SENHA, SENHA), /diferente/);
-  assert.match(await tentar('errada1', 'novasenha', 'novasenha'), /senha atual está incorreta/);
-  assert.match(await tentar(SENHA, 'novasenha', 'novasenha'), /Senha alterada/);
-  assert.equal(db.users[EMAIL].pw, 'novasenha');
+  assert.match(await tentar('errada1', 'Nova#Senha12', 'Nova#Senha12'), /senha atual está incorreta/);
+  assert.match(await tentar(SENHA, 'Nova#Senha12', 'Nova#Senha12'), /Senha alterada/);
+  assert.equal(db.users[EMAIL].pw, 'Nova#Senha12');
   assert.equal(app.$('#pwa').value, '', 'campos limpos');
   app.close();
 });

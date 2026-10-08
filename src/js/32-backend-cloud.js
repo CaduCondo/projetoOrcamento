@@ -83,7 +83,7 @@ class CloudBackend {
       err=(t,ok)=>{const x=el('lerr');x.style.color=ok?'var(--pos)':'';x.textContent=t};
     try{
       if(loginMode==='reset'){await this.auth.sendPasswordResetEmail(e);return err('Se existir uma conta com esse e-mail, enviamos um link para redefinir a senha. Confira também o spam.',true)}
-      if(loginMode==='up'){if(p!==el('lpw2').value)return err('As senhas não conferem.');await this.auth.createUserWithEmailAndPassword(e,p)}
+      if(loginMode==='up'){const pb=passwordProblem(p,el('lpw2').value);if(pb)return err(pb);await this.auth.createUserWithEmailAndPassword(e,p)}
       else await this.auth.signInWithEmailAndPassword(e,p)
     }catch(x){err(AUTHMSG[x.code]||'Erro: '+(x.code||x.message))}}
 }

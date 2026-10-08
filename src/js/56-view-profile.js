@@ -50,10 +50,11 @@ function vPerfil(){const p=profile,mail=viewing?viewing.email:user,hoje=new Date
    </div></div>
    <div class="panel"><h2>Trocar senha</h2><div class="pbody">
     <label class="f">Senha atual<input id="pwa" type="password" autocomplete="current-password"></label>
-    <label class="f">Nova senha (mínimo 6 caracteres)<input id="pwn" type="password" autocomplete="new-password"></label>
+    <label class="f">Nova senha<input id="pwn" type="password" autocomplete="new-password"></label>
     <label class="f">Repita a nova senha<input id="pwc" type="password" autocomplete="new-password"></label>
+    ${PasswordRules.html('pwr-perfil')}
     <div class="err" id="pwerr" role="alert"></div><div class="okmsg" id="pwok"></div>
-    <button type="button" class="btn" data-pw="trocar">Trocar senha</button>
+    <button type="button" class="btn" data-pw="trocar" disabled>Trocar senha</button>
    </div></div>
    ${backend.storageChoice?storageCard():`<div class="panel full"><h2>Onde ficam meus dados</h2><div class="pbody"><p class="hint">Neste modo (sem nuvem) seus dados ficam sempre neste navegador. Use Ajustes para baixar o arquivo e levar para outro lugar.</p></div></div>`}
   </div>`}
@@ -77,7 +78,7 @@ async function changePasswordForm(){
   const a=el('pwa').value,n=el('pwn').value,c=el('pwc').value,err=validateNewPassword(a,n,c);showMsg('pwok','');
   if(err)return showMsg('pwerr',err);showMsg('pwerr','');
   try{await backend.changePassword(a,n)}catch(e){return showMsg('pwerr',e.message)}
-  el('pwa').value=el('pwn').value=el('pwc').value='';showMsg('pwok','Senha alterada ✓')}
+  el('pwa').value=el('pwn').value=el('pwc').value='';syncPasswordUi();showMsg('pwok','Senha alterada ✓')}
 async function setPhoto(file){
   try{const url=await Photo.fromFile(file),p={...profile,foto:url},err=validateProfile(p);if(err)return showMsg('pferr',err);
     profile=p;await backend.saveProfile(profile);render()}catch(e){showMsg('pferr',e.message)}}
