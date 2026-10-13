@@ -39,19 +39,21 @@ test('login: erros claros e criação de conta', async () => {
   app.close();
 });
 
-test('tela Mês: sem barra de lançamento; "＋ Categoria" em cada bloco cria a categoria e o "Lançar" lança o valor', async () => {
+test('tela Mês: "＋ Categoria" só INCLUI uma categoria que já existe; criar fica na página Categorias; o "Lançar" lança o valor', async () => {
   const app = openApp({ html });
   await entrar(app);
   const y = app.ev('selY'), mth = app.ev('selM');
   assert.equal(app.$('#qf'), null, 'a barra de lançamento rápido saiu');
-  assert.equal(app.$$('[data-newcat]').length, 2, 'um botão em A receber e outro em A pagar');
+  assert.equal(app.$$('[data-usecat]').length, 2, 'um botão em A receber e outro em A pagar');
+  assert.equal(app.$$('[data-newcat]').length, 0, 'criar categoria não é feito na tela Mês');
   assert.equal(app.$$('.pfoot').length, 2);
-  // validações da janela
+  // criar na página Categorias: validações da janela
+  app.click('[data-tab="cat"]');
   app.click('[data-newcat="pagar"]');
   assert.ok(app.$('#dlg3').hasAttribute('open'));
   assert.equal(app.$('#cfv'), null, 'a janela de categoria não tem campo valor');
-  assert.equal(app.$$('input[name=cfs]').length, 3, 'três opções de onde vale');
-  assert.equal(app.$('input[name=cfs]:checked').value, 'futuro', 'padrão: deste mês em diante');
+  assert.equal(app.$$('input[name=cfs]').length, 2, 'duas opções ao criar: só onde eu incluir · ano todo');
+  assert.equal(app.$('input[name=cfs]:checked').value, 'lib', 'padrão: só onde eu incluir no mês');
   app.submit('#cf');
   assert.match(app.$('#cferr').textContent, /nome/i);
   app.type('#cfn', 'Padaria'); app.type('#cfd', '40'); app.submit('#cf');
@@ -60,10 +62,19 @@ test('tela Mês: sem barra de lançamento; "＋ Categoria" em cada bloco cria a 
   assert.ok(!app.$('#dlg3').hasAttribute('open'), 'janela fechou');
   const pad = app.ev("S.cats.find(c=>c.nome==='Padaria').id");
   assert.equal(app.ev(`catById('${pad}').dia`), 12);
+  // na tela Mês ela ainda NÃO aparece; é incluída digitando parte do nome
+  app.click('[data-tab="mes"]');
+  assert.ok(!app.$(`tr[data-cat="${pad}"]`), 'criada, mas só aparece onde for incluída');
+  app.click('[data-usecat="pagar"]');
+  assert.ok(app.$('#dlg3').hasAttribute('open'));
+  app.type('#ufq', 'dar');                                     // "paDARia": o texto pode estar no meio do nome
+  assert.deepEqual(app.$$('#ufl .nm').map(e => e.textContent), ['Padaria']);
+  app.click(`[data-upick="${pad}"]`);
+  assert.ok(!app.$('#dlg3').hasAttribute('open'), 'janela fechou');
   assert.ok(app.$(`tr[data-cat="${pad}"]`), 'a linha aparece no bloco A pagar');
   assert.match(app.$(`tr[data-cat="${pad}"]`).textContent, /Lançar/);
   assert.match(app.$(`tr[data-cat="${pad}"]`).textContent, /dia 12/);
-  assert.equal(app.ev(`MT('pagar',${y},${mth},'prev')`), 0, 'criar categoria não lança valor');
+  assert.equal(app.ev(`MT('pagar',${y},${mth},'prev')`), 0, 'incluir categoria não lança valor');
   // lançar pelo botão da linha
   app.click(`[data-open="${pad}|${y}|${mth}"]`);
   app.type('#nv', '123456');                                   // máscara: vira 1.234,56
@@ -75,22 +86,52 @@ test('tela Mês: sem barra de lançamento; "＋ Categoria" em cada bloco cria a 
   app.close();
 });
 
-test('a categoria nova só aparece onde a opção escolhida manda (só este mês · ano todo · em diante)', async () => {
+test('incluir categoria: a lista filtra pelo meio do nome, ignora acento, e a mesma categoria vale em outro mês', async () => {
   const app = openApp({ html });
   await entrar(app);
-  const y = app.ev('selY');
-  app.click('[data-m="3"]');                                   // abril
+  app.ev(`['Salário Spassu','Salário Caixa','Salgueiro','Resalte de lucros','Reajuste salarial retroativo','Mercado Extra','Investimento'].forEach(n=>{addCat('receber',n).lib=true});save();render()`);
+  const mostra = q => { app.type('#ufq', q); return app.$$('#ufl .nm').map(e => e.textContent).sort(); };
+  app.click('[data-usecat="receber"]');
+  assert.ok(mostra('').includes('Investimento'), 'sem texto: todas as que ainda não estão no mês');
+  assert.deepEqual(mostra('sal'), ['Reajuste salarial retroativo', 'Resalte de lucros', 'Salgueiro', 'Salário Caixa', 'Salário Spassu'].sort());
+  assert.deepEqual(mostra('SALA'), ['Reajuste salarial retroativo', 'Salário Caixa', 'Salário Spassu'].sort(), 'acento e maiúscula não atrapalham');
+  assert.deepEqual(mostra('sal spassu'), ['Salário Spassu'], 'várias palavras: todas precisam estar no nome');
+  mostra('xyz');
+  assert.match(app.$('#ufl').textContent, /Nenhuma categoria com/);
+  assert.ok(app.$('#ufl [data-gocat]'), 'oferece criar na página Categorias');
+  app.click('[data-cclose]');
+  // usa "Investimento" em setembro e de novo em outubro: não dá "já existe"
+  app.click('[data-m="8"]');
+  app.click('[data-usecat="receber"]'); app.type('#ufq', 'invest'); app.click('#ufl [data-upick]');
+  assert.ok(app.$$('tr[data-cat]').some(r => r.textContent.includes('Investimento')), 'apareceu em setembro');
+  app.click('[data-usecat="receber"]');
+  assert.ok(!mostra('invest').includes('Investimento'), 'já está em setembro: não é oferecida de novo');
+  app.click('[data-cclose]');
+  app.click('[data-m="9"]');
+  assert.ok(!app.$$('tr[data-cat]').some(r => r.textContent.includes('Investimento')), 'em outubro ainda não');
+  app.click('[data-usecat="receber"]'); app.type('#ufq', 'invest'); app.click('#ufl [data-upick]');
+  assert.ok(app.$$('tr[data-cat]').some(r => r.textContent.includes('Investimento')), 'e agora também em outubro');
+  assert.equal(app.ev("S.cats.filter(c=>c.nome==='Investimento').length"), 1, 'continua sendo UMA categoria');
+  app.close();
+});
+
+test('categoria nova: "só onde eu incluir" não aparece sozinha; "ano todo" aparece em todos os meses; meses futuros começam vazios', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  app.click('[data-tab="cat"]');
   const criar = (nome, scope) => { app.click('[data-newcat="receber"]'); app.type('#cfn', nome); app.click(`input[name=cfs][value=${scope}]`); app.submit('#cf'); };
-  criar('SoAbril', 'mes'); criar('AnoTodo', 'ano'); criar('Adiante', 'futuro');
+  criar('AnoTodo', 'ano'); criar('Escondida', 'lib');
+  app.click('[data-tab="mes"]');
   const linhas = () => app.$$('tr[data-cat]').map(r => r.textContent);
-  const tem = (n) => linhas().some(t => t.includes(n));
-  assert.ok(tem('SoAbril') && tem('AnoTodo') && tem('Adiante'), 'abril: as três');
-  app.click('[data-m="4"]');
-  assert.ok(!tem('SoAbril') && tem('AnoTodo') && tem('Adiante'), 'maio: sem a "só abril"');
-  app.click('[data-m="1"]');
-  assert.ok(!tem('SoAbril') && tem('AnoTodo') && !tem('Adiante'), 'fevereiro: o ano todo sim, "em diante" não');
-  app.click('[data-m="11"]');
-  assert.ok(tem('AnoTodo') && tem('Adiante'));
+  const tem = n => linhas().some(t => t.includes(n));
+  for (const mes of [0, 3, 9]) { app.click(`[data-m="${mes}"]`); assert.ok(tem('AnoTodo') && !tem('Escondida'), `mês ${mes + 1}: ano todo sim, "só onde eu incluir" não`); }
+  app.click('[data-m="11"]');                                  // dezembro: futuro
+  assert.ok(tem('AnoTodo'), 'futuro: aparece porque foi criada para o ano todo');
+  assert.ok(!tem('Salário') && !tem('Mercado') && !tem('Moradia'), 'futuro: nenhuma outra categoria já vem na lista');
+  app.click('[data-usecat="receber"]'); app.type('#ufq', 'escond'); app.click('#ufl [data-upick]');
+  assert.ok(tem('Escondida'), 'incluída em dezembro');
+  app.click('[data-m="10"]');
+  assert.ok(!tem('Escondida') && !tem('Salário'), 'novembro continua vazio (só o ano todo)');
   app.close();
 });
 
@@ -125,18 +166,20 @@ test('janela de itens: previsto x realizado, cartão (💳) e total', async () =
   app.close();
 });
 
-test('categorias em Ajustes: criar, buscar, mesclar e excluir', async () => {
+test('página Categorias: criar, buscar, mesclar e excluir', async () => {
   const app = openApp({ html });
   await entrar(app);
   const y = app.ev('selY'), mth = app.ev('selM');
   const merc = app.ev("S.cats.find(c=>c.nome==='Mercado').id");
   app.ev(`ens('${merc}',${y},${mth}).items.push({v:70,d:'x',ok:true})`); app.ev('save()');
+  app.click('[data-tab="cat"]');
+  assert.ok(app.$('#cl'), 'abriu a página Categorias com o gerenciador');
   app.click('[data-tab="aj"]');
-  assert.ok(app.$('#cl'), 'abriu Ajustes com o gerenciador');
-  // criar (pela mesma janela da tela Mês)
+  assert.equal(app.$('#cl'), null, 'Ajustes não gerencia mais categorias');
+  app.click('[data-tab="cat"]');
   app.click('[data-newcat="pagar"]'); app.type('#cfn', 'Padaria'); app.submit('#cf');
   assert.ok(app.ev("S.cats.some(c=>c.nome==='Padaria')"));
-  assert.match(app.$$('#cl .vig').map(e => e.textContent).join('|'), /de .*\/\d{4} em diante/, 'a linha mostra onde a categoria vale');
+  assert.match(app.$$('#cl .vig').map(e => e.textContent).join('|'), /só onde for incluída no mês/, 'a linha mostra onde a categoria vale');
   // buscar
   app.type('#cq', 'merc');
   assert.deepEqual(app.$$('#cl .cn').map(i => i.value), ['Mercado']);
@@ -159,15 +202,16 @@ test('categorias em Ajustes: criar, buscar, mesclar e excluir', async () => {
   app.close();
 });
 
-test('Ajustes: editar a categoria vale do mês escolhido em diante, mostra a vigência e permite desfazer', async () => {
+test('página Categorias: editar a categoria vale do mês escolhido em diante, mostra a vigência e permite desfazer', async () => {
   const app = openApp({ html });
   await entrar(app);
   const y = app.ev('selY');
   // cria "Salário Antigo" (ano todo, dia 5) e lança em janeiro e maio
+  app.click('[data-tab="cat"]');
   app.click('[data-newcat="receber"]'); app.type('#cfn', 'Salário Antigo'); app.type('#cfd', '5'); app.click('input[name=cfs][value=ano]'); app.submit('#cf');
   const velho = app.ev("S.cats.find(c=>c.nome==='Salário Antigo').id");
   app.ev(`ens('${velho}',${y},0).items.push({v:1000,d:'',ok:true});ens('${velho}',${y},4).items.push({v:1000,d:'',ok:true});save()`);
-  app.click('[data-tab="aj"]');
+  app.click('[data-tab="cat"]');
   app.click('[data-cf="tipo|receber"]'); app.type('#cq', 'Salário Antigo');
   assert.match(app.$('#cl .vig').textContent, new RegExp(`ano todo ${y}`));
   // Editar → a partir de abril, novo nome e dia 10, "deste mês em diante"
@@ -212,7 +256,7 @@ test('anos e abas: adicionar ano, trocar de aba e gráficos', async () => {
   assert.equal(app.ev('selY'), 2030);
   assert.ok(app.ev('S.anos.includes(2030)'));
   assert.deepEqual(app.$$('#ysel option').map(o => o.textContent).slice(-1), ['2030']);
-  for (const t of ['ano', 'graf', 'pat', 'aj', 'mes']) { app.click(`[data-tab="${t}"]`); assert.equal(app.ev('tab'), t); }
+  for (const t of ['ano', 'graf', 'pat', 'cat', 'aj', 'mes']) { app.click(`[data-tab="${t}"]`); assert.equal(app.ev('tab'), t); }
   app.click('[data-tab="graf"]');
   assert.ok(app.$('#c1') && app.$('#c16'), 'tela de gráficos montada');
   assert.ok(FakeChart.count >= 16, 'os 16 gráficos foram criados');
@@ -286,7 +330,7 @@ test('cadastro no modo local: salvo no navegador, sem escolha de nuvem, e troca 
 test('sem erros de script durante os fluxos', async () => {
   const app = openApp({ html });
   await entrar(app);
-  for (const t of ['ano', 'graf', 'pat', 'aj', 'mes']) app.click(`[data-tab="${t}"]`);
+  for (const t of ['ano', 'graf', 'pat', 'cat', 'aj', 'mes']) app.click(`[data-tab="${t}"]`);
   assert.deepEqual(app.dom.errors || [], []);
   app.close();
 });

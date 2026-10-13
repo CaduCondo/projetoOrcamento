@@ -67,6 +67,7 @@ app.addEventListener('click',e=>{const t=e.target;let b;
   else if(t.closest('[data-cmore]')){catUI.lim+=40;renderCatList()}
   else if(b=t.closest('[data-cmerge]'))MergeDialog.open(b.dataset.cmerge)
   else if(b=t.closest('[data-newcat]'))CategoryDialog.openNew(b.dataset.newcat)
+  else if(b=t.closest('[data-usecat]'))UseCategoryDialog.open(b.dataset.usecat)
   else if(b=t.closest('[data-cedit]'))CategoryDialog.openEdit(b.dataset.cedit)
   else if(b=t.closest('[data-cdel]'))confirmDeleteCat(b.dataset.cdel)
   else if(t.id==='bk')exportBackup()

@@ -13,7 +13,7 @@ async function criarConta(app, email = EMAIL) {
   app.click('[data-lm="up"]');
   app.type('#lem', email); app.type('#lpw', SENHA); app.type('#lpw2', SENHA);
   app.submit('#lf');
-  await app.waitFor(() => app.ev('user') === email && app.ev('S') && app.$('[data-newcat]'), 4000, 'conta criada e tela carregada');
+  await app.waitFor(() => app.ev('user') === email && app.ev('S') && app.$('[data-usecat]'), 4000, 'conta criada e tela carregada');
 }
 
 test('nuvem: login sem "manter conectado" e com textos da nuvem', async () => {
@@ -56,7 +56,7 @@ test('nuvem: entrar de novo (outro aparelho) traz os dados; cada usuário só v�
   a.close();
   // "outro aparelho": nova janela, mesma nuvem; a sessão do Firebase continua
   const b = abrir(db);
-  await b.waitFor(() => b.ev('user') === EMAIL && b.$('[data-newcat]'), 4000, 'abriu já logado');
+  await b.waitFor(() => b.ev('user') === EMAIL && b.$('[data-usecat]'), 4000, 'abriu já logado');
   assert.equal(b.ev(`V('${merc}',${y},${m},'real')`), 77, 'dados chegaram do outro aparelho');
   // sair e entrar com outra conta: não vê nada da primeira
   b.click('[data-logout]');

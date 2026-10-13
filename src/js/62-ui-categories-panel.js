@@ -16,10 +16,12 @@ function catRows(){const st=catStats(),nq=normName(catUI.q);
    <span class="cact"><button class="btn sec sm" data-cedit="${c.id}" title="Editar nome, dia e onde aparece">Editar</button><button class="btn sec sm" data-cmerge="${c.id}" title="Juntar com outra categoria">Mesclar</button><button class="btn dan sm" data-cdel="${c.id}" title="Excluir" aria-label="Excluir">✕</button></span></div>`}).join('')||'<p class="hint" style="padding:14px 4px">Nenhuma categoria com esse filtro.</p>';
   return{html:html+(tot>catUI.lim?`<div style="padding:10px 4px"><button class="btn sec sm" data-cmore>Mostrar mais ${Math.min(40,tot-catUI.lim)} (${tot-catUI.lim} restantes)</button></div>`:''),tot}}
 function renderCatList(){const r=catRows(),el=document.getElementById('cl');if(!el)return;el.innerHTML=r.html;document.getElementById('cc').textContent=`${r.tot} de ${S.cats.length}`}
+/* Página Categorias: o lugar de CRIAR, EDITAR, MESCLAR e EXCLUIR categorias */
+function vCat(){return catPanel()}
 function catPanel(){const r=catRows(),sg=(k,opts)=>`<div class="seg">${opts.map(([v,l])=>`<button data-cf="${k}|${v}" class="${catUI[k]===v?'on':''}">${l}</button>`).join('')}</div>`;
-  return `<div class="panel" style="margin-top:16px"><h2>Categorias <span class="sub" id="cc">${r.tot} de ${S.cats.length}</span></h2><div style="padding:12px 14px">
+  return `<div class="panel" ><h2>Categorias <span class="sub" id="cc">${r.tot} de ${S.cats.length}</span></h2><div style="padding:12px 14px">
    <div class="row"><input id="cq" type="search" placeholder="🔍 Buscar categoria…" value="${esc(catUI.q)}" style="flex:1;min-width:200px">
     ${sg('filtro',[['ativas','Ativas'],['antigas','Antigas'],['sem','Sem lançamentos'],['todas','Todas']])}${sg('tipo',[['','Todas'],['receber','A receber'],['pagar','A pagar']])}</div>
-   <p class="hint" style="margin:2px 0 8px">“Ativas” = usadas nos últimos 24 meses; ao buscar aparecem todas. Mudar nome ou dia aqui vale <b>de ${MESES[selM].toLowerCase()}/${selY} em diante</b> (o passado não muda). Para corrigir um erro em todos os meses, use <b>Editar</b>.</p>
+   <p class="hint" style="margin:2px 0 8px">“Ativas” = usadas nos últimos 24 meses; ao buscar aparecem todas. Aqui você cria, edita e exclui. Na tela Mês você apenas <b>inclui</b> no mês uma categoria que já existe. Mudar nome ou dia aqui vale <b>de ${MESES[selM].toLowerCase()}/${selY} em diante</b> (o passado não muda). Para corrigir um erro em todos os meses, use <b>Editar</b>.</p>
    <div class="row"><button class="btn sec sm" data-newcat="pagar">＋ Categoria a pagar</button><button class="btn sec sm" data-newcat="receber">＋ Categoria a receber</button></div>
    <div id="cl">${r.html}</div></div></div>`}

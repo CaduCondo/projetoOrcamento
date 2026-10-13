@@ -122,6 +122,14 @@ Legenda: ✅ feito e em produção · 🧪 feito no ambiente de teste (`dev`) ·
 ### 5.8 Senha forte (issue #29)
 Pedido: ao criar conta e em Meu Cadastro → Trocar senha, mostrar uma lista de regras; cada linha começa com **X vermelho** e vira **V verde** quando atendida; o botão só habilita com tudo verde. Regras: mínimo 6 caracteres; 1 letra maiúscula; 1 minúscula; 2 números; 1 caractere especial; senhas idênticas. Implementado em `src/js/27-model-password.js` (regras, fonte única) e `47-ui-password.js` (tela). A validação também roda ao enviar (não depende só do botão). Observação: regra no navegador pode ser contornada por quem mexe no código; para blindar de verdade, ativar a política de senha no Firebase Authentication.
 
+### 5.9 Página Categorias e "incluir no mês" (issue #30)
+Pedido do dono: (1) meses futuros começam **sem nenhuma categoria**, só as criadas para o **ano inteiro**; (2) ao incluir uma categoria num mês, digitar e ver **sugestões que filtram** (o texto pode estar em qualquer parte do nome, ex.: "sal" acha "Salário Caixa", "Resalte de lucros"); (3) acabar com o erro "Já existe uma categoria com esse nome neste período" (a categoria "Investimento" existia mas não aparecia em setembro); (4) uma **página separada** para CRIAR, EDITAR, EXCLUIR categorias; na tela do mês só se **USA** uma categoria que já existe.
+Como ficou:
+- Nova aba **Categorias** (criar, editar, mesclar, excluir). A lista saiu de Ajustes. Ao criar: "só onde eu incluir no mês" (padrão) ou "o ano todo".
+- Tela Mês: o botão **＋ Categoria** abre uma lista que filtra enquanto digita (sem ligar para acento ou maiúscula) e **inclui a categoria já existente naquele mês**. Não cria nada nem dá "já existe"; a mesma categoria pode ser incluída em quantos meses quiser. Se não existir, a janela oferece ir criar na página Categorias.
+- Meses **futuros** (depois do mês atual) só mostram: categoria com lançamento, incluída naquele mês, ou criada com fim definido (ex.: o ano todo). "Deste mês em diante" vale até o mês atual.
+- Dados: `extra` (meses incluídos) e `lib` (só sob demanda) em cada categoria; entram no CSV (colunas MesesIncluidos e SoSobDemanda) e na nuvem.
+
 ## 6. Princípios que combinamos
 - **Privacidade primeiro:** planilhas, backups e dados pessoais **nunca** vão para o GitHub (repositório público).
 - **Honestidade com o usuário:** o que a tela promete é o que o sistema faz.

@@ -1,5 +1,5 @@
 /* Tela Mês: cartões do mês e as tabelas A receber / A pagar.
-   Categorias novas entram pelo botão "＋ Categoria" de cada bloco; o valor é lançado depois, no botão "Lançar" da linha. */
+   Cada bloco tem o botão "＋ Categoria", que INCLUI neste mês uma categoria que já existe (criar, editar e excluir ficam na página Categorias). */
 function sumBadge(c,y,m){const its=cellOf(c.id,y,m)?.items||[];if(!its.length)return'';const w=its.some(i=>/sem detalhe/.test(i.d));
   const cc=its.some(i=>i.info)?' <span title="Tem valor já incluso na fatura do cartão (não soma)">💳</span>':'';
   return `${its.length>1?'':`<span class="sub">${esc(its[0].d)}</span>`}${cc}${w?' <span class="warn" title="A anotação antiga não batia com o total — revise">⚠</span>':''}`}
@@ -13,8 +13,8 @@ function rowMes(c,y,m){const r=V(c.id,y,m,'real'),p=V(c.id,y,m,'prev'),neg=c.tip
 function blocoMes(tipo,titulo,total,y,m){
   const linhas=visCats(tipo,y,m).map(c=>rowMes(c,y,m)).join('');
   return `<div class="panel"><h2>${titulo} <span class="${tipo==='pagar'?'neg':'pos'}">${total}</span></h2>
-   <table>${linhas||`<tr><td class="sub" style="padding:16px">Nenhuma categoria neste mês. Use “＋ Categoria” para criar a primeira.</td></tr>`}</table>
-   <div class="pfoot"><button class="btn sec sm" data-newcat="${tipo}" title="Criar uma categoria de ${tipo==='pagar'?'despesa':'receita'}">＋ Categoria</button></div></div>`}
+   <table>${linhas||`<tr><td class="sub" style="padding:16px">Nenhuma categoria neste mês. Use “＋ Categoria” para incluir uma que já existe.</td></tr>`}</table>
+   <div class="pfoot"><button class="btn sec sm" data-usecat="${tipo}" title="Incluir neste mês uma categoria de ${tipo==='pagar'?'despesa':'receita'} que já existe">＋ Categoria</button></div></div>`}
 function vMes(){const y=selY,m=selM,R=MT('receber',y,m,'real'),P=MT('pagar',y,m,'real'),Rp=MT('receber',y,m,'prev'),Pp=MT('pagar',y,m,'prev');
   const curY=new Date().getFullYear(),curMo=new Date().getMonth();
   return `<div class="chips">${MESES.map((n,i)=>`<button class="chip ${i===m?'on':''} ${i===curMo&&y===curY?'cur':''}" data-m="${i}">${n}</button>`).join('')}<span class="sub" style="margin-left:8px">${MESES[m]} de ${y}</span></div>

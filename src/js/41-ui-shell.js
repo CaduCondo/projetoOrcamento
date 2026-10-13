@@ -1,6 +1,6 @@
 /* Casca da tela: menu, ano, render geral */
 /* ---------- RENDER GERAL ---------- */
-const TABS=[['mes','Mês','📅'],['ano','Ano','🗓️'],['graf','Gráficos','📊'],['pat','Patrimônio','🏦'],['aj','Ajustes','⚙️']];
+const TABS=[['mes','Mês','📅'],['ano','Ano','🗓️'],['graf','Gráficos','📊'],['pat','Patrimônio','🏦'],['cat','Categorias','🏷️'],['aj','Ajustes','⚙️']];
 function chrome(){const n=document.getElementById('nav'),h=document.getElementById('hr');
   if(!user){n.innerHTML='';h.innerHTML='';return}
   n.innerHTML=TABS.map(([k,l,i])=>`<button class="${tab===k?'on':''}" data-tab="${k}"><span class="ti" aria-hidden="true">${i}</span><span class="tl">${l}</span></button>`).join('');
@@ -10,7 +10,7 @@ function chrome(){const n=document.getElementById('nav'),h=document.getElementBy
    <button class="btn dan sm" data-logout>Sair</button>`}
 function render(){chrome();destroyCharts();tip.style.display='none';const a=document.getElementById('app');
   if(!user){a.innerHTML=vLogin();renderNotice();renderRoBar();return}
-  a.innerHTML={mes:vMes,ano:vAno,graf:vGraf,pat:vPat,aj:vAj,perfil:vPerfil}[tab]();
+  a.innerHTML={mes:vMes,ano:vAno,graf:vGraf,pat:vPat,cat:vCat,aj:vAj,perfil:vPerfil}[tab]();
   renderNotice();renderRoBar();
   if(tab==='graf')drawCharts();if(tab==='pat')drawPat();if(tab==='perfil')fillDeviceStatus();
   if(readOnly){lockUi(a);lockUi(el('hr'))}}

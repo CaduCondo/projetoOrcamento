@@ -24,7 +24,8 @@ test('criar categoria: "só este mês", "o ano todo" e "deste mês em diante"', 
   const c = m.createCat('receber', { nome: 'Bônus', dia: 15 }, 'futuro', 2026, 3);
   assert.deepEqual(plain(c.vis), { from: [2026, 3], to: null });
   assert.ok(!nomes('receber', 2026, 2).includes('Bônus'));
-  assert.ok(nomes('receber', 2026, 3).includes('Bônus') && nomes('receber', 2031, 6).includes('Bônus'));
+  assert.ok(nomes('receber', 2026, 3).includes('Bônus') && nomes('receber', 2026, 9).includes('Bônus'), 'de abril até o mês atual (outubro)');
+  assert.ok(!nomes('receber', 2026, 10).includes('Bônus') && !nomes('receber', 2031, 6).includes('Bônus'), 'meses futuros começam vazios');
   assert.ok(m.S.cats.includes(a) && m.S.cats.includes(b) && m.S.cats.includes(c));
 });
 
@@ -152,4 +153,60 @@ test('vigência sobrevive ao ciclo da nuvem (serializar e voltar)', () => {
   assert.deepEqual(plain(cv.vis), plain(c.vis));
   assert.equal(nv.prevId, c.id);
   assert.deepEqual(plain(nv.vis), { from: [2026, 5], to: [2026, 11] });
+});
+
+test('meses futuros começam vazios: só aparece o que foi incluído, tem lançamento ou tem fim definido (ano todo)', () => {
+  fresh();                                                       // "hoje" = 15/out/2026
+  const todas = m.S.cats.map(c => c.nome);
+  assert.ok(nomes('pagar', 2026, 9).includes('Aluguel') || m.visCats('pagar', 2026, 9).length >= 0);
+  assert.deepEqual(nomes('pagar', 2026, 10), [], 'novembro: nada, nem as categorias antigas');
+  assert.deepEqual(nomes('receber', 2027, 2), []);
+  const ano = m.createCat('pagar', { nome: 'Seguro do ano', dia: '' }, 'ano', 2026, 9);
+  const lib = m.createCat('pagar', { nome: 'Sob demanda', dia: '' }, 'lib', 2026, 9);
+  assert.ok(nomes('pagar', 2026, 10).includes('Seguro do ano') && nomes('pagar', 2026, 11).includes('Seguro do ano'), 'ano todo vale nos meses futuros do ano');
+  assert.ok(!nomes('pagar', 2027, 0).includes('Seguro do ano'), 'mas não no ano seguinte');
+  assert.ok(!nomes('pagar', 2026, 10).includes('Sob demanda') && !nomes('pagar', 2026, 5).includes('Sob demanda'), 'biblioteca: não aparece sozinha');
+  m.ens('luz', 2026, 11).items.push({ v: 10, d: '', ok: false });
+  assert.ok(nomes('pagar', 2026, 11).includes('Luz'), 'com lançamento aparece');
+  assert.ok(todas.length > 0 && lib.lib === true);
+});
+
+test('incluir uma categoria que já existe num mês: não cria nada, não dá "já existe" e vale só naquele mês', () => {
+  fresh();
+  const inv = m.createCat('receber', { nome: 'Investimento', dia: '' }, 'lib', 2026, 9);
+  const antes = m.S.cats.length;
+  m.useCatInMonth(inv.id, 2026, 8);
+  m.useCatInMonth(inv.id, 2026, 9);
+  m.useCatInMonth(inv.id, 2026, 9);
+  assert.equal(m.S.cats.length, antes, 'nenhuma categoria nova');
+  assert.deepEqual(plain(inv.extra), ['2026-09', '2026-10'], 'sem repetir');
+  assert.ok(nomes('receber', 2026, 8).includes('Investimento') && nomes('receber', 2026, 9).includes('Investimento'));
+  assert.ok(!nomes('receber', 2026, 7).includes('Investimento') && !nomes('receber', 2026, 10).includes('Investimento'));
+  m.useCatInMonth(inv.id, 2027, 3);                              // mês futuro também vale quando incluída
+  assert.ok(nomes('receber', 2027, 3).includes('Investimento'));
+  assert.ok(m.showsInYear(inv, 2026, m.catStats()) && !m.showsInYear(inv, 2028, m.catStats()));
+});
+
+test('lista de categorias para incluir: busca em qualquer parte do nome, sem acento/maiúscula, sem repetir as que já estão no mês', () => {
+  fresh();
+  for (const n of ['Salário Spassu', 'Salário Caixa', 'Salgueiro', 'Resalte de lucros', 'Reajuste salarial retroativo', 'Mercado']) m.createCat('receber', { nome: n, dia: '' }, 'lib', 2026, 9);
+  const l = q => Array.from(m.pickableCats('receber', 2026, 8, q), c => c.nome).sort();
+  assert.deepEqual(l('sal'), ['Reajuste salarial retroativo', 'Resalte de lucros', 'Salgueiro', 'Salário Caixa', 'Salário Spassu'].sort());
+  assert.deepEqual(l('SALARIO sp'), ['Salário Spassu']);
+  assert.equal(Array.from(m.pickableCats('receber', 2026, 8, 'sal'))[0].nome.startsWith('Sal'), true, 'quem começa com o texto vem primeiro');
+  m.useCatInMonth(m.S.cats.find(c => c.nome === 'Salgueiro').id, 2026, 8);
+  assert.ok(!l('sal').includes('Salgueiro'), 'já incluída neste mês: não é oferecida');
+  assert.ok(Array.from(m.pickableCats('receber', 2026, 9, 'sal'), c => c.nome).includes('Salgueiro'), 'mas em outro mês é');
+  assert.deepEqual(l('pagar-nao-existe'), []);
+});
+
+test('revisar categoria leva os meses incluídos de depois para a nova versão; mesclar junta os meses', () => {
+  fresh();
+  const c = m.createCat('pagar', { nome: 'Plano', dia: '' }, 'lib', 2026, 9);
+  m.useCatInMonth(c.id, 2026, 2); m.useCatInMonth(c.id, 2026, 8);
+  const n = m.reviseCat(c.id, { nome: 'Plano Pro', dia: '' }, 'lib', 2026, 5);
+  assert.deepEqual(plain(c.extra), ['2026-03'], 'o que veio antes fica');
+  assert.deepEqual(plain(n.extra), ['2026-09'], 'o que veio depois vai para a nova');
+  m.mergeCat(n.id, c.id);
+  assert.deepEqual(plain(c.extra), ['2026-03', '2026-09']);
 });

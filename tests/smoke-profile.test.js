@@ -11,12 +11,12 @@ const nbsp = s => s.replace(/ /g, ' ');
 async function criarConta(app, email = EMAIL) {
   await app.waitFor(() => app.$('#lf'), 3000, 'tela de login');
   app.click('[data-lm="up"]'); app.type('#lem', email); app.type('#lpw', SENHA); app.type('#lpw2', SENHA); app.submit('#lf');
-  await app.waitFor(() => app.ev('user') === email && app.ev('S') && app.$('[data-newcat]'), 4000, 'tela carregada');
+  await app.waitFor(() => app.ev('user') === email && app.ev('S') && app.$('[data-usecat]'), 4000, 'tela carregada');
 }
 async function entrar(app, email = EMAIL, senha = SENHA) {
   await app.waitFor(() => app.$('#lf'), 3000, 'tela de login');
   app.type('#lem', email); app.type('#lpw', senha); app.submit('#lf');
-  await app.waitFor(() => app.ev('user') === email && app.ev('S') && app.$('[data-newcat]'), 4000, 'entrou');
+  await app.waitFor(() => app.ev('user') === email && app.ev('S') && app.$('[data-usecat]'), 4000, 'entrou');
 }
 const lancar = (app, valorDigitos = '5000', desc = 'x') => {
   app.click('[data-tab="mes"]');
@@ -236,7 +236,7 @@ test('regras do banco desatualizadas: o app abre mesmo assim e explica o que faz
   const app = abrir(db); await criarConta(app);
   assert.match(app.$('#notice').textContent, /regras de segurança do banco estão desatualizadas/);
   assert.match(app.$('#notice').textContent, /firestore\.rules/);
-  assert.ok(app.$('[data-newcat]'), 'a tela principal abriu');
+  assert.ok(app.$('[data-usecat]'), 'a tela principal abriu');
   lancar(app, '2500', 'funciona'); await app.ev('backend.flush()');
   assert.ok(JSON.stringify(db.docs).includes('funciona'), 'os lançamentos continuam sendo salvos');
   app.close();

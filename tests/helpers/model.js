@@ -20,7 +20,7 @@ function loadModel() {
   key, cellOf, ens, itemsOf, V, cats, MT, SAL, iniY, acum, hasData, lastActive, prevMonths,
   catById, addCat, catStats, isActive, lastLabel, visCats, yearHas, yearEmpty,
   mergeCat, reorderCats, deleteCat, importClashYears, applyImport,
-  serializeState, deserializeState, PASSWORD_RULES, passwordChecks, passwordOk, passwordProblem,
+  useCatInMonth, pickableCats, applyScope, serializeState, deserializeState, PASSWORD_RULES, passwordChecks, passwordOk, passwordProblem,
   stateToCsv, csvFileText, csvToState, parseCsv,
   ym, ymOf, fromYm, aliveFrom, showsInMonth, showsInYear, scopeVis, scopeOf, scopeLabel, validateCat, createCat, reviseCat,
   get S(){return S}, set S(v){S=v},

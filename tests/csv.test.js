@@ -109,3 +109,13 @@ test('CSV: não altera o estado que está em uso e dá o mesmo total depois de r
   m.S = state;
   assert.equal(m.MT('pagar', 2026, 0, 'real'), totalAntes);
 });
+
+test('CSV: categorias "só onde eu incluir" e os meses incluídos voltam iguais', () => {
+  const s = sampleState(m); m.S = s;
+  const c = m.createCat('receber', { nome: 'Investimento', dia: '' }, 'lib', 2026, 9);
+  m.useCatInMonth(c.id, 2026, 8); m.useCatInMonth(c.id, 2027, 0);
+  const { state } = m.csvToState(m.csvFileText(s));
+  const v = state.cats.find(x => x.id === c.id);
+  assert.equal(v.lib, true); assert.deepEqual(Array.from(v.extra), ['2026-09', '2027-01']); assert.equal(v.vis, undefined);
+  assert.deepEqual(plain(state), plain(m.mig(plain(s))));
+});

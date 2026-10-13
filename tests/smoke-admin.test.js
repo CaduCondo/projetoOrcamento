@@ -10,7 +10,7 @@ const abrir = db => openApp({ html, setup: w => install(w, db) });
 async function criarConta(app, email) {
   await app.waitFor(() => app.$('#lf'), 3000, 'tela de login');
   app.click('[data-lm="up"]'); app.type('#lem', email); app.type('#lpw', SENHA); app.type('#lpw2', SENHA); app.submit('#lf');
-  await app.waitFor(() => app.ev('user') === email && app.ev('S') && app.$('[data-newcat]'), 4000, 'tela carregada');
+  await app.waitFor(() => app.ev('user') === email && app.ev('S') && app.$('[data-usecat]'), 4000, 'tela carregada');
 }
 const lancar = (app, digitos, desc) => {
   app.click('[data-tab="mes"]');
@@ -40,7 +40,7 @@ test('administrador: vê o botão "Usuários"; um usuário comum não vê', asyn
   adm.close(); db.current = null;
   const ana = abrir(db); await ana.waitFor(() => ana.$('#lf'), 3000, 'login');
   ana.type('#lem', 'ana@exemplo.com'); ana.type('#lpw', SENHA); ana.submit('#lf');
-  await ana.waitFor(() => ana.ev('user') === 'ana@exemplo.com' && ana.$('[data-newcat]'), 4000, 'Ana entrou');
+  await ana.waitFor(() => ana.ev('user') === 'ana@exemplo.com' && ana.$('[data-usecat]'), 4000, 'Ana entrou');
   assert.equal(ana.$('[data-adm="abrir"]'), null, 'usuário comum não tem o botão');
   assert.equal(ana.ev('backend.isAdmin'), false);
   ana.close();
@@ -87,8 +87,10 @@ test('SOMENTE LEITURA: vê todos os dados da pessoa, nada é alterável e NADA �
   assert.equal(adm.$('#pfn').disabled, true, 'cadastro dela bloqueado para edição');
   // tudo que altera está desabilitado
   adm.click('[data-tab="mes"]');
-  assert.ok(adm.$$('[data-newcat]').every(b => b.disabled), 'botões de nova categoria bloqueados');
+  assert.ok(adm.$$('[data-usecat]').every(b => b.disabled), 'botões de nova categoria bloqueados');
   assert.ok(adm.$$('tr[data-cat]').every(r => r.draggable === false), 'não dá para arrastar linhas');
+  adm.click('[data-tab="cat"]');
+  assert.ok(adm.$$('#app [data-newcat],#app [data-cedit],#app [data-cdel],#app [data-cmerge]').every(e => e.disabled), 'na página Categorias nada altera');
   adm.click('[data-tab="aj"]');
   const mut = adm.$$('#app input:not([type=search]),#app select,#app button').filter(e => !e.matches('[data-tab],[data-m],[data-modo],#per,#ysel,[data-open],[data-close],[data-na],[data-adm],[data-logout]'));
   assert.ok(mut.length > 5 && mut.every(e => e.disabled), 'em Ajustes tudo está bloqueado: ' + mut.filter(e => !e.disabled).map(e => e.outerHTML.slice(0, 60)).join(' | '));
