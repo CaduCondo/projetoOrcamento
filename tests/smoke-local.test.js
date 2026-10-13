@@ -44,7 +44,7 @@ test('tela Mês: "＋ Categoria" só INCLUI uma categoria que já existe; criar 
   await entrar(app);
   const y = app.ev('selY'), mth = app.ev('selM');
   assert.equal(app.$('#qf'), null, 'a barra de lançamento rápido saiu');
-  assert.equal(app.$$('[data-usecat]').length, 2, 'um botão em A receber e outro em A pagar');
+  assert.equal(app.$$('[data-usecat]').length, 2, 'um botão em Receitas e outro em Despesas');
   assert.equal(app.$$('[data-newcat]').length, 0, 'criar categoria não é feito na tela Mês');
   assert.equal(app.$$('.pfoot').length, 2);
   // criar na página Categorias: validações da janela
@@ -71,7 +71,7 @@ test('tela Mês: "＋ Categoria" só INCLUI uma categoria que já existe; criar 
   assert.deepEqual(app.$$('#ufl .nm').map(e => e.textContent), ['Padaria']);
   app.click(`[data-upick="${pad}"]`);
   assert.ok(!app.$('#dlg3').hasAttribute('open'), 'janela fechou');
-  assert.ok(app.$(`tr[data-cat="${pad}"]`), 'a linha aparece no bloco A pagar');
+  assert.ok(app.$(`tr[data-cat="${pad}"]`), 'a linha aparece no bloco Despesas');
   assert.match(app.$(`tr[data-cat="${pad}"]`).textContent, /Lançar/);
   assert.equal(app.$(`tr[data-cat="${pad}"] td.dia`).textContent, '12', 'o dia aparece na coluna Dia');
   assert.equal(app.ev(`MT('pagar',${y},${mth},'prev')`), 0, 'incluir categoria não lança valor');
@@ -379,10 +379,10 @@ test('tela Mês: tabelas com cabeçalho que ordena (nome, dia, valor), sem dia n
   const lista = () => Array.from(nomes(), r => r.cells[1].childNodes[0].textContent.trim()).filter(n => ['Zeta', 'Beta', 'Alfa', 'Gama', 'Delta'].includes(n));
   const th = col => app.$(`th[data-sort="pagar|${col}"]`);
   assert.equal(app.$$('table.mes thead').length, 2, 'as duas tabelas têm cabeçalho');
-  assert.deepEqual(Array.from(app.$$('table.mes')[1].querySelectorAll('thead th'), t => t.textContent.trim()), ['', 'Categoria', 'Dia', 'Valor']);
-  app.click('th[data-sort="pagar|dia"]');
-  assert.deepEqual(lista(), ['Beta', 'Delta', 'Zeta', 'Gama', 'Alfa'], 'por dia: 3, 6, 15, 30 e depois quem não tem dia');
+  assert.deepEqual(Array.from(app.$$('table.mes')[1].querySelectorAll('thead th'), t => t.textContent.trim()), ['', 'Categoria', 'Dia ▲', 'Valor']);
+  assert.deepEqual(lista(), ['Beta', 'Delta', 'Zeta', 'Gama', 'Alfa'], 'ao abrir já vem por dia: 3, 6, 15, 30 e depois quem não tem dia');
   assert.match(th('dia').textContent, /▲/);
+  assert.equal(app.ev('mesSort.receber.col'), 'dia', 'as duas tabelas abrem por dia');
   app.click('th[data-sort="pagar|dia"]');
   assert.deepEqual(lista(), ['Gama', 'Zeta', 'Delta', 'Beta', 'Alfa'], 'decrescente: sem dia continua no fim');
   app.click('th[data-sort="pagar|nome"]');
@@ -393,10 +393,34 @@ test('tela Mês: tabelas com cabeçalho que ordena (nome, dia, valor), sem dia n
   assert.deepEqual(lista(), ['Delta', 'Gama', 'Alfa', 'Beta', 'Zeta'], 'valor decrescente');
   app.click('th[data-sort="pagar|valor"]');
   assert.equal(app.ev("mesSort.pagar.col"), 'manual', 'o terceiro clique volta à ordem manual');
-  assert.equal(app.ev("mesSort.receber.col"), 'manual', 'o outro bloco não é afetado');
+  assert.equal(app.ev('mesSort.receber.col'), 'dia', 'o outro bloco não é afetado');
   // total fica embaixo da tabela, não no título
   const tab = app.$$('table.mes')[1];
-  assert.match(nbsp(tab.querySelector('tfoot').textContent), /Total a pagar.*-R\$/);
+  assert.match(nbsp(tab.querySelector('tfoot').textContent), /Total de despesas.*-R\$/);
   assert.doesNotMatch(app.$$('.panel h2')[1].textContent, /R\$/);
+  app.close();
+});
+
+test('tela Mês: títulos RECEITAS e DESPESAS; despesa que vence hoje e ainda está prevista ganha destaque', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  const y = app.ev('selY'), mth = app.ev('selM'), hoje = new Date().getDate();
+  assert.deepEqual(app.$$('.panel.pm h2').map(h => h.textContent), ['RECEITAS', 'DESPESAS']);
+  const nova = (nome, dia, tipo = 'pagar') => app.ev(`(()=>{const c=addCat('${tipo}','${nome}',${dia});c.lib=true;useCatInMonth(c.id,${y},${mth});return c.id})()`);
+  const prevista = nova('Conta prevista', hoje), paga = nova('Conta paga', hoje), outroDia = nova('Outro dia', hoje === 28 ? 27 : hoje + 1), semItem = nova('Sem item', hoje), receita = nova('Receita hoje', hoje, 'receber');
+  const item = (id, ok, info) => app.ev(`ens('${id}',${y},${mth}).items.push({v:100,d:'',ok:${ok}${info ? ',info:true' : ''}})`);
+  item(prevista, false); item(prevista, true); item(paga, true); item(outroDia, false); item(receita, false);
+  app.ev('save();render()');
+  const venc = id => app.$(`tr[data-cat="${id}"]`).classList.contains('venc');
+  assert.equal(venc(prevista), true, 'dia = hoje e com item previsto: destaca');
+  assert.match(app.$(`tr[data-cat="${prevista}"]`).textContent, /vence hoje/);
+  assert.equal(venc(paga), false, 'tudo confirmado: não destaca');
+  assert.equal(venc(outroDia), false, 'dia diferente de hoje: não destaca');
+  assert.equal(venc(semItem), false, 'sem nenhum item: não destaca');
+  assert.equal(venc(receita), false, 'só vale para despesas');
+  item(paga, false, true);                                                  // item de cartão (informativo) não conta como previsto
+  app.ev('render()'); assert.equal(venc(paga), false);
+  app.click(`[data-m="${(mth + 1) % 12}"]`);
+  assert.equal(app.$$('tr.venc').length, 0, 'outro mês: nada destacado');
   app.close();
 });

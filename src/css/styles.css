@@ -240,3 +240,12 @@ table.mes th.n,table.mes td.n{text-align:right}
 table.mes td.dia{text-align:center;color:var(--mut);width:1%}
 table.mes th.dia{text-align:center}
 table.mes tfoot td{border-top:2px solid var(--line);border-bottom:0;font-weight:600;padding-top:10px}
+
+/* título das tabelas da tela Mês (RECEITAS / DESPESAS): discreto, mas se diferencia do resto */
+.panel.pm h2{background:rgba(127,127,127,.12);letter-spacing:.08em;font-size:13px;font-weight:700;border-left:4px solid var(--mut)}
+.panel.pm.receber h2{border-left-color:var(--pos)}
+.panel.pm.pagar h2{border-left-color:var(--neg)}
+/* despesa que vence hoje e ainda está prevista */
+tr.venc td{background:rgba(255,170,0,.12)}
+tr.venc td:first-child{box-shadow:inset 3px 0 0 rgba(255,170,0,.8)}
+.vtag{font-size:11px;font-weight:600;color:#c77d00;white-space:nowrap}

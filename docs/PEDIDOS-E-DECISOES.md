@@ -133,6 +133,11 @@ Como ficou:
 ### 5.10 Tabelas da tela Mês com cabeçalho e total embaixo (issue #31)
 Pedido: A receber e A pagar com cabeçalho (Categoria · Dia · Valor); clicar no título ordena (alfabética, por dia, por valor) para acompanhar o mês dia a dia, com as categorias sem dia no fim; o total fica embaixo da tabela. Clique 1 = crescente, 2 = decrescente, 3 = volta à ordem manual (arrastar ⋮⋮ só funciona na ordem manual). Cada bloco tem a sua ordem.
 
+### 5.11 Receitas/Despesas, ordem inicial e aviso de vencimento (issue #32)
+- Os blocos da tela Mês passaram a se chamar **RECEITAS** e **DESPESAS**, com o título levemente destacado (faixa suave e barra colorida na lateral).
+- Ao abrir a tela, as duas tabelas já vêm ordenadas pela coluna **Dia** (sem dia no fim).
+- **Aviso suave de vencimento:** na tabela de DESPESAS, a linha ganha um fundo âmbar claro e a etiqueta "⏰ vence hoje" quando (a) a categoria tem dia cadastrado igual ao dia de hoje, no mês atual, e (b) tem pelo menos 1 item ainda **previsto**. Se todos os itens já estão confirmados (pago/agendado) ou são só de cartão (informativos), não avisa. Vale só para despesas.
+
 ## 6. Princípios que combinamos
 - **Privacidade primeiro:** planilhas, backups e dados pessoais **nunca** vão para o GitHub (repositório público).
 - **Honestidade com o usuário:** o que a tela promete é o que o sistema faz.
