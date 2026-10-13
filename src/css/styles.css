@@ -231,3 +231,12 @@ nav .ti{display:none}
 .uopt:hover,.uopt:focus{background:rgba(127,127,127,.15)}
 .uopt .nm{flex:1}.uopt .tg{font-size:12px;color:var(--mut)}
 .ulist .hint{padding:10px;margin:0}
+
+/* tabelas da tela Mês: título clicável para ordenar e total embaixo */
+table.mes th{font-size:12px;color:var(--mut);font-weight:600}
+table.mes th.srt{cursor:pointer;user-select:none}
+table.mes th.srt:hover,table.mes th.srt.on{color:var(--ink)}
+table.mes th.n,table.mes td.n{text-align:right}
+table.mes td.dia{text-align:center;color:var(--mut);width:1%}
+table.mes th.dia{text-align:center}
+table.mes tfoot td{border-top:2px solid var(--line);border-bottom:0;font-weight:600;padding-top:10px}

@@ -130,6 +130,9 @@ Como ficou:
 - Meses **futuros** (depois do mês atual) só mostram: categoria com lançamento, incluída naquele mês, ou criada com fim definido (ex.: o ano todo). "Deste mês em diante" vale até o mês atual.
 - Dados: `extra` (meses incluídos) e `lib` (só sob demanda) em cada categoria; entram no CSV (colunas MesesIncluidos e SoSobDemanda) e na nuvem.
 
+### 5.10 Tabelas da tela Mês com cabeçalho e total embaixo (issue #31)
+Pedido: A receber e A pagar com cabeçalho (Categoria · Dia · Valor); clicar no título ordena (alfabética, por dia, por valor) para acompanhar o mês dia a dia, com as categorias sem dia no fim; o total fica embaixo da tabela. Clique 1 = crescente, 2 = decrescente, 3 = volta à ordem manual (arrastar ⋮⋮ só funciona na ordem manual). Cada bloco tem a sua ordem.
+
 ## 6. Princípios que combinamos
 - **Privacidade primeiro:** planilhas, backups e dados pessoais **nunca** vão para o GitHub (repositório público).
 - **Honestidade com o usuário:** o que a tela promete é o que o sistema faz.

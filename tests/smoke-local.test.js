@@ -73,7 +73,7 @@ test('tela Mês: "＋ Categoria" só INCLUI uma categoria que já existe; criar 
   assert.ok(!app.$('#dlg3').hasAttribute('open'), 'janela fechou');
   assert.ok(app.$(`tr[data-cat="${pad}"]`), 'a linha aparece no bloco A pagar');
   assert.match(app.$(`tr[data-cat="${pad}"]`).textContent, /Lançar/);
-  assert.match(app.$(`tr[data-cat="${pad}"]`).textContent, /dia 12/);
+  assert.equal(app.$(`tr[data-cat="${pad}"] td.dia`).textContent, '12', 'o dia aparece na coluna Dia');
   assert.equal(app.ev(`MT('pagar',${y},${mth},'prev')`), 0, 'incluir categoria não lança valor');
   // lançar pelo botão da linha
   app.click(`[data-open="${pad}|${y}|${mth}"]`);
@@ -367,5 +367,36 @@ test('Meu Cadastro: a troca de senha tem a mesma lista e o botão só libera com
   app.type('#pwn', 'Nova#Senha12'); app.type('#pwc', 'Nova#Senha12');
   assert.ok(app.$$('#pwr-perfil li').every(l => l.classList.contains('ok')));
   assert.equal(app.$('[data-pw="trocar"]').disabled, false);
+  app.close();
+});
+
+test('tela Mês: tabelas com cabeçalho que ordena (nome, dia, valor), sem dia no fim, e total embaixo', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  const y = app.ev('selY'), mth = app.ev('selM');
+  app.ev(`['Zeta:15','Beta:3','Alfa:','Gama:30','Delta:6'].forEach((x,i)=>{const[n,d]=x.split(':');const c=addCat('pagar',n,d?+d:null);c.lib=true;useCatInMonth(c.id,${y},${mth});ens(c.id,${y},${mth}).items.push({v:(i+1)*10,d:'',ok:true})});save();render()`);
+  const nomes = () => app.$$('table.mes')[1].querySelectorAll('tbody tr[data-cat]');
+  const lista = () => Array.from(nomes(), r => r.cells[1].childNodes[0].textContent.trim()).filter(n => ['Zeta', 'Beta', 'Alfa', 'Gama', 'Delta'].includes(n));
+  const th = col => app.$(`th[data-sort="pagar|${col}"]`);
+  assert.equal(app.$$('table.mes thead').length, 2, 'as duas tabelas têm cabeçalho');
+  assert.deepEqual(Array.from(app.$$('table.mes')[1].querySelectorAll('thead th'), t => t.textContent.trim()), ['', 'Categoria', 'Dia', 'Valor']);
+  app.click('th[data-sort="pagar|dia"]');
+  assert.deepEqual(lista(), ['Beta', 'Delta', 'Zeta', 'Gama', 'Alfa'], 'por dia: 3, 6, 15, 30 e depois quem não tem dia');
+  assert.match(th('dia').textContent, /▲/);
+  app.click('th[data-sort="pagar|dia"]');
+  assert.deepEqual(lista(), ['Gama', 'Zeta', 'Delta', 'Beta', 'Alfa'], 'decrescente: sem dia continua no fim');
+  app.click('th[data-sort="pagar|nome"]');
+  assert.deepEqual(lista(), ['Alfa', 'Beta', 'Delta', 'Gama', 'Zeta'], 'alfabética');
+  app.click('th[data-sort="pagar|valor"]');
+  assert.deepEqual(lista(), ['Zeta', 'Beta', 'Alfa', 'Gama', 'Delta'], 'por valor crescente (10, 20, 30, 40, 50)');
+  app.click('th[data-sort="pagar|valor"]');
+  assert.deepEqual(lista(), ['Delta', 'Gama', 'Alfa', 'Beta', 'Zeta'], 'valor decrescente');
+  app.click('th[data-sort="pagar|valor"]');
+  assert.equal(app.ev("mesSort.pagar.col"), 'manual', 'o terceiro clique volta à ordem manual');
+  assert.equal(app.ev("mesSort.receber.col"), 'manual', 'o outro bloco não é afetado');
+  // total fica embaixo da tabela, não no título
+  const tab = app.$$('table.mes')[1];
+  assert.match(nbsp(tab.querySelector('tfoot').textContent), /Total a pagar.*-R\$/);
+  assert.doesNotMatch(app.$$('.panel h2')[1].textContent, /R\$/);
   app.close();
 });
