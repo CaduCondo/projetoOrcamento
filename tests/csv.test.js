@@ -52,10 +52,10 @@ test('CSV: formato do arquivo (BOM, CRLF, ponto e vírgula, vírgula decimal) e 
   const i = linhas.findIndex(l => l.startsWith('RESUMO;2026'));
   assert.ok(i > 0);
   assert.equal(linhas[i + 1], 'Categoria;Jan;Fev;Mar;Abr;Mai;Jun;Jul;Ago;Set;Out;Nov;Dez;Total');
-  assert.equal(linhas[i + 2], 'A RECEBER');
+  assert.equal(linhas[i + 2], 'RECEITAS');
   assert.ok(linhas.includes('Salário;5000,00;0,00;0,00;0,00;0,00;0,00;0,00;0,00;0,00;0,00;0,00;0,00;5000,00'), 'receber positivo, só o realizado');
   assert.ok(linhas.some(l => l.startsWith('Aluguel;-1500,00;')), 'a pagar em negativo, como na tela Ano');
-  assert.ok(linhas.some(l => l.startsWith('Total a pagar;-')));
+  assert.ok(linhas.some(l => l.startsWith('Total de despesas;-')));
   assert.ok(linhas.some(l => l.startsWith('Saldo do mês;')) && linhas.some(l => l.startsWith('Acumulado;')));
   assert.ok(linhas.includes('CATEGORIAS') && linhas.includes('DETALHE') && linhas.includes('SALDOS INICIAIS') && linhas.includes('PATRIMONIO'));
   assert.ok(linhas.includes('2026;1;luz;pagar;Luz;no cartão;80,00;cartao'), 'item de cartão marcado como cartao');

@@ -424,3 +424,68 @@ test('tela Mês: títulos RECEITAS e DESPESAS; despesa que vence hoje e ainda es
   assert.equal(app.$$('tr.venc').length, 0, 'outro mês: nada destacado');
   app.close();
 });
+
+test('tela Ano: coluna Dia à esquerda da Categoria, ordenada por dia (sem dia embaixo), grupos RECEITAS/DESPESAS e arrastar dentro do grupo', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  const y = app.ev('selY');
+  app.ev(`['Zeta:15','Beta:3','Alfa:','Gama:30'].forEach(x=>{const[n,d]=x.split(':');const c=addCat('pagar',n,d?+d:null);c.lib=true;ens(c.id,${y},0).items.push({v:10,d:'',ok:true})});save()`);
+  app.click('[data-tab="ano"]');
+  assert.deepEqual(app.$$('tr.secr').map(r => r.cells[1].textContent.replace(/ [▲▼]/, '')), ['RECEITAS', 'DESPESAS', 'RESULTADO']);
+  assert.match(app.text(), /Total de receitas/); assert.match(app.text(), /Total de despesas/);
+  assert.doesNotMatch(app.text(), /A RECEBER|A PAGAR/);
+  const ordem = () => app.$$('tr[data-cat][data-tipo="pagar"]').map(r => r.cells[1].textContent).filter(n => ['Zeta', 'Beta', 'Alfa', 'Gama'].includes(n));
+  const linha = app.$('tr[data-cat][data-tipo="pagar"]');
+  assert.ok(linha.cells[0].classList.contains('dia') && !linha.cells[1].classList.contains('dia'), 'Dia é a coluna da esquerda, Categoria vem depois');
+  assert.deepEqual(ordem(), ['Beta', 'Zeta', 'Gama', 'Alfa'], 'por dia crescente; sem dia embaixo');
+  // clique no título do grupo ordena por nome
+  app.click('th[data-sort="pagar|nome"]');
+  assert.deepEqual(ordem(), ['Alfa', 'Beta', 'Gama', 'Zeta']);
+  app.click('th[data-sort="pagar|nome"]');
+  assert.deepEqual(ordem(), ['Zeta', 'Gama', 'Beta', 'Alfa']);
+  app.click('th[data-sort="pagar|dia"]');                      // volta ao dia crescente
+  // arrastar "Alfa" (última) para cima da "Beta": vale dentro do grupo e vira a ordem manual
+  const id = n => app.ev(`S.cats.find(c=>c.nome==='${n}').id`);
+  const drag = (de, para) => { const a = app.$(`tr[data-cat="${id(de)}"]`), b = app.$(`tr[data-cat="${id(para)}"]`); const dt = { setData() {}, effectAllowed: '' };
+    const ev = (t, el) => { const e = new app.w.Event(t, { bubbles: true, cancelable: true }); e.dataTransfer = dt; el.dispatchEvent(e) };
+    ev('dragstart', a); ev('dragover', b); ev('drop', b); ev('dragend', a) };
+  app.ev("mesSort.pagar.col='dia';mesSort.pagar.dir=1;render()");
+  drag('Alfa', 'Beta');
+  assert.equal(app.ev('mesSort.pagar.col'), 'manual', 'arrastar vira ordem manual');
+  assert.deepEqual(ordem().slice(0, 4), ['Alfa', 'Beta', 'Zeta', 'Gama'], 'Alfa subiu para antes da Beta');
+  const rec = app.$$('tr[data-cat][data-tipo="receber"]').map(r => r.dataset.cat);
+  assert.ok(rec.length > 0);
+  // não dá para soltar uma despesa dentro de RECEITAS
+  const antes = ordem().join(); const r0 = app.$('tr[data-cat][data-tipo="receber"]');
+  { const dt = { setData() {}, effectAllowed: '' }, a = app.$(`tr[data-cat="${id('Gama')}"]`);
+    const ev = (t, el) => { const e = new app.w.Event(t, { bubbles: true, cancelable: true }); e.dataTransfer = dt; el.dispatchEvent(e) };
+    ev('dragstart', a); ev('dragover', r0); ev('drop', r0); ev('dragend', a); }
+  assert.equal(ordem().join(), antes, 'soltar em outro grupo não faz nada');
+  app.close();
+});
+
+test('página Categorias: cabeçalho clicável ordena por nome, dia, onde aparece, último uso e lançamentos', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  app.ev(`['Zeta:15','Beta:3','Alfa:','Gama:30'].forEach(x=>{const[n,d]=x.split(':');addCat('pagar',n,d?+d:null)});save()`);
+  app.click('[data-tab="cat"]');
+  app.click('[data-cf="filtro|todas"]'); app.click('[data-cf="tipo|pagar"]');
+  const nomes = () => app.$$('#cl .cn').map(i => i.value).filter(n => ['Zeta', 'Beta', 'Alfa', 'Gama'].includes(n));
+  assert.ok(app.$('#cl .cr.hd'), 'a lista tem cabeçalho');
+  assert.deepEqual(Array.from(app.$$('#cl .cr.hd .srt'), t => t.textContent.trim()).slice(1, 6), ['Nome', 'Dia', 'Onde aparece', 'Último uso ▼', 'Lanç.']);
+  app.click('[data-csort="dia"]');
+  assert.deepEqual(nomes(), ['Beta', 'Zeta', 'Gama', 'Alfa'], 'por dia; sem dia no fim');
+  assert.match(app.$('[data-csort="dia"]').textContent, /▲/);
+  app.click('[data-csort="dia"]');
+  assert.deepEqual(nomes(), ['Gama', 'Zeta', 'Beta', 'Alfa'], 'decrescente; sem dia continua no fim');
+  app.click('[data-csort="nome"]');
+  assert.deepEqual(nomes(), ['Alfa', 'Beta', 'Gama', 'Zeta']);
+  app.click('[data-csort="nome"]');
+  assert.deepEqual(nomes(), ['Zeta', 'Gama', 'Beta', 'Alfa']);
+  app.click('[data-csort="nome"]');
+  assert.equal(app.ev('catUI.col'), 'uso', 'terceiro clique volta ao padrão (último uso)');
+  app.click('[data-csort="n"]');
+  assert.equal(app.ev('catUI.col'), 'n');
+  assert.deepEqual(app.dom.errors || [], []);
+  app.close();
+});

@@ -29,6 +29,11 @@ function reorderCats(dragId,targetId){
   const fi=S.cats.findIndex(c=>c.id===dragId),oti=S.cats.findIndex(c=>c.id===targetId);if(fi<0||oti<0||fi===oti)return false;
   const[it]=S.cats.splice(fi,1);let ti=S.cats.findIndex(c=>c.id===targetId);if(fi<oti)ti++;S.cats.splice(ti,0,it);return true}
 
+/* grava na lista de categorias a ordem em que um tipo está sendo mostrado (ids na ordem da tela); o resto do tipo vai depois */
+function applyOrder(tipo,ids){const mesmas=S.cats.filter(c=>c.tipo===tipo),pos=S.cats.map((c,i)=>c.tipo===tipo?i:-1).filter(i=>i>=0);
+  const nova=[...ids.map(catById).filter(c=>c&&c.tipo===tipo),...mesmas.filter(c=>!ids.includes(c.id))];
+  pos.forEach((p,i)=>{S.cats[p]=nova[i]})}
+
 function deleteCat(id){S.cats=S.cats.filter(c=>c.id!==id);Object.keys(S.data).filter(k=>k.startsWith(id+'|')).forEach(k=>delete S.data[k])}
 
 /* ---- importação de anos (arquivo gerado a partir de planilhas) ---- */

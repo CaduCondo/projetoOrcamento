@@ -1,12 +1,13 @@
-/* Tela Mês: cartões do mês e as tabelas A receber / A pagar.
+/* Tela Mês: cartões do mês e as tabelas Receitas / Despesas.
    Cada bloco tem o botão "＋ Categoria", que INCLUI neste mês uma categoria que já existe (criar, editar e excluir ficam na página Categorias). */
 function sumBadge(c,y,m){const its=cellOf(c.id,y,m)?.items||[];if(!its.length)return'';const w=its.some(i=>/sem detalhe/.test(i.d));
   const cc=its.some(i=>i.info)?' <span title="Tem valor já incluso na fatura do cartão (não soma)">💳</span>':'';
   return `${its.length>1?'':`<span class="sub">${esc(its[0].d)}</span>`}${cc}${w?' <span class="warn" title="A anotação antiga não batia com o total — revise">⚠</span>':''}`}
 /* ordem das linhas: clique no título da coluna (1º clique crescente, 2º decrescente, 3º volta à ordem manual; ao abrir a tela já vem por Dia). Cada bloco tem a sua. */
 const mesSort={receber:{col:'dia',dir:1},pagar:{col:'dia',dir:1}};      // ao abrir: pela coluna Dia
+/* m = null: tela Ano (o valor é o total do ano) */
 function sortMes(list,tipo,y,m){const{col,dir}=mesSort[tipo];if(col==='manual')return list;
-  const nome=c=>normName(c.nome),val=c=>V(c.id,y,m,'real')||V(c.id,y,m,'prev')||0;
+  const nome=c=>normName(c.nome),val=c=>m==null?MC.reduce((s,_,i)=>s+V(c.id,y,i,'real'),0):V(c.id,y,m,'real')||V(c.id,y,m,'prev')||0;
   return[...list].sort((a,b)=>{
     if(col==='dia'){const x=a.dia||0,z=b.dia||0;if(!x||!z)return !x&&!z?nome(a).localeCompare(nome(b)):!x?1:-1;   // sem dia sempre no fim
       return(x-z)*dir||nome(a).localeCompare(nome(b))}
@@ -27,7 +28,7 @@ function rowMes(c,y,m){const r=V(c.id,y,m,'real'),p=V(c.id,y,m,'prev'),neg=c.tip
  <td data-tipcat="${c.id}|${y}|${m}">${esc(c.nome)}${vh?' <span class="vtag">⏰ vence hoje</span>':''}<br>${sumBadge(c,y,m)}</td>
  <td class="dia">${c.dia||''}</td>
  <td class="n">${n>1?`<span class="cnt" title="Quantidade de itens que formam este valor">${n} itens</span>`:''}<button class="val" data-open="${c.id}|${y}|${m}" data-tipcell="${c.id}|${y}|${m}">${main}</button>${p!==r?`<div class="sub" style="padding-right:8px">previsto ${f(p)}</div>`:''}</td></tr>`}
-/* um bloco (A receber ou A pagar) com as linhas e o botão de nova categoria no canto inferior esquerdo */
+/* um bloco (Receitas ou Despesas) com as linhas e o botão de nova categoria no canto inferior esquerdo */
 function blocoMes(tipo,titulo,total,y,m){
   const linhas=sortMes(visCats(tipo,y,m),tipo,y,m).map(c=>rowMes(c,y,m)).join('');
   return `<div class="panel pm ${tipo}"><h2>${titulo.toUpperCase()}</h2>

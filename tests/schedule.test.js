@@ -210,3 +210,13 @@ test('revisar categoria leva os meses incluídos de depois para a nova versão; 
   m.mergeCat(n.id, c.id);
   assert.deepEqual(plain(c.extra), ['2026-03', '2026-09']);
 });
+
+test('applyOrder: grava a ordem mostrada na tela dentro do tipo, sem mexer nas posições do outro tipo', () => {
+  fresh();
+  const antesRec = Array.from(m.S.cats, c => c.id).filter(id => m.catById(id).tipo === 'receber');
+  m.applyOrder('pagar', ['cel', 'luz', 'alu']);
+  assert.deepEqual(Array.from(m.S.cats, c => c.id), ['sal', 'cel', 'luz', 'alu']);
+  assert.deepEqual(Array.from(m.S.cats, c => c.id).filter(id => m.catById(id).tipo === 'receber'), antesRec);
+  m.applyOrder('pagar', ['luz']);                                  // as que não vieram na lista vão depois
+  assert.deepEqual(Array.from(m.S.cats, c => c.id), ['sal', 'luz', 'cel', 'alu']);
+});

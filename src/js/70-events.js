@@ -48,11 +48,14 @@ document.addEventListener('cbpick',e=>{const{id,cid}=e.detail;
 /* ---- arrastar linhas da tela Mês para reordenar ---- */
 let dragId=null;
 const dragRow=e=>e.target.closest?.('tr[data-cat]');
-app.addEventListener('dragstart',e=>{const r=dragRow(e);if(!r)return;if(mesSort[r.dataset.tipo].col!=='manual')return e.preventDefault();dragId=r.dataset.cat;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragId);r.classList.add('dragging');hideTip()});
+app.addEventListener('dragstart',e=>{const r=dragRow(e);if(!r)return;dragId=r.dataset.cat;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragId);r.classList.add('dragging');hideTip()});
 app.addEventListener('dragover',e=>{const r=dragRow(e);if(!r||!dragId)return;
   if(catById(dragId).tipo!==r.dataset.tipo)return;e.preventDefault();app.querySelectorAll('.over').forEach(x=>x.classList.remove('over'));r.classList.add('over')});
 app.addEventListener('drop',e=>{const r=dragRow(e);if(!r||!dragId||r.dataset.cat===dragId)return;e.preventDefault();
-  reorderCats(dragId,r.dataset.cat);dragId=null;save();render()});
+  /* arrastar numa tabela ordenada: a ordem que está na tela vira a ordem manual e a linha muda de lugar dentro do seu grupo */
+  const tipo=catById(dragId).tipo,ids=[...r.closest('table').querySelectorAll(`tr[data-cat][data-tipo="${tipo}"]`)].map(x=>x.dataset.cat);
+  const fi=ids.indexOf(dragId),ti=ids.indexOf(r.dataset.cat);ids.splice(fi,1);ids.splice(ti,0,dragId);      // para baixo cai depois da linha alvo; para cima, antes
+  applyOrder(tipo,ids);mesSort[tipo].col='manual';mesSort[tipo].dir=1;dragId=null;save();render()});
 app.addEventListener('dragend',()=>{dragId=null;app.querySelectorAll('.dragging,.over').forEach(x=>x.classList.remove('dragging','over'))});
 
 /* ---- cliques ---- */
@@ -67,6 +70,9 @@ app.addEventListener('click',e=>{const t=e.target;let b;
   else if(t.closest('[data-cmore]')){catUI.lim+=40;renderCatList()}
   else if(b=t.closest('[data-cmerge]'))MergeDialog.open(b.dataset.cmerge)
   else if(b=t.closest('[data-newcat]'))CategoryDialog.openNew(b.dataset.newcat)
+  else if(b=t.closest('[data-csort]')){const col=b.dataset.csort;
+    if(catUI.col!==col){catUI.col=col;catUI.dir=col==='uso'||col==='n'?-1:1}else if(catUI.dir===(col==='uso'||col==='n'?-1:1))catUI.dir=-catUI.dir;else{catUI.col='uso';catUI.dir=-1}
+    renderCatList()}
   else if(b=t.closest('[data-sort]')){const[tp,col]=b.dataset.sort.split('|'),o=mesSort[tp];
     if(o.col!==col){o.col=col;o.dir=1}else if(o.dir===1)o.dir=-1;else{o.col='manual';o.dir=1}render()}
   else if(b=t.closest('[data-usecat]'))UseCategoryDialog.open(b.dataset.usecat)
@@ -93,3 +99,4 @@ app.addEventListener('change',e=>{const t=e.target,d=t.dataset;
   else if(t.id==='rs'&&t.files[0])restoreFile(t.files[0])});
 /* o título das colunas também ordena pelo teclado */
 app.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('th[data-sort]')){e.preventDefault();e.target.click()}});
+app.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('[data-csort]')){e.preventDefault();e.target.click()}});

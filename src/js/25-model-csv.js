@@ -28,8 +28,8 @@ function stateToCsv(s,atualizadoEm=new Date().toISOString()){
       L.push([],['RESUMO',y,'valores realizados (pagos/recebidos); a pagar em negativo'],['Categoria',...MC,'Total']);
       const bloco=(t,rot,sinal)=>{L.push([rot]);
         for(const c of rows(t)){const v=MC.map((_,m)=>sinal*V(c.id,y,m,'real'));L.push([csvTxt(c.nome),...v.map(num),num(v.reduce((a,b)=>a+b,0))])}
-        const tot=MC.map((_,m)=>sinal*MT(t,y,m,'real'));L.push([t==='receber'?'Total a receber':'Total a pagar',...tot.map(num),num(tot.reduce((a,b)=>a+b,0))])};
-      bloco('receber','A RECEBER',1);bloco('pagar','A PAGAR',-1);
+        const tot=MC.map((_,m)=>sinal*MT(t,y,m,'real'));L.push([t==='receber'?'Total de receitas':'Total de despesas',...tot.map(num),num(tot.reduce((a,b)=>a+b,0))])};
+      bloco('receber','RECEITAS',1);bloco('pagar','DESPESAS',-1);
       const sal=MC.map((_,m)=>SAL(y,m,'real'));
       L.push(['Saldo do mês',...sal.map(num),num(sal.reduce((a,b)=>a+b,0))],['Acumulado',...MC.map((_,m)=>num(acum(y,m,'real'))),'']);
     }

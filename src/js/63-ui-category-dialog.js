@@ -14,7 +14,7 @@ const CategoryDialog={
   draw(v){const novo=this.mode==='new',pagar=this.tipo==='pagar',L=this.labels(),c=novo?null:catById(this.id);
     const dica=pagar?'Lembrete do dia do vencimento: o dia em que essa conta precisa ser paga.':'Lembrete do dia em que esse dinheiro entra (ou deveria entrar).';
     dlg3.innerHTML=`<form id="cf" novalidate>
-     <div class="dh"><div><h3>${novo?'Nova categoria':'Editar categoria'} · ${pagar?'A pagar':'A receber'}</h3>
+     <div class="dh"><div><h3>${novo?'Nova categoria':'Editar categoria'} · ${pagar?'Despesas':'Receitas'}</h3>
        <div class="sub">${novo?'Depois de criar, inclua a categoria no mês pela tela Mês (botão “＋ Categoria”) e lance o valor.':`Hoje: ${esc(scopeLabel(c)||'categoria do histórico')}`}</div></div>
        <button type="button" class="btn sec" data-cclose>Fechar</button></div>
      <div class="db">
@@ -57,7 +57,7 @@ const UseCategoryDialog={
   tipo:null,y:0,m:0,
   open(tipo){Object.assign(this,{tipo,y:selY,m:selM});const pagar=tipo==='pagar';
     dlg3.innerHTML=`<form id="uf" novalidate>
-     <div class="dh"><div><h3>Incluir categoria · ${pagar?'A pagar':'A receber'}</h3><div class="sub">em ${MESES[this.m]} de ${this.y}</div></div><button type="button" class="btn sec" data-cclose>Fechar</button></div>
+     <div class="dh"><div><h3>Incluir categoria · ${pagar?'Despesas':'Receitas'}</h3><div class="sub">em ${MESES[this.m]} de ${this.y}</div></div><button type="button" class="btn sec" data-cclose>Fechar</button></div>
      <div class="db"><label class="f">Nome da categoria<input id="ufq" autocomplete="off" placeholder="Digite parte do nome, ex.: sal"></label>
       <div id="ufl" class="ulist" role="listbox"></div>
       <p class="hint">Só aparecem categorias que já existem e ainda não estão neste mês. Para criar, editar ou excluir categorias, use a página <a data-gocat>Categorias</a>.</p></div>

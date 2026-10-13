@@ -14,14 +14,14 @@ class Combobox {
     const list=S.cats.filter(c=>(!t||c.tipo===t)&&c.id!==ex),rec=c=>st[c.id]?.recent||0,lst=c=>st[c.id]?.last??-1;
     const row=c=>{const x=st[c.id],act=isActive(c,st);return `<div class="cbo" data-pick="${c.id}"><span class="dot ${c.tipo}"></span><span class="nm">${esc(c.nome)}</span><span class="tg">${x?(act?lastLabel(x.last):'antiga · '+lastLabel(x.last)):'nova'}</span></div>`};
     let h='';
-    if(!nq){[['pagar','A pagar · mais usadas'],['receber','A receber · mais usadas']].forEach(([tp,lb])=>{
+    if(!nq){[['pagar','Despesas · mais usadas'],['receber','Receitas · mais usadas']].forEach(([tp,lb])=>{
         const a=list.filter(c=>c.tipo===tp&&isActive(c,st)).sort((a,b)=>rec(b)-rec(a)||lst(b)-lst(a)).slice(0,8);if(a.length)h+=`<div class="cbh">${lb}</div>`+a.map(row).join('')});
       h+=`<div class="cbh">Digite para buscar entre as ${list.length} categorias</div>`}
     else{const toks=nq.split(' '),m=list.filter(c=>toks.every(x=>normName(c.nome).includes(x)))
         .sort((a,b)=>(normName(b.nome).startsWith(nq)-normName(a.nome).startsWith(nq))||(isActive(b,st)-isActive(a,st))||rec(b)-rec(a)||lst(b)-lst(a));
       h+=m.slice(0,30).map(row).join('')||'<div class="cbh">Nenhuma categoria encontrada</div>';
       if(m.length>30)h+=`<div class="cbh">+${m.length-30} — continue digitando para filtrar</div>`;
-      if(root.dataset.create==='1'&&!list.some(c=>normName(c.nome)===nq))h+=`<div class="cbh">Não achou? Crie agora</div>`+['pagar','receber'].map(tp=>`<div class="cbo" data-new="${tp}"><span class="dot ${tp}"></span><span class="nm">＋ Criar “${esc(q.trim())}” em ${tp==='pagar'?'A pagar':'A receber'}</span></div>`).join('')}
+      if(root.dataset.create==='1'&&!list.some(c=>normName(c.nome)===nq))h+=`<div class="cbh">Não achou? Crie agora</div>`+['pagar','receber'].map(tp=>`<div class="cbo" data-new="${tp}"><span class="dot ${tp}"></span><span class="nm">＋ Criar “${esc(q.trim())}” em ${tp==='pagar'?'Despesas':'Receitas'}</span></div>`).join('')}
     return h}
 
   static open(root){const box=root.querySelector('.cbl');box.innerHTML=Combobox.optionsHtml(root,root.querySelector('.cbi').value);box.hidden=false;root._act=0;Combobox.mark(root)}

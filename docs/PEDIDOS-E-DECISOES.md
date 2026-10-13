@@ -138,6 +138,11 @@ Pedido: A receber e A pagar com cabeçalho (Categoria · Dia · Valor); clicar n
 - Ao abrir a tela, as duas tabelas já vêm ordenadas pela coluna **Dia** (sem dia no fim).
 - **Aviso suave de vencimento:** na tabela de DESPESAS, a linha ganha um fundo âmbar claro e a etiqueta "⏰ vence hoje" quando (a) a categoria tem dia cadastrado igual ao dia de hoje, no mês atual, e (b) tem pelo menos 1 item ainda **previsto**. Se todos os itens já estão confirmados (pago/agendado) ou são só de cartão (informativos), não avisa. Vale só para despesas.
 
+### 5.12 Ordenação na página Categorias e coluna Dia na tela Ano (issue #33)
+- **Categorias:** a lista tem cabeçalho clicável (Nome, Dia, Onde aparece, Último uso, Lançamentos). 1º clique crescente, 2º decrescente, 3º volta ao padrão (último uso). Sem dia sempre no fim.
+- **Ano:** nova coluna **Dia** à esquerda da Categoria (as duas ficam fixas ao rolar). Cada grupo abre ordenado por dia (sem dia embaixo); os títulos **Dia**, **RECEITAS/DESPESAS** (nome) e **Total** na linha do grupo ordenam. Dá para **arrastar** uma linha dentro do seu grupo: a ordem que está na tela vira a ordem manual (isso vale também na tela Mês). Não dá para soltar uma despesa em Receitas.
+- Os grupos passaram de A RECEBER/A PAGAR para **RECEITAS/DESPESAS** em todo o app (telas, CSV e janelas); totais: "Total de receitas/despesas".
+
 ## 6. Princípios que combinamos
 - **Privacidade primeiro:** planilhas, backups e dados pessoais **nunca** vão para o GitHub (repositório público).
 - **Honestidade com o usuário:** o que a tela promete é o que o sistema faz.
