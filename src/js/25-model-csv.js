@@ -34,8 +34,8 @@ function stateToCsv(s,atualizadoEm=new Date().toISOString()){
       L.push(['Saldo do mês',...sal.map(num),num(sal.reduce((a,b)=>a+b,0))],['Acumulado',...MC.map((_,m)=>num(acum(y,m,'real'))),'']);
     }
     // ---- seções que o app lê ao carregar ----
-    L.push([],['CATEGORIAS'],['Id','Tipo','Nome','Dia','VigenciaDe','VigenciaAte','Encerrada','Anterior','MesesIncluidos','SoSobDemanda']);
-    for(const c of s.cats)L.push([c.id,c.tipo,csvTxt(c.nome),c.dia??'',ymTxt(c.vis?.from),ymTxt(c.vis?.to),ymTxt(c.until),c.prevId||'',(c.extra||[]).join(' '),c.lib?'1':'']);
+    L.push([],['CATEGORIAS'],['Id','Tipo','Nome','Dia','VigenciaDe','VigenciaAte','Encerrada','Anterior','MesesIncluidos','SoSobDemanda','MesesRetirados']);
+    for(const c of s.cats)L.push([c.id,c.tipo,csvTxt(c.nome),c.dia??'',ymTxt(c.vis?.from),ymTxt(c.vis?.to),ymTxt(c.until),c.prevId||'',(c.extra||[]).join(' '),c.lib?'1':'',(c.hide||[]).join(' ')]);
     L.push([],['DETALHE'],['Ano','Mes','Id','Tipo','Categoria','Descricao','Valor','Situacao']);
     const keys=Object.keys(s.data).filter(k=>s.data[k].items.length).sort((a,b)=>{const x=parseKey(a),y2=parseKey(b);return x.y-y2.y||x.m-y2.m||0});
     for(const k of keys){const{c,y,m}=parseKey(k),cat=s.cats.find(x=>x.id===c);if(!cat)continue;
@@ -77,9 +77,9 @@ function csvToState(text){
     const a=String(r[0]).trim();
     if(sec===null&&SEC.includes(a.toUpperCase())){sec=a.toUpperCase();skipHeader=true;continue}
     if(skipHeader){skipHeader=false;continue}
-    if(sec==='CATEGORIAS'){const[id,tipo,nome,dia,de,ate,enc,ant,ext,lib]=r;if(!id||!nome)continue;
+    if(sec==='CATEGORIAS'){const[id,tipo,nome,dia,de,ate,enc,ant,ext,lib,ocu]=r;if(!id||!nome)continue;
       const c={id:id.trim(),tipo:tipo.trim()==='pagar'?'pagar':'receber',nome:csvUntxt(nome),dia:dia===''||dia==null?null:+dia};
-      const f=ymPar(de);if(f)c.vis={from:f,to:ymPar(ate)};const u=ymPar(enc);if(u)c.until=u;if(ant)c.prevId=ant.trim();if(ext&&ext.trim())c.extra=ext.trim().split(/\s+/).sort();if(lib==='1')c.lib=true;st.cats.push(c)}
+      const f=ymPar(de);if(f)c.vis={from:f,to:ymPar(ate)};const u=ymPar(enc);if(u)c.until=u;if(ant)c.prevId=ant.trim();if(ext&&ext.trim())c.extra=ext.trim().split(/\s+/).sort();if(lib==='1')c.lib=true;if(ocu&&ocu.trim())c.hide=ocu.trim().split(/\s+/).sort();st.cats.push(c)}
     else if(sec==='DETALHE'){const[ano,mes,id,,,desc,valor,sit]=r;const y=+ano,m=+mes-1;if(!id||!(y>0)||!(m>=0&&m<12))continue;
       const k=`${id.trim()}|${y}|${m}`;const item={v:parseV(valor),d:csvUntxt(desc||''),ok:sit!=='previsto'};if(sit==='cartao')item.info=true;
       (st.data[k]??={items:[]}).items.push(item);anos.add(y)}

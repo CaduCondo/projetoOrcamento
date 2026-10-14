@@ -10,7 +10,9 @@ function drawDlg(){const c=catById(cur.cid),x=ens(cur.cid,cur.y,cur.m),[py,pm]=p
   <div class="db">${x.items.length?x.items.map((i,k)=>`<div class="item ${i.info?'info':i.ok?'':'prev'}"><input type="checkbox" class="ok" data-ik="${k}" ${i.ok&&!i.info?'checked':''} ${i.info?'disabled':''} title="${c.tipo==='pagar'?'Pago':'Recebido'}"><input class="money" data-iv="${k}" value="${fmtN(i.v)}" inputmode="decimal" aria-label="valor"><input data-id="${k}" value="${esc(i.d)}" placeholder="descrição" aria-label="descrição"><button data-info="${k}" class="cc ${i.info?'on':''}" title="Marcar como já incluso na fatura do cartão (informativo, não soma)">💳</button><button data-del="${k}" title="Remover">✕</button></div>`).join(''):'<p class="hint">Nenhum item ainda. Adicione abaixo.</p>'}
    <div class="item" style="margin-top:10px"><input type="checkbox" class="ok" id="nk" checked title="Já ${c.tipo==='pagar'?'pago':'recebido'}"><input id="nv" class="money" placeholder="0,00" inputmode="decimal"><input id="nd" placeholder="descrição (Enter para adicionar)"><span></span><button class="btn" style="padding:4px" data-add title="Adicionar">＋</button></div></div>
   <div class="df"><div><span class="sub">${c.tipo==='pagar'?'Pago':'Recebido'}</span><div class="big" id="dr"></div><div class="sub">Previsto: <span id="dp"></span></div></div>
-   <div class="row" style="margin:0"><button class="btn sec sm" data-allok>Marcar todos</button>${hasPrev?`<button class="btn sec sm" data-copyprev title="Copia os itens de ${MESES[pm]} como previsão">Copiar do mês anterior</button>`:''}</div></div>`;
+   <div class="row" style="margin:0"><button class="btn sec sm" data-allok>Marcar todos</button>${hasPrev?`<button class="btn sec sm" data-copyprev title="Copia os itens de ${MESES[pm]} como previsão">Copiar do mês anterior</button>`:''}</div></div>
+  <div class="df rm"><span class="sub">${x.items.length?'Para tirar esta categoria do mês, apague antes todos os itens.':`Não vai usar “${esc(c.nome)}” em ${MESES[cur.m].toLowerCase()}?`}</span>
+   <button type="button" class="btn dan sm" data-rmmonth ${x.items.length?'disabled title="Tem lançamentos neste mês"':`title="Tira a categoria só deste mês; os outros meses não mudam"`}>Tirar do mês</button></div>`;
   totals();if(readOnly)lockUi(dlg);else setTimeout(()=>dlg.querySelector('#nv')?.focus(),0)}
 function addItem(){const v=parseV(dlg.querySelector('#nv').value),d=dlg.querySelector('#nd').value.trim();if(!v&&!d)return;
   ens(cur.cid,cur.y,cur.m).items.push({v,d,ok:dlg.querySelector('#nk').checked});save();drawDlg()}
@@ -21,6 +23,7 @@ dlg.addEventListener('click',e=>{const t=e.target,x=cur&&ens(cur.cid,cur.y,cur.m
   else if(t.dataset.info!==undefined){const i=x.items[+t.dataset.info];i.info=!i.info;if(!i.info)delete i.info;save();drawDlg()}
   else if(t.closest('[data-allok]')){x.items.forEach(i=>{if(!i.info)i.ok=true});save();drawDlg()}
   else if(t.closest('[data-copyprev]')){const[py,pm]=prevCellRef();ens(cur.cid,cur.y,cur.m).items=structuredClone(cellOf(cur.cid,py,pm).items.filter(i=>!/sem detalhe/.test(i.d))).map(i=>({...i,ok:false}));save();drawDlg()}
+  else if(t.closest('[data-rmmonth]'))removeFromMonthUi();
   else if(t===dlg)dlg.close()});
 dlg.addEventListener('input',e=>{const t=e.target,x=ens(cur.cid,cur.y,cur.m);
   if(t.dataset.iv!==undefined){x.items[+t.dataset.iv].v=parseV(t.value);save();totals()}
@@ -28,3 +31,11 @@ dlg.addEventListener('input',e=>{const t=e.target,x=ens(cur.cid,cur.y,cur.m);
 dlg.addEventListener('change',e=>{const t=e.target;if(t.dataset.ik!==undefined){ens(cur.cid,cur.y,cur.m).items[+t.dataset.ik].ok=t.checked;save();t.closest('.item').classList.toggle('prev',!t.checked);totals()}});
 dlg.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.target.id==='nv'||e.target.id==='nd')){e.preventDefault();addItem()}});
 dlg.addEventListener('close',()=>{cur=null;render()});
+
+/* tirar a categoria do mês: 2 passos (botão na janela + confirmação) e "Desfazer" depois, para não acontecer sem querer */
+async function removeFromMonthUi(){if(readOnly||!cur)return;const{cid,y,m}=cur,c=catById(cid);
+  if(!await confirmAsync(`Tirar “${c.nome}” de ${MESES[m]} de ${y}? Ela some só deste mês; os outros meses e a categoria continuam como estão.`,'Tirar do mês','Cancelar'))return;
+  const antes=JSON.stringify(c);
+  try{removeCatFromMonth(cid,y,m)}catch(e){return alert(e.message)}
+  save();dlg.close();
+  snackbar(`“${c.nome}” saiu de ${MESES[m].toLowerCase()}/${y}.`,'Desfazer',()=>{const i=S.cats.findIndex(x=>x.id===cid);if(i>=0){S.cats[i]=JSON.parse(antes);save();render()}})}

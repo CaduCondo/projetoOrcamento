@@ -119,3 +119,12 @@ test('CSV: categorias "só onde eu incluir" e os meses incluídos voltam iguais'
   assert.equal(v.lib, true); assert.deepEqual(Array.from(v.extra), ['2026-09', '2027-01']); assert.equal(v.vis, undefined);
   assert.deepEqual(plain(state), plain(m.mig(plain(s))));
 });
+
+test('CSV: meses de onde a categoria foi retirada voltam iguais', () => {
+  const s = sampleState(m); m.S = s;
+  const c = m.createCat('pagar', { nome: 'Seguro', dia: '' }, 'ano', 2026, 0);
+  m.removeCatFromMonth(c.id, 2026, 4); m.removeCatFromMonth(c.id, 2026, 6);
+  const { state } = m.csvToState(m.csvFileText(s));
+  assert.deepEqual(Array.from(state.cats.find(x => x.id === c.id).hide), ['2026-05', '2026-07']);
+  assert.deepEqual(plain(state), plain(m.mig(plain(s))));
+});

@@ -3,6 +3,7 @@
    - c.until = [ano,mês]                              → a categoria "acabou" neste mês (versão antiga após uma edição)
    Categorias antigas (importadas) não têm vis nem until e seguem a regra do histórico (aparecem onde têm lançamentos).
    - c.extra = ["2026-10",...]                        → meses em que a pessoa INCLUIU a categoria pela tela Mês (uso pontual)
+   - c.hide  = ["2026-10",...]                        → meses de onde a pessoa TIROU a categoria (só vale se não houver lançamento nele)
    - c.lib   = true                                    → categoria "de biblioteca": só aparece onde for incluída (extra) ou tiver lançamentos
    Meses FUTUROS (depois do mês atual) começam vazios: só mostram a categoria se ela foi incluída naquele mês, tem lançamento
    ou tem vigência com fim definido (ex.: "o ano todo").
@@ -20,7 +21,9 @@ const aliveFrom=(c,y,m)=>{const t=ym(y,m);return(!c.until||ymOf(c.until)>=t)&&(!
 
 /* a categoria deve aparecer no mês (y,m)? */
 function showsInMonth(c,y,m,st){
-  if(hasItemsIn(c,y,m)||inExtra(c,y,m))return true;
+  if(hasItemsIn(c,y,m))return true;
+  if(c.hide?.includes(exKey(y,m)))return false;
+  if(inExtra(c,y,m))return true;
   const t=ym(y,m);if(c.until&&t>ymOf(c.until))return false;
   if(t>nowIdx())return !!(c.vis&&c.vis.to&&t>=ymOf(c.vis.from)&&t<=ymOf(c.vis.to));   // mês futuro: só com fim definido
   if(c.lib&&!c.vis)return false;
@@ -87,6 +90,7 @@ function reviseCat(id,input,scope,y,m){
     const f=c.vis.from;c.nome=nome;c.dia=dia;applyScope(c,scope,f[0],f[1],false);return c}
   const n=makeCat(c.tipo,nome,dia);applyScope(n,scope,y,m,false);n.prevId=c.id;
   if(c.extra){const ex=c.extra.filter(k=>k>=exKey(y,m)),ficam=c.extra.filter(k=>k<exKey(y,m));if(ex.length)n.extra=ex;if(ficam.length)c.extra=ficam;else delete c.extra}
+  if(c.hide){const ex=c.hide.filter(k=>k>=exKey(y,m)),ficam=c.hide.filter(k=>k<exKey(y,m));if(ex.length)n.hide=ex;if(ficam.length)c.hide=ficam;else delete c.hide}
   const prev=fromYm(t-1);
   if(c.vis){c.vis={from:c.vis.from,to:c.vis.to&&ymOf(c.vis.to)<t-1?c.vis.to:prev}}else c.until=prev;
   if(c.until&&ymOf(c.until)>t-1)c.until=prev;
@@ -97,7 +101,14 @@ function reviseCat(id,input,scope,y,m){
 /* ---- usar uma categoria que já existe num mês (tela Mês) ---- */
 /* inclui a categoria no mês (y,m) sem criar nada novo */
 function useCatInMonth(id,y,m){const c=catById(id);if(!c)throw new Error('Categoria não encontrada.');
-  const k=exKey(y,m);c.extra??=[];if(!c.extra.includes(k)){c.extra.push(k);c.extra.sort()}return c}
+  const k=exKey(y,m);c.extra??=[];if(!c.extra.includes(k)){c.extra.push(k);c.extra.sort()}
+  if(c.hide){c.hide=c.hide.filter(x=>x!==k);if(!c.hide.length)delete c.hide}return c}
+/* tira a categoria SÓ deste mês. Recusa se houver lançamentos (para não apagar dinheiro sem querer). Nada dos outros meses muda. */
+function removeCatFromMonth(id,y,m){const c=catById(id);if(!c)throw new Error('Categoria não encontrada.');
+  if(hasItemsIn(c,y,m))throw new Error('Esta categoria tem lançamentos neste mês. Apague os itens primeiro.');
+  const k=exKey(y,m);if(c.extra){c.extra=c.extra.filter(x=>x!==k);if(!c.extra.length)delete c.extra}
+  if(showsInMonth(c,y,m,catStats())){c.hide??=[];if(!c.hide.includes(k)){c.hide.push(k);c.hide.sort()}}
+  return c}
 /* categorias que podem ser incluídas no mês: ainda não aparecem nele e batem com o que foi digitado (em qualquer parte do nome) */
 function pickableCats(tipo,y,m,q=''){
   const st=catStats(),t=ym(y,m),shown=new Set(visCats(tipo,y,m).map(c=>normName(c.nome))),

@@ -220,3 +220,25 @@ test('applyOrder: grava a ordem mostrada na tela dentro do tipo, sem mexer nas p
   m.applyOrder('pagar', ['luz']);                                  // as que não vieram na lista vão depois
   assert.deepEqual(Array.from(m.S.cats, c => c.id), ['sal', 'luz', 'cel', 'alu']);
 });
+
+test('tirar a categoria só de um mês: some só ali, recusa se houver lançamento, dá para incluir de novo', () => {
+  fresh();
+  const antes = nomes('pagar', 2026, 5);
+  assert.ok(antes.includes('Celular'), 'tem lançamento em junho');
+  assert.throws(() => m.removeCatFromMonth('cel', 2026, 5), /lançamentos/);
+  assert.ok(nomes('pagar', 2026, 5).includes('Celular'), 'nada mudou');
+  const ano = m.createCat('pagar', { nome: 'Seguro', dia: '' }, 'ano', 2026, 0);
+  assert.ok(nomes('pagar', 2026, 4).includes('Seguro') && nomes('pagar', 2026, 5).includes('Seguro'));
+  m.removeCatFromMonth(ano.id, 2026, 4);
+  assert.ok(!nomes('pagar', 2026, 4).includes('Seguro'), 'saiu de maio');
+  assert.ok(nomes('pagar', 2026, 3).includes('Seguro') && nomes('pagar', 2026, 5).includes('Seguro'), 'abril e junho continuam');
+  assert.deepEqual(plain(ano.hide), ['2026-05']);
+  assert.ok(Array.from(m.pickableCats('pagar', 2026, 4, 'segu'), c => c.nome).includes('Seguro'), 'volta a ser oferecida para incluir em maio');
+  m.useCatInMonth(ano.id, 2026, 4);
+  assert.ok(nomes('pagar', 2026, 4).includes('Seguro') && ano.hide === undefined, 'incluir de novo desfaz');
+  const lib = m.createCat('pagar', { nome: 'Pontual', dia: '' }, 'lib', 2026, 9);
+  m.useCatInMonth(lib.id, 2026, 8); m.removeCatFromMonth(lib.id, 2026, 8);
+  assert.equal(lib.extra, undefined); assert.equal(lib.hide, undefined, 'incluída por uso e retirada: não deixa rastro');
+  const { meta, years } = m.serializeState(m.S), volta = m.deserializeState(meta, years);
+  assert.deepEqual(plain(volta.cats.find(c => c.id === ano.id)), plain(ano));
+});

@@ -22,6 +22,7 @@ function mergeCat(src,dst){
     if(S.data[nk])S.data[nk].items.push(...v.items);else S.data[nk]=v;delete S.data[k]});
   const a=catById(src),b=catById(dst);if(b&&!b.dia&&a?.dia)b.dia=a.dia;
   if(a?.extra&&b)b.extra=[...new Set([...(b.extra||[]),...a.extra])].sort();
+  if(a?.hide&&b)b.hide=[...new Set([...(b.hide||[]),...a.hide])].sort();
   S.cats=S.cats.filter(c=>c.id!==src);if(catSel===src)catSel=dst}
 
 /* coloca a categoria dragId na posição da categoria targetId (arrastar e soltar) */

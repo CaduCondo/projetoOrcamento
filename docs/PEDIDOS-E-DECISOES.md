@@ -147,6 +147,9 @@ Pedido: A receber e A pagar com cabeçalho (Categoria · Dia · Valor); clicar n
 - Tela Mês: itens marcados como "já está na fatura do cartão" 💳 passaram a aparecer na linha (ex.: "💳 -R$ 596,99 no cartão · não soma"), em texto menor e itálico, deixando claro que **não entram no total** (já estão dentro do valor do cartão de crédito). O total da categoria e das tabelas não muda.
 - Categorias: o cabeçalho estava deslocado porque as colunas variavam de linha para linha; agora todas têm larguras fixas e o cabeçalho fica alinhado com os dados.
 
+### 5.14 Tirar uma categoria só de um mês (issue #35)
+Pedido: um jeito fácil de tirar a categoria X de um mês, mas difícil de acontecer sem querer. Solução: dentro da janela de itens da linha há o botão **Tirar do mês** (não há botão solto na linha). Passos: abrir a linha → "Tirar do mês" → confirmar → aparece **Desfazer** por alguns segundos. Só funciona quando a categoria **não tem lançamentos** naquele mês (com itens o botão fica travado e explica; os itens precisam ser apagados antes). Só aquele mês muda: a categoria e os outros meses continuam como estão. Para voltar, use "＋ Categoria" no mês. Dados: `hide` (meses retirados) em cada categoria; vai ao CSV (MesesRetirados) e à nuvem.
+
 ## 6. Princípios que combinamos
 - **Privacidade primeiro:** planilhas, backups e dados pessoais **nunca** vão para o GitHub (repositório público).
 - **Honestidade com o usuário:** o que a tela promete é o que o sistema faz.

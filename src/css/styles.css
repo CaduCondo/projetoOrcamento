@@ -268,3 +268,5 @@ tr.venc td:first-child{box-shadow:inset 3px 0 0 rgba(255,170,0,.8)}
 .cr.hd .srt{cursor:pointer;user-select:none}.cr.hd .srt:hover,.cr.hd .srt.on{color:var(--ink)}
 @media(max-width:760px){.cr.hd .c3,.cr.hd .c4,.cr.hd .c5,.cr.hd .c6{display:none}}
 .infoc{padding-right:8px;font-style:italic;opacity:.85}
+.df.rm{border-top:1px solid var(--line);margin-top:6px;padding-top:10px;gap:10px;align-items:center}
+.df.rm .sub{flex:1}

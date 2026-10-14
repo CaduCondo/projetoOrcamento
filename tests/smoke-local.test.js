@@ -503,3 +503,35 @@ test('tela Mês: valores "no cartão" aparecem na linha, claramente marcados com
   assert.equal(app.$(`tr[data-cat="${sem}"] .infoc`), null, 'sem item de cartão: sem a linha extra');
   app.close();
 });
+
+test('tela Mês: tirar uma categoria só daquele mês (botão dentro da janela, com confirmação e "Desfazer"); com lançamento não deixa', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  const y = app.ev('selY'), mth = app.ev('selM');
+  const id = app.ev(`(()=>{const c=addCat('pagar','Academia',9);c.lib=true;useCatInMonth(c.id,${y},${mth});useCatInMonth(c.id,${y},${(mth + 11) % 12});save();render();return c.id})()`);
+  assert.equal(app.$(`tr[data-cat="${id}"] [data-rmmonth]`), null, 'não há botão de remover solto na linha (evita clique sem querer)');
+  app.click(`[data-open="${id}|${y}|${mth}"]`);
+  assert.equal(app.$('[data-rmmonth]').disabled, false);
+  app.click('[data-rmmonth]');
+  await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'pede confirmação');
+  assert.match(app.$('#dlg4').textContent, /Tirar “Academia” de/);
+  app.choose('');                                                // Cancelar
+  await app.sleep(30);
+  assert.equal(app.ev(`catById('${id}').hide`), undefined, 'cancelou: nada mudou');
+  app.click('[data-rmmonth]');
+  await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'pede confirmação de novo'); app.choose('sim');
+  await app.waitFor(() => !app.$(`tr[data-cat="${id}"]`), 2000, 'a linha saiu do mês');
+  assert.equal(app.$('#snack').hidden, false);
+  assert.match(app.$('#snack').textContent, /saiu de/);
+  app.click('#snack button');                                    // Desfazer
+  assert.ok(app.$(`tr[data-cat="${id}"]`), 'desfez: a linha voltou');
+  // mês anterior continua com ela
+  app.click(`[data-m="${(mth + 11) % 12}"]`);
+  assert.ok(app.$(`tr[data-cat="${id}"]`), 'o outro mês não foi afetado');
+  // com lançamento: botão travado
+  app.click(`[data-m="${mth}"]`);
+  app.ev(`ens('${id}',${y},${mth}).items.push({v:10,d:'x',ok:false});save();render()`);
+  app.click(`[data-open="${id}|${y}|${mth}"]`);
+  assert.equal(app.$('[data-rmmonth]').disabled, true, 'com lançamentos não dá para tirar');
+  app.close();
+});
