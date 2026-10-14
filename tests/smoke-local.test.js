@@ -535,3 +535,85 @@ test('tela Mês: tirar uma categoria só daquele mês (botão dentro da janela, 
   assert.equal(app.$('[data-rmmonth]').disabled, true, 'com lançamentos não dá para tirar');
   app.close();
 });
+
+test('importar fatura do cartão (PDF já em linhas): confere o total, importa, leva item para categoria e para lançamento; 💳 fica travado', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  const y = app.ev('selY'), mth = app.ev('selM');
+  const FAT = ['Lançamentos: compras e saques', '21/09 LOJA UM 01/03 100,00', 'casa SP', '22/09 LOJA DOIS 50,50', 'outros SP', 'Lançamentos no cartão 150,50', 'Total dos lançamentos atuais 150,50'];
+  app.click('[data-import]');
+  assert.ok(app.$('#dlg3').hasAttribute('open'));
+  assert.ok(app.$('#imfile') && app.$('#imm') && app.$('#imy'), 'tem arquivo e combos de mês e ano');
+  app.ev(`ImportDialog.setLines(${JSON.stringify(FAT)},'fatura.pdf')`);
+  assert.equal(app.$$('.imrow').length, 2);
+  assert.match(app.$('#imf').textContent, /confere/);
+  assert.equal(app.$('[data-imgo]').disabled, false);
+  app.click('[data-imgo]');
+  assert.ok(!app.$('#dlg3').hasAttribute('open'));
+  const cc = app.ev("S.cats.find(c=>c.nome==='CC Itaú').id");
+  assert.equal(app.ev(`V('${cc}',${y},${mth},'prev')`), 150.5);
+  assert.ok(app.$(`tr[data-cat="${cc}"]`), 'a categoria do cartão aparece nas despesas do mês');
+  // levar o 1º item para uma categoria nova (informativa)
+  app.click(`[data-open="${cc}|${y}|${mth}"]`);
+  assert.equal(app.$$('[data-tocat]').length, 2);
+  app.click('[data-tocat="0"]');
+  await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'pergunta o nome');
+  assert.equal(app.$('#atx').value, 'LOJA UM', 'nome sugerido sem data nem parcela');
+  app.type('#atx', 'Loja Um'); app.choose('ok');
+  await app.waitFor(() => app.ev("S.cats.some(c=>c.nome==='Loja Um')"), 2000, 'categoria criada');
+  assert.match(app.$('#dlg').textContent, /Levado para\s*Loja Um/);
+  assert.equal(app.ev(`MT('pagar',${y},${mth},'prev')`), 150.5, 'o total não mudou');
+  // 💳 da cópia está travado
+  const lu = app.ev("S.cats.find(c=>c.nome==='Loja Um').id");
+  app.click('[data-close]');
+  assert.match(nbsp(app.$(`tr[data-cat="${lu}"] .infoc`).textContent), /no cartão · não soma/);
+  app.click(`[data-open="${lu}|${y}|${mth}"]`);
+  assert.equal(app.$('[data-info="0"]').disabled, true, 'o 💳 não pode ser desmarcado');
+  app.click('[data-info="0"]');
+  assert.equal(app.ev(`S.data['${lu}|${y}|${mth}'].items[0].info`), true);
+  app.click('[data-close]');
+  // levar o 2º item para um lançamento de categoria existente
+  const merc = app.ev("S.cats.find(c=>c.nome==='Mercado').id");
+  app.click(`[data-open="${cc}|${y}|${mth}"]`);
+  app.click('[data-toex="1"]');
+  await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'escolher categoria');
+  app.type('#mvcin', 'merc'); app.key('#mvcin', 'Enter');
+  app.choose('ok');
+  await app.waitFor(() => app.ev(`(S.data['${merc}|${y}|${mth}']?.items||[]).some(i=>i.info&&i.lock)`), 2000, 'lançado em Mercado');
+  assert.equal(app.ev(`MT('pagar',${y},${mth},'prev')`), 150.5, 'continua o mesmo total');
+  assert.equal(app.ev(`V('${cc}',${y},${mth},'prev')`), 150.5, 'cartão intacto');
+  // importar o mesmo arquivo de novo não duplica
+  app.click('[data-close]');
+  app.click('[data-import]');
+  app.ev(`ImportDialog.setLines(${JSON.stringify(FAT)},'fatura.pdf')`);
+  assert.equal(app.$('[data-imgo]').disabled, true, 'tudo já importado: nada a importar');
+  assert.equal(app.$$('.imrow.ja').length, 2);
+  assert.deepEqual(app.dom.errors || [], []);
+  app.close();
+});
+
+test('importar extrato da conta: só o mês escolhido; pagamento da fatura vem desmarcado; mover tira da Movimentação', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  const y = app.ev('selY'), mth = app.ev('selM');
+  const mm = n => String(n + 1).padStart(2, '0'), prev = (mth + 11) % 12, py = mth === 0 ? y - 1 : y;
+  const EXT = ['extrato conta / lançamentos', `10/${mm(mth)}/${y} PIX TRANSF FULANO -50,00`, `09/${mm(mth)}/${y} FATURA ITAU UNICLASS VS IN -200,00`, `05/${mm(mth)}/${y} REMUNERACAO/SALARIO 5.000,00`, `28/${mm(prev)}/${py} PIX OUTRO MES -10,00`, `28/${mm(prev)}/${py} SALDO DO DIA 900,00`];
+  app.click('[data-import]');
+  app.ev(`ImportDialog.setLines(${JSON.stringify(EXT)},'extrato.pdf')`);
+  assert.equal(app.$$('.imrow').length, 3, 'só as 3 do mês escolhido');
+  assert.equal(app.$$('.imrow input:checked').length, 2, 'o pagamento da fatura vem desmarcado');
+  assert.match(app.$('#imf').textContent, /pagamento da fatura/);
+  app.click('[data-imgo]');
+  const mov = app.ev("S.cats.find(c=>c.nome==='Movimentação CC Itaú').id");
+  assert.equal(app.ev(`S.data['${mov}|${y}|${mth}'].items.map(i=>i.v).join()`), '50,-5000');
+  app.click(`[data-open="${mov}|${y}|${mth}"]`);
+  app.click('[data-tocat="1"]');
+  await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'nome');
+  app.type('#atx', 'Salário Teste'); app.choose('ok');
+  await app.waitFor(() => app.ev("S.cats.some(c=>c.nome==='Salário Teste')"), 2000, 'criada');
+  assert.equal(app.ev("S.cats.find(c=>c.nome==='Salário Teste').tipo"), 'receber', 'entrada vira receita');
+  assert.equal(app.ev(`S.data['${mov}|${y}|${mth}'].items.length`), 1, 'saiu da Movimentação');
+  assert.equal(app.ev(`V(S.cats.find(c=>c.nome==='Salário Teste').id,${y},${mth},'real')`), 5000);
+  assert.deepEqual(app.dom.errors || [], []);
+  app.close();
+});

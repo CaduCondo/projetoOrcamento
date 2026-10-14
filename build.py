@@ -19,6 +19,9 @@ def build(env, out, vendor=True):
     js = '\n'.join(read(p) for p in sorted(glob.glob('src/js/*.js')))
     html = html.replace('/*CSS*/', read('src/css/styles.css'))
     html = html.replace('/*CHARTJS*/', (read('src/vendor/chart.js') if vendor else '').replace('</script>', '<\\/script>'))
+    # leitor de PDF (importar fatura/extrato): vai como texto e só é executado quando a pessoa usa a importação
+    pdf = lambda n: (read(f'src/vendor/{n}') if vendor else '').replace('</script>', '<\\/script>')
+    html = html.replace('/*PDFLIB*/', pdf('pdf.min.js')).replace('/*PDFWORKER*/', pdf('pdf.worker.min.js'))
     sdk = ''
     if env in ('dev', 'prod'):
         cfg = json.loads(read(f'src/config/firebase.{env}.json'))
@@ -41,6 +44,6 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--env', choices=['local', 'dev', 'prod'], default='local')
     ap.add_argument('--out', default='dist/index.html')
-    ap.add_argument('--no-vendor', action='store_true', help='só para testes: não embute o Chart.js')
+    ap.add_argument('--no-vendor', action='store_true', help='só para testes: não embute o Chart.js nem o leitor de PDF')
     a = ap.parse_args()
     print(f'{a.out} gerado ({a.env}, {build(a.env, a.out, not a.no_vendor)} bytes)')

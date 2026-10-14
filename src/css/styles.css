@@ -270,3 +270,9 @@ tr.venc td:first-child{box-shadow:inset 3px 0 0 rgba(255,170,0,.8)}
 .infoc{padding-right:8px;font-style:italic;opacity:.85}
 .df.rm{border-top:1px solid var(--line);margin-top:6px;padding-top:10px;gap:10px;align-items:center}
 .df.rm .sub{flex:1}
+
+/* itens importados (fatura/extrato): ações embaixo do item e lista da janela de importação */
+.itact{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-2px 0 8px 30px;font-size:12px}
+.imlist{max-height:38vh;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:6px}
+.imrow{display:grid;grid-template-columns:22px 48px 1fr auto;gap:8px;align-items:center;padding:6px 8px;border-bottom:1px solid var(--line);font-size:13px;cursor:pointer}
+.imrow.ja{opacity:.5}.imrow .imd{color:var(--mut)}.imrow .imv{font-variant-numeric:tabular-nums;text-align:right}

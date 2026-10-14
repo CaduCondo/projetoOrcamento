@@ -150,6 +150,16 @@ Pedido: A receber e A pagar com cabeçalho (Categoria · Dia · Valor); clicar n
 ### 5.14 Tirar uma categoria só de um mês (issue #35)
 Pedido: um jeito fácil de tirar a categoria X de um mês, mas difícil de acontecer sem querer. Solução: dentro da janela de itens da linha há o botão **Tirar do mês** (não há botão solto na linha). Passos: abrir a linha → "Tirar do mês" → confirmar → aparece **Desfazer** por alguns segundos. Só funciona quando a categoria **não tem lançamentos** naquele mês (com itens o botão fica travado e explica; os itens precisam ser apagados antes). Só aquele mês muda: a categoria e os outros meses continuam como estão. Para voltar, use "＋ Categoria" no mês. Dados: `hide` (meses retirados) em cada categoria; vai ao CSV (MesesRetirados) e à nuvem.
 
+### 5.16 Importar fatura do cartão e extrato da conta (PDF do Itaú) (issue #36)
+Pedido do dono, com PDFs reais do Itaú (fatura e extrato). Decisões:
+- Botão **📥 Importar PDF** na tela Mês. Escolhe-se o **arquivo**, o **mês** e o **ano**. O PDF é lido **dentro do navegador** (leitor pdf.js embutido, só carrega quando se usa); nada é enviado para fora.
+- **Fatura do cartão:** entram só “Lançamentos: compras e saques” e “Lançamentos internacionais” (+ o repasse de IOF, que faz parte do total). Ficam de fora pagamentos, compras parceladas das próximas faturas, encargos e simulações. O app confere se a soma bate com o total da fatura. Vão para a categoria **CC Itaú** (reaproveita a que já existe, sem ligar para acento) como **previstos**; a pessoa marca o que foi pago.
+- **Extrato da conta:** o extrato vem com dias de outros meses; só entra o mês escolhido. Vai para a categoria **Movimentação CC Itaú** (criada no mês se não existir), como **realizado**. A linha de pagamento da fatura vem **desmarcada** (o cartão já está em CC Itaú; marcar contaria em dobro).
+- Importar o mesmo arquivo de novo **não duplica** (cada item tem uma chave).
+- **Itens do cartão** (botões na janela de itens da categoria): **→ Virar categoria** (categoria só informativa do mês, igual à Vivo: aparece com 💳, não soma) ou **→ Lançar em categoria** (lançamento com 💳 numa categoria existente). O item **continua no cartão** e continua somando lá; a cópia é só informação. A cópia fica **travada**: o 💳 não pode ser desmarcado e o valor não é editável (senão contaria duas vezes). “Desfazer” no item do cartão (ou apagar a cópia) remove a ligação; apagar o item do cartão pergunta se apaga a cópia também.
+- **Itens do extrato:** os mesmos dois botões, mas aqui o item **sai** da Movimentação e **soma** no destino (o saldo do mês não muda). O sinal se ajusta ao tipo do destino; virar categoria nova: entrada vira receita, saída vira despesa.
+- Dados: cada item importado tem `imp` (chave); cópias do cartão têm `ref`+`lock`+`info`; itens movidos do extrato guardam `moved` (para não voltarem se importar de novo).
+
 ## 6. Princípios que combinamos
 - **Privacidade primeiro:** planilhas, backups e dados pessoais **nunca** vão para o GitHub (repositório público).
 - **Honestidade com o usuário:** o que a tela promete é o que o sistema faz.

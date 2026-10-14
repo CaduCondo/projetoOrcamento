@@ -33,6 +33,7 @@ src/
     21-model-calc.js    totais, saldos, acumulado, previsto × realizado
     22-model-categories.js  categorias: ativas, mesclar, reordenar, excluir, importar anos
     23-model-serialize.js   como os dados viram documentos na nuvem e voltam
+    28-model-import.js      leitura da fatura/extrato (linhas de texto) e o que fazer com os itens importados
     24-model-schedule.js    vigência das categorias (onde/quando aparecem; editar do mês em diante; incluir categoria num mês; meses futuros vazios)
     25-model-csv.js         arquivo CSV (resumo no estilo da tela Ano + detalhe para recarregar tudo)
     26-model-profile.js     cadastro do usuário (nome, foto, escolha nuvem × aparelho, lembretes)

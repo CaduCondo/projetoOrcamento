@@ -75,6 +75,7 @@ app.addEventListener('click',e=>{const t=e.target;let b;
     renderCatList()}
   else if(b=t.closest('[data-sort]')){const[tp,col]=b.dataset.sort.split('|'),o=mesSort[tp];
     if(o.col!==col){o.col=col;o.dir=1}else if(o.dir===1)o.dir=-1;else{o.col='manual';o.dir=1}render()}
+  else if(t.closest('[data-import]'))ImportDialog.open()
   else if(b=t.closest('[data-usecat]'))UseCategoryDialog.open(b.dataset.usecat)
   else if(b=t.closest('[data-cedit]'))CategoryDialog.openEdit(b.dataset.cedit)
   else if(b=t.closest('[data-cdel]'))confirmDeleteCat(b.dataset.cdel)
