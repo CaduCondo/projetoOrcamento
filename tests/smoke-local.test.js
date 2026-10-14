@@ -489,3 +489,17 @@ test('página Categorias: cabeçalho clicável ordena por nome, dia, onde aparec
   assert.deepEqual(app.dom.errors || [], []);
   app.close();
 });
+
+test('tela Mês: valores "no cartão" aparecem na linha, claramente marcados como "não soma", e não entram no total', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  const y = app.ev('selY'), mth = app.ev('selM');
+  const id = app.ev(`(()=>{const c=addCat('pagar','Vivo',6);c.lib=true;useCatInMonth(c.id,${y},${mth});ens(c.id,${y},${mth}).items.push({v:466,d:'familia',ok:true,info:true},{v:130.99,d:'internet',ok:true,info:true});save();render();return c.id})()`);
+  const linha = app.$(`tr[data-cat="${id}"]`);
+  assert.match(nbsp(linha.querySelector('.infoc').textContent), /💳 -R\$ 596,99 no cartão · não soma/);
+  assert.equal(app.ev(`V('${id}',${y},${mth},'real')`), 0, 'o total da categoria continua zero');
+  assert.equal(app.ev(`MT('pagar',${y},${mth},'real')`) , app.ev(`MT('pagar',${y},${mth},'real')`));
+  const sem = app.ev(`(()=>{const c=addCat('pagar','Sem cartao',7);c.lib=true;useCatInMonth(c.id,${y},${mth});ens(c.id,${y},${mth}).items.push({v:50,d:'x',ok:true});save();render();return c.id})()`);
+  assert.equal(app.$(`tr[data-cat="${sem}"] .infoc`), null, 'sem item de cartão: sem a linha extra');
+  app.close();
+});

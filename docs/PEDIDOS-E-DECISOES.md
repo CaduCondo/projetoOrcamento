@@ -143,6 +143,10 @@ Pedido: A receber e A pagar com cabeçalho (Categoria · Dia · Valor); clicar n
 - **Ano:** nova coluna **Dia** à esquerda da Categoria (as duas ficam fixas ao rolar). Cada grupo abre ordenado por dia (sem dia embaixo); os títulos **Dia**, **RECEITAS/DESPESAS** (nome) e **Total** na linha do grupo ordenam. Dá para **arrastar** uma linha dentro do seu grupo: a ordem que está na tela vira a ordem manual (isso vale também na tela Mês). Não dá para soltar uma despesa em Receitas.
 - Os grupos passaram de A RECEBER/A PAGAR para **RECEITAS/DESPESAS** em todo o app (telas, CSV e janelas); totais: "Total de receitas/despesas".
 
+### 5.13 Valor "no cartão" visível e cabeçalho alinhado (issue #34)
+- Tela Mês: itens marcados como "já está na fatura do cartão" 💳 passaram a aparecer na linha (ex.: "💳 -R$ 596,99 no cartão · não soma"), em texto menor e itálico, deixando claro que **não entram no total** (já estão dentro do valor do cartão de crédito). O total da categoria e das tabelas não muda.
+- Categorias: o cabeçalho estava deslocado porque as colunas variavam de linha para linha; agora todas têm larguras fixas e o cabeçalho fica alinhado com os dados.
+
 ## 6. Princípios que combinamos
 - **Privacidade primeiro:** planilhas, backups e dados pessoais **nunca** vão para o GitHub (repositório público).
 - **Honestidade com o usuário:** o que a tela promete é o que o sistema faz.

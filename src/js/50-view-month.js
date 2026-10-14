@@ -21,13 +21,13 @@ function venceHoje(c,y,m){const d=new Date();
   return c.tipo==='pagar'&&!!c.dia&&c.dia===d.getDate()&&y===d.getFullYear()&&m===d.getMonth()
     &&(cellOf(c.id,y,m)?.items||[]).some(i=>!i.ok&&!i.info)}
 function rowMes(c,y,m){const r=V(c.id,y,m,'real'),p=V(c.id,y,m,'prev'),neg=c.tipo==='pagar',f=n=>moneyFor(c.tipo,n);
-  const n=(cellOf(c.id,y,m)?.items||[]).length,vazio=!p&&!r&&!n;
+  const its=cellOf(c.id,y,m)?.items||[],n=its.length,vazio=!p&&!r&&!n,noCartao=its.filter(i=>i.info).reduce((s,i)=>s+i.v,0);
   const main=vazio?'<span class="lancar">＋ Lançar</span>':`<span class="${neg?'neg':'pos'}" ${r?'':'style="opacity:.5"'}>${f(r)}</span>`;
   const vh=venceHoje(c,y,m);
   return `<tr draggable="true" data-cat="${c.id}" data-tipo="${c.tipo}"${vh?' class="venc" title="Vence hoje e ainda está como previsto: agende/pague e marque como pago para tirar este aviso"':''}><td class="grip" title="Arraste para reordenar">⋮⋮</td>
  <td data-tipcat="${c.id}|${y}|${m}">${esc(c.nome)}${vh?' <span class="vtag">⏰ vence hoje</span>':''}<br>${sumBadge(c,y,m)}</td>
  <td class="dia">${c.dia||''}</td>
- <td class="n">${n>1?`<span class="cnt" title="Quantidade de itens que formam este valor">${n} itens</span>`:''}<button class="val" data-open="${c.id}|${y}|${m}" data-tipcell="${c.id}|${y}|${m}">${main}</button>${p!==r?`<div class="sub" style="padding-right:8px">previsto ${f(p)}</div>`:''}</td></tr>`}
+ <td class="n">${n>1?`<span class="cnt" title="Quantidade de itens que formam este valor">${n} itens</span>`:''}<button class="val" data-open="${c.id}|${y}|${m}" data-tipcell="${c.id}|${y}|${m}">${main}</button>${p!==r?`<div class="sub" style="padding-right:8px">previsto ${f(p)}</div>`:''}${noCartao?`<div class="sub infoc" title="Valor lançado como “já está na fatura do cartão”: aparece aqui para você acompanhar, mas NÃO entra no total (já está dentro do valor do cartão de crédito)">💳 ${f(noCartao)} no cartão · não soma</div>`:''}</td></tr>`}
 /* um bloco (Receitas ou Despesas) com as linhas e o botão de nova categoria no canto inferior esquerdo */
 function blocoMes(tipo,titulo,total,y,m){
   const linhas=sortMes(visCats(tipo,y,m),tipo,y,m).map(c=>rowMes(c,y,m)).join('');

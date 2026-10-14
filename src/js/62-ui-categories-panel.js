@@ -3,7 +3,7 @@
 let catUI={q:'',filtro:'ativas',tipo:'',lim:40,col:'uso',dir:-1};      // ordem: padrão = usadas há menos tempo primeiro
 /* cabeçalho clicável: 1º clique crescente, 2º decrescente, 3º volta ao padrão */
 const CAT_COLS=[['tipo','Tipo'],['nome','Nome'],['dia','Dia'],['vig','Onde aparece'],['uso','Último uso'],['n','Lanç.']];
-function catHead(){return `<div class="cr hd">${CAT_COLS.map(([k,l],i)=>`<span class="srt c${i} ${catUI.col===k?'on':''}" data-csort="${k}" role="button" tabindex="0" title="Clique para ordenar" aria-sort="${catUI.col===k?(catUI.dir>0?'ascending':'descending'):'none'}">${i===0?'':l}${i===0?'<span title="Tipo: receita ou despesa">⇅</span>':''}${catUI.col===k?(catUI.dir>0?' ▲':' ▼'):''}</span>`).join('')}<span class="c6"></span></div>`}
+function catHead(){return `<div class="cr hd">${CAT_COLS.map(([k,l],i)=>`<span class="srt c${i} ${catUI.col===k?'on':''}" data-csort="${k}" role="button" tabindex="0" title="Clique para ordenar" aria-sort="${catUI.col===k?(catUI.dir>0?'ascending':'descending'):'none'}">${i===0?'':l}${i===0?'<span title="Tipo: receita ou despesa">⇅</span>':''}${catUI.col===k?(catUI.dir>0?' ▲':' ▼'):''}</span>`).join('')}<span class="c6"></span><span class="c7"></span><span class="c8"></span></div>`}
 function sortCats(l,st){const{col,dir}=catUI,nome=c=>normName(c.nome);
   const chave={tipo:c=>c.tipo,nome,vig:c=>normName(scopeLabel(c)),uso:c=>st[c.id]?.last??-1,n:c=>st[c.id]?.n||0};
   return l.sort((a,b)=>{
