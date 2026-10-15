@@ -28,6 +28,7 @@ const EXTRATO = [
   '05/10/2026 REMUNERACAO/SALARIO 5.000,00', '01/10/2026 REND PAGO APLIC AUT MAIS 0,05', '30/09/2026 PIX QRS LOJA -10,00',
   '30/09/2026 SALDO DO DIA 900,00', 'Aviso! Os saldos acima...',
 ];
+const EXTRATO2 = EXTRATO.concat(['02/10/2026 REND PAGO APLIC AUT MAIS 0,07']);
 const liquido = () => Math.round((m.MT('receber', Y, M, 'real') - m.MT('pagar', Y, M, 'real')) * 100) / 100;
 
 test('reconhece o tipo de arquivo', () => {
@@ -113,39 +114,67 @@ test('cartão → virar LANÇAMENTO de uma categoria que já existe: chega com �
   assert.throws(() => m.cardItemToExisting(cc.id, Y, M, 1, 'nao-existe'), /Escolha/);
 });
 
-test('extrato → "Movimentação CC Itaú": só o mês escolhido, realizado; entrada reduz a despesa; fatura vem à parte', () => {
+test('extrato → "Movimentação CC Itaú": entradas em RECEITAS, saídas em DESPESAS, rendimentos somados num só, tudo realizado', () => {
   fresh();
-  const out = m.extratoDoMes(m.parseExtrato(EXTRATO).itens, Y, M), antes = liquido();
+  const itens = m.parseExtrato(EXTRATO2).itens, out = m.extratoParaImportar(itens, Y, M), antes = liquido();
+  assert.equal(out.length, 4, 'os dois "REND PAGO" viraram um');
+  const rend = out.find(i => i.rend);
+  assert.equal(rend.valor, 0.12); assert.match(rend.desc, /2 lançamentos/);
   const r = m.importStatement('conta', out, Y, M);
-  assert.equal(r.cat.nome, 'Movimentação CC Itaú');
-  const its = m.cellOf(r.cat.id, Y, M).items;
-  assert.deepEqual(Array.from(its, i => [i.v, i.ok]), [[50, true], [212, true], [-5000, true], [-0.05, true]]);
-  assert.equal(Math.round((liquido() - antes) * 100) / 100, Math.round((-50 - 212 + 5000 + 0.05) * 100) / 100, 'o saldo do mês reflete a movimentação');
+  assert.equal(r.novos, 4); assert.equal(r.cats.length, 2);
+  const rec = r.cats.find(c => c.tipo === 'receber'), des = r.cats.find(c => c.tipo === 'pagar');
+  assert.equal(rec.nome, 'Movimentação CC Itaú'); assert.equal(des.nome, 'Movimentação CC Itaú');
+  assert.deepEqual(Array.from(m.cellOf(des.id, Y, M).items, i => [i.v, i.ok]), [[50, true], [212, true]]);
+  assert.deepEqual(Array.from(m.cellOf(rec.id, Y, M).items, i => [i.v, i.ok]), [[5000, true], [0.12, true]]);
+  assert.equal(Math.round((liquido() - antes) * 100) / 100, Math.round((5000.12 - 262) * 100) / 100, 'o saldo do mês reflete a movimentação');
+  const so_saidas = m.importStatement('conta', [{ dia: 2, mes: 10, ano: 2026, desc: 'PIX X', valor: -5 }], Y, M);
+  assert.equal(so_saidas.cats.length, 1, 'só cria o lado que precisa');
+});
+
+test('rendimentos: importar de novo depois de chegarem mais rendimentos ATUALIZA a soma, sem duplicar', () => {
+  fresh();
+  m.importStatement('conta', m.extratoParaImportar(m.parseExtrato(EXTRATO2).itens, Y, M), Y, M);
+  const mais = EXTRATO2.concat(['20/10/2026 REND PAGO APLIC AUT MAIS 0,01']);
+  const out = m.extratoParaImportar(m.parseExtrato(mais).itens, Y, M);
+  assert.equal(out.find(i => i.rend).valor, 0.13);
+  const k = m.impKeys('conta', out)[out.findIndex(i => i.rend)];
+  assert.equal(m.rendDiferente(out.find(i => i.rend), k, Y, M), true);
+  const r = m.importStatement('conta', out, Y, M);
+  assert.equal(r.novos, 0); assert.equal(r.atualizados, 1); assert.equal(r.repetidos, 3);
+  const rec = m.S.cats.find(c => c.tipo === 'receber' && c.nome === 'Movimentação CC Itaú');
+  assert.deepEqual(Array.from(m.cellOf(rec.id, Y, M).items, i => i.v), [5000, 0.13]);
+  assert.equal(m.importStatement('conta', out, Y, M).atualizados, 0, 'sem novidade: nada muda');
 });
 
 test('extrato: levar um item para fora da Movimentação TIRA de lá e SOMA no destino (saldo do mês não muda)', () => {
   fresh();
-  const out = m.extratoDoMes(m.parseExtrato(EXTRATO).itens, Y, M), mov = m.importStatement('conta', out, Y, M).cat, base = liquido();
-  // saída (−50) → lançamento de uma despesa existente
-  m.contaItemMove(mov.id, Y, M, 0, 'luz');
-  assert.equal(m.cellOf(mov.id, Y, M).items.length, 3, 'saiu da Movimentação');
+  const out = m.extratoParaImportar(m.parseExtrato(EXTRATO2).itens, Y, M), r = m.importStatement('conta', out, Y, M), base = liquido();
+  const rec = r.cats.find(c => c.tipo === 'receber'), des = r.cats.find(c => c.tipo === 'pagar');
+  const achar = (c, v) => m.cellOf(c.id, Y, M).items.findIndex(i => i.v === v);
+  // saída (50) → lançamento de uma despesa existente
+  m.contaItemMove(des.id, Y, M, achar(des, 50), 'luz');
+  assert.equal(m.cellOf(des.id, Y, M).items.length, 1, 'saiu da Movimentação de Despesas');
   assert.equal(m.cellOf('luz', Y, M).items.at(-1).v, 50); assert.equal(m.cellOf('luz', Y, M).items.at(-1).ok, true);
   assert.equal(liquido(), base, 'só mudou de lugar');
-  // entrada (+5000, guardada como −5000) → lançamento de uma RECEITA existente: sinal ajustado ao tipo
-  const idx = m.cellOf(mov.id, Y, M).items.findIndex(i => i.v === -5000);
-  m.contaItemMove(mov.id, Y, M, idx, 'sal');
-  assert.equal(m.cellOf('sal', Y, M).items.at(-1).v, 5000);
+  // entrada (5000) → lançamento de uma RECEITA existente
+  m.contaItemMove(rec.id, Y, M, achar(rec, 5000), 'sal');
+  assert.equal(m.cellOf('sal', Y, M).items.at(-1).v, 5000); assert.equal(liquido(), base);
+  // virar categoria nova: a entrada nasce em Receitas, a saída em Despesas
+  const rd = m.contaItemMove(rec.id, Y, M, achar(rec, 0.12), { nome: 'Rendimentos' });
+  assert.equal(rd.tipo, 'receber'); assert.equal(m.V(rd.id, Y, M, 'real'), 0.12);
+  const pf = m.contaItemMove(des.id, Y, M, achar(des, 212), { nome: 'Pagto fatura' });
+  assert.equal(pf.tipo, 'pagar'); assert.equal(m.V(pf.id, Y, M, 'real'), 212);
   assert.equal(liquido(), base);
-  // virar categoria nova: entrada → receita; saída → despesa
-  const i2 = m.cellOf(mov.id, Y, M).items.findIndex(i => i.v === -0.05);
-  const rend = m.contaItemMove(mov.id, Y, M, i2, { nome: 'Rendimentos' });
-  assert.equal(rend.tipo, 'receber'); assert.equal(m.V(rend.id, Y, M, 'real'), 0.05);
-  const i3 = m.cellOf(mov.id, Y, M).items.findIndex(i => i.v === 212);
-  const faturaCat = m.contaItemMove(mov.id, Y, M, i3, { nome: 'Pagto fatura' });
-  assert.equal(faturaCat.tipo, 'pagar'); assert.equal(m.V(faturaCat.id, Y, M, 'real'), 212);
+  assert.equal(m.cellOf(rec.id, Y, M).items.length + m.cellOf(des.id, Y, M).items.length, 0, 'as duas Movimentações ficam vazias');
+  assert.equal(m.importStatement('conta', out, Y, M).novos, 0, 'importar de novo não traz de volta o que já foi levado');
+  assert.throws(() => m.contaItemMove(des.id, Y, M, 0, 'luz'), /importação/);
+});
+
+test('extrato: levar uma ENTRADA para uma categoria de despesa (ex.: estorno) vira valor negativo lá; o saldo não muda', () => {
+  fresh();
+  const r = m.importStatement('conta', m.extratoParaImportar(m.parseExtrato(EXTRATO2).itens, Y, M), Y, M), base = liquido();
+  const rec = r.cats.find(c => c.tipo === 'receber');
+  m.contaItemMove(rec.id, Y, M, m.cellOf(rec.id, Y, M).items.findIndex(i => i.v === 5000), 'luz');
+  assert.equal(m.cellOf('luz', Y, M).items.at(-1).v, -5000);
   assert.equal(liquido(), base);
-  assert.equal(m.cellOf(mov.id, Y, M).items.length, 0);
-  // importar o mesmo extrato de novo não traz de volta o que já foi levado
-  assert.equal(m.importStatement('conta', out, Y, M).novos, 0);
-  assert.throws(() => m.contaItemMove(mov.id, Y, M, 0, 'luz'), /importação/);
 });

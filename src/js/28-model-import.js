@@ -40,6 +40,16 @@ function parseExtrato(lines){
 /* quais meses o extrato traz (o extrato vem com dias a mais: o app só usa o mês escolhido) */
 const extratoMeses=itens=>[...new Set(itens.map(i=>i.ano*12+i.mes-1))].sort((a,b)=>a-b);
 const extratoDoMes=(itens,y,m)=>itens.filter(i=>i.ano===y&&i.mes-1===m);
+/* "REND PAGO APLIC AUT MAIS" (rendimento do saldo): são vários valores bem pequenos por mês; viram UM lançamento só (a soma) */
+const ehRendimento=desc=>/^REND PAGO APLIC AUT/i.test(desc);
+function agruparRendimentos(itens){
+  const rs=itens.filter(i=>ehRendimento(i.desc));if(!rs.length)return itens;
+  const ultimo=rs.reduce((a,b)=>(b.dia>a.dia?b:a)),soma=Math.round(rs.reduce((s,i)=>s+i.valor,0)*100)/100;
+  const um={dia:ultimo.dia,mes:ultimo.mes,ano:ultimo.ano,desc:`Rendimentos do mês (REND PAGO APLIC AUT MAIS, ${rs.length} lançamento${rs.length>1?'s':''})`,valor:soma,rend:true};
+  const primeiro=itens.findIndex(i=>ehRendimento(i.desc));
+  return itens.flatMap((i,n)=>n===primeiro?[um]:ehRendimento(i.desc)?[]:[i])}
+/* o que a tela de importação mostra do extrato: só o mês escolhido, com os rendimentos já somados */
+const extratoParaImportar=(itens,y,m)=>agruparRendimentos(extratoDoMes(itens,y,m));
 
 /* movimentações que normalmente NÃO devem ser importadas: o pagamento da fatura já está na categoria do cartão */
 const pareceFatura=desc=>/\bFATURA\b.*\b(ITAU|CARTAO)\b|\bPAGAMENTO (DE )?FATURA\b|\bITAU UNICLASS\b/i.test(desc);
@@ -53,18 +63,31 @@ function ensureMonthCat(tipo,nome,y,m){
   const cat=c||createCat(tipo,{nome,dia:''},'lib',y,m);useCatInMonth(cat.id,y,m);return{cat,criada:!c}}
 const dataTxt=i=>i.dia?`${String(i.dia).padStart(2,'0')}/${String(i.mes).padStart(2,'0')} `:'';
 /* chave estável do item importado (para não importar duas vezes o mesmo arquivo); repetidos idênticos ganham contador */
-function impKeys(kind,itens){const seen={};return itens.map(i=>{const k=`${kind}|${i.ano||''}|${i.mes||''}|${i.dia||''}|${normName(i.desc)}|${i.valor}`;seen[k]=(seen[k]||0)+1;return k+'|'+seen[k]})}
+function impKeys(kind,itens){const seen={};return itens.map(i=>{if(i.rend)return`${kind}|rend|${i.ano}|${i.mes}`;const k=`${kind}|${i.ano||''}|${i.mes||''}|${i.dia||''}|${normName(i.desc)}|${i.valor}`;seen[k]=(seen[k]||0)+1;return k+'|'+seen[k]})}
 /* chaves de tudo o que já veio de importação (no cartão, na movimentação ou depois de levado para outra categoria) */
 function chavesImportadas(){const s=new Set();for(const v of Object.values(S.data))for(const i of v.items){if(i.imp)s.add(i.imp);if(i.moved)s.add(i.moved)}return s}
-/* grava os itens escolhidos. cartão: tudo em "CC Itaú" como previsto; conta: tudo em "Movimentação CC Itaú" já realizado.
-   Retorna {cat, novos, repetidos, criada}. */
+/* o item de rendimentos deste mês já foi importado e o valor mudou (chegaram mais rendimentos)? */
+const rendDiferente=(it,k,y,m)=>{if(!it.rend)return false;for(const c of S.cats){const x=(cellOf(c.id,y,m)?.items||[]).find(i=>i.imp===k);if(x)return x.v!==it.valor}return false};
+/* grava os itens escolhidos.
+   cartão: tudo em "CC Itaú" (despesa) como previsto.
+   conta: cada movimentação vai para o seu lado: entradas em "Movimentação CC Itaú" de RECEITAS, saídas na de DESPESAS (já realizadas).
+   Retorna {cat, cats, novos, atualizados, repetidos, criada}. */
 function importStatement(kind,itens,y,m){
-  const cartao=kind==='cartao',{cat,criada}=ensureMonthCat('pagar',cartao?CARTAO_CAT:MOV_CAT,y,m),cell=ens(cat.id,y,m),keys=impKeys(kind,itens),have=chavesImportadas();
-  let novos=0,repetidos=0;
-  itens.forEach((it,n)=>{const k=keys[n];if(have.has(k)){repetidos++;return}
-    // despesa: valor positivo = gasto. Extrato: saiu (−) vira +, entrou (+) vira − (reduz a despesa).
-    const v=cartao?it.valor:-it.valor;cell.items.push({v,d:(dataTxt(it)+it.desc).trim(),ok:!cartao,imp:k});novos++});
-  return{cat,novos,repetidos,criada}}
+  const cartao=kind==='cartao',keys=impKeys(kind,itens),have=chavesImportadas(),dest={};
+  const destino=tipo=>dest[tipo]??=ensureMonthCat(tipo,cartao?CARTAO_CAT:MOV_CAT,y,m);
+  let novos=0,repetidos=0,atualizados=0,criada=false;
+  itens.forEach((it,n)=>{const k=keys[n],tipo=cartao||it.valor<0?'pagar':'receber';
+    if(have.has(k)){
+      if(it.rend){                       // rendimentos: se o mês já foi importado antes, atualiza a soma (se o item ainda está na Movimentação)
+        const c=S.cats.find(x=>(cellOf(x.id,y,m)?.items||[]).some(i=>i.imp===k));
+        const ex=c&&cellOf(c.id,y,m).items.find(i=>i.imp===k);
+        if(ex&&ex.v!==it.valor){ex.v=it.valor;ex.d=(dataTxt(it)+it.desc).trim();atualizados++;return}}
+      repetidos++;return}
+    const d=destino(tipo);criada=criada||d.criada;
+    // despesa guarda gasto como positivo; receita guarda entrada como positivo (valores sempre positivos nas Movimentações)
+    const v=cartao?it.valor:Math.abs(it.valor);ens(d.cat.id,y,m).items.push({v,d:(dataTxt(it)+it.desc).trim(),ok:!cartao,imp:k});novos++});
+  const cats=Object.values(dest).map(d=>d.cat);
+  return{cat:cats[0],cats,novos,atualizados,repetidos,criada}}
 
 /* ---- depois de importado ---- */
 const itemsLinked=ref=>{const r=[];for(const[k,v]of Object.entries(S.data))v.items.forEach((i,n)=>{if(i.ref===ref)r.push({key:k,n,item:i})});return r};
@@ -87,12 +110,14 @@ function cardItemToExisting(cid,y,m,idx,destId){
 function unlinkCardItem(item){for(const l of cardLinks(item).reverse())S.data[l.key].items.splice(l.n,1)}
 
 /* conta → o item SAI da "Movimentação" e vai para outra categoria (a movimentação diminui, o destino aumenta).
-   O sinal se ajusta ao tipo do destino: despesa guarda gasto como positivo, receita guarda entrada como positivo. */
-const valorNoTipo=(it,tipo)=>tipo==='pagar'?it.v:-it.v;      // it.v está no sinal de "despesa" (a Movimentação é despesa)
+   O valor é "dinheiro que entrou (+) ou saiu (−)" na origem e se ajusta ao tipo do destino (receita guarda entrada positiva; despesa guarda gasto positivo).
+   Virar categoria nova: nasce do mesmo tipo da Movimentação de onde veio. */
+const caixaDe=(it,tipo)=>tipo==='receber'?it.v:-it.v;
+const valorNoTipo=(caixa,tipo)=>tipo==='receber'?caixa:-caixa;
 function contaItemMove(cid,y,m,idx,dest){
-  const cell=cellOf(cid,y,m),it=(cell?.items||[])[idx];if(!it||!it.imp)throw new Error('Este item não veio de uma importação.');
+  const cell=cellOf(cid,y,m),it=(cell?.items||[])[idx],origem=catById(cid);if(!it||!it.imp)throw new Error('Este item não veio de uma importação.');
   let c=typeof dest==='string'?catById(dest):null;
-  if(dest&&dest.nome){const tipo=dest.tipo||(it.v>0?'pagar':'receber');c=createCat(tipo,{nome:dest.nome,dia:''},'lib',y,m)}
+  if(dest&&dest.nome)c=createCat(dest.tipo||origem.tipo,{nome:dest.nome,dia:''},'lib',y,m);
   if(!c)throw new Error('Escolha uma categoria.');if(c.id===cid)throw new Error('Escolha outra categoria.');
   useCatInMonth(c.id,y,m);cell.items.splice(idx,1);
-  ens(c.id,y,m).items.push({v:valorNoTipo(it,c.tipo),d:it.d,ok:true,moved:it.imp});return c}
+  ens(c.id,y,m).items.push({v:valorNoTipo(caixaDe(it,origem.tipo),c.tipo),d:it.d,ok:true,moved:it.imp});return c}
