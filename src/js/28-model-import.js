@@ -66,6 +66,12 @@ const dataTxt=i=>i.dia?`${String(i.dia).padStart(2,'0')}/${String(i.mes).padStar
 function impKeys(kind,itens){const seen={};return itens.map(i=>{if(i.rend)return`${kind}|rend|${i.ano}|${i.mes}`;const k=`${kind}|${i.ano||''}|${i.mes||''}|${i.dia||''}|${normName(i.desc)}|${i.valor}`;seen[k]=(seen[k]||0)+1;return k+'|'+seen[k]})}
 /* chaves de tudo o que já veio de importação (no cartão, na movimentação ou depois de levado para outra categoria) */
 function chavesImportadas(){const s=new Set();for(const v of Object.values(S.data))for(const i of v.items){if(i.imp)s.add(i.imp);if(i.moved)s.add(i.moved)}return s}
+/* versões antigas importavam cada "REND PAGO..." como um item separado. Ao importar a SOMA do mês, tira esses avulsos que ainda estão
+   na Movimentação (senão o rendimento contaria duas vezes). */
+function limparRendimentosAvulsos(y,m){let n=0;
+  for(const c of S.cats){const cell=cellOf(c.id,y,m);if(!cell)continue;
+    const antes=cell.items.length;cell.items=cell.items.filter(i=>!(i.imp&&/^conta\|\d+\|\d+\|\d+\|rend pago aplic aut/.test(i.imp)));n+=antes-cell.items.length}
+  return n}
 /* o item de rendimentos deste mês já foi importado e o valor mudou (chegaram mais rendimentos)? */
 const rendDiferente=(it,k,y,m)=>{if(!it.rend)return false;for(const c of S.cats){const x=(cellOf(c.id,y,m)?.items||[]).find(i=>i.imp===k);if(x)return x.v!==it.valor}return false};
 /* grava os itens escolhidos.
@@ -76,6 +82,7 @@ function importStatement(kind,itens,y,m){
   const cartao=kind==='cartao',keys=impKeys(kind,itens),have=chavesImportadas(),dest={};
   const destino=tipo=>dest[tipo]??=ensureMonthCat(tipo,cartao?CARTAO_CAT:MOV_CAT,y,m);
   let novos=0,repetidos=0,atualizados=0,criada=false;
+  if(itens.some(i=>i.rend))limparRendimentosAvulsos(y,m);
   itens.forEach((it,n)=>{const k=keys[n],tipo=cartao||it.valor<0?'pagar':'receber';
     if(have.has(k)){
       if(it.rend){                       // rendimentos: se o mês já foi importado antes, atualiza a soma (se o item ainda está na Movimentação)

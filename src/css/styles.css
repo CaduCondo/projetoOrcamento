@@ -276,3 +276,11 @@ tr.venc td:first-child{box-shadow:inset 3px 0 0 rgba(255,170,0,.8)}
 .imlist{max-height:38vh;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:6px}
 .imrow{display:grid;grid-template-columns:22px 48px 1fr auto;gap:8px;align-items:center;padding:6px 8px;border-bottom:1px solid var(--line);font-size:13px;cursor:pointer}
 .imrow.ja{opacity:.5}.imrow .imd{color:var(--mut)}.imrow .imv{font-variant-numeric:tabular-nums;text-align:right}
+
+/* escolher categoria dentro de uma janela de pergunta (ex.: "Lançar em qual categoria?"): janela maior e lista aberta embaixo do campo, sem ficar cortada */
+#dlg4:has(.cb){width:min(560px,94vw);min-height:min(440px,82vh)}
+#dlg4 .cb .cbl{position:static;width:100%;max-height:min(36vh,300px);margin-top:8px;box-shadow:none}
+#dlg4 .cb .cbi{font-size:16px;padding:10px 12px}
+#dlg4 .cb .cbo{padding:10px 12px;font-size:15px}
+#dlg4 .db{overflow-x:hidden}#dlg4 .cb{min-width:0;width:100%}#dlg4 .cb .cbl{box-sizing:border-box}
+#dlg4 .cb .cbl{overflow-x:hidden}#dlg4 .cb .cbo{min-width:0}

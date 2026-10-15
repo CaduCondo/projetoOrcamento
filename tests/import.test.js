@@ -178,3 +178,16 @@ test('extrato: levar uma ENTRADA para uma categoria de despesa (ex.: estorno) vi
   assert.equal(m.cellOf('luz', Y, M).items.at(-1).v, -5000);
   assert.equal(liquido(), base);
 });
+
+test('rendimentos avulsos de importações antigas são trocados pela soma do mês (não contam em dobro)', () => {
+  fresh();
+  const antiga = m.addCat('pagar', 'Movimentação CC Itaú');
+  m.ens(antiga.id, Y, M).items.push({ v: -0.05, d: '01/10/2026 REND PAGO APLIC AUT MAIS', ok: true, imp: 'conta|2026|10|1|rend pago aplic aut mais|0.05|1' },
+    { v: 50, d: '13/10 PIX', ok: true, imp: 'conta|2026|10|13|pix transf fulano|-50|1' });
+  m.importStatement('conta', m.extratoParaImportar(m.parseExtrato(EXTRATO2).itens, Y, M), Y, M);
+  const todos = Array.from(m.S.cats).flatMap(c => (m.cellOf(c.id, Y, M)?.items || []).map(i => i.d));
+  assert.equal(todos.filter(d => /REND PAGO/.test(d)).length, 1, 'só a soma do mês');
+  assert.ok(todos.some(d => d.includes('PIX')), 'o resto não é apagado');
+  const rec = m.S.cats.find(c => c.tipo === 'receber' && c.nome === 'Movimentação CC Itaú');
+  assert.equal(m.cellOf(rec.id, Y, M).items.find(i => /Rendimentos/.test(i.d)).v, 0.12);
+});
