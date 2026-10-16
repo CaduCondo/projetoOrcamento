@@ -120,6 +120,29 @@ dialog[open]{animation:pop .22s ease-out}
 .userchip{border-color:var(--line2);background:var(--glass)}
 .avatar{background:var(--grad)}
 
+/* ---------- computador: tudo numa linha só (sem espaços vazios) ---------- */
+@media(min-width:701px){
+  .top{flex-wrap:nowrap;gap:12px}
+  nav{flex-wrap:nowrap;gap:2px}
+  nav button{padding:7px 12px;white-space:nowrap}
+  .right{flex-wrap:nowrap;margin-left:auto;gap:6px}
+  .right label.row{font-size:0;gap:0;margin:0}                 /* o seletor já mostra o ano */
+  .right label.row select{font-size:14px;border-radius:999px;padding:6px 10px}
+  .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:6px;padding:2px 0 4px}
+  .chips::-webkit-scrollbar{display:none}
+  .chips .chip{flex:none;padding:5px 12px}
+  .chips>.sub{display:none}                                    /* "Outubro de 2026" já está no botão destacado */
+  .chips [data-import]{margin-left:auto!important;flex:none}
+}
+@media(min-width:701px) and (max-width:1240px){
+  .userchip{padding:2px;border:0;background:none}.userchip .uname{display:none}
+  nav button{padding:7px 9px}
+  h1{font-size:16px}
+}
+@media(min-width:701px) and (max-width:960px){
+  nav .tl{display:none}nav .ti{display:block;font-size:18px}    /* telas médias: só os ícones */
+}
+
 /* =====================================================================
    CELULAR (prioridade): menu flutuante embaixo, folhas que sobem de baixo,
    meses rolando de lado e números grandes.
@@ -201,3 +224,4 @@ dialog[open]{animation:pop .22s ease-out}
 @keyframes sheet{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 nav:empty,.right:empty{display:none!important}
+.two{align-items:start}                                         /* cada painel com a sua altura: sem sobra embaixo do menor */
