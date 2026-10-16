@@ -27,7 +27,7 @@ def build(env, out, vendor=True):
         cfg = json.loads(read(f'src/config/firebase.{env}.json'))
         js = js.replace('/*FIREBASE*/null', json.dumps(cfg))
         sdk = ''.join(f'<script src="https://www.gstatic.com/firebasejs/{SDK_VERSION}/firebase-{n}-compat.js"></script>\n'
-                      for n in ('app', 'auth', 'firestore'))
+                      for n in ('app', 'auth', 'firestore') + (('app-check',) if cfg.get('appCheckKey') else ()))   # App Check: só quando a chave do reCAPTCHA estiver na configuração
     js = js.replace('/*FIREBASE*/null', 'null')  # no modo local não há Firebase (nos outros, já foi trocado acima)
     js = js.replace("/*ENV*/'local'", json.dumps(env)).replace('/*SEED*/null', 'null')
     html = html.replace('<!--FBSDK-->', sdk).replace('/*APP*/', js.replace('</script>', '<\\/script>'))
