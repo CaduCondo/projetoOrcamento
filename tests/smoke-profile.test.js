@@ -153,7 +153,7 @@ test('PRIVACIDADE — entrar em OUTRO aparelho nunca puxa dados da nuvem; mostra
   // o botão do aviso leva a Ajustes, onde se carrega o arquivo
   b.click('[data-na="ajustes"]'); assert.equal(b.ev('tab'), 'aj');
   const csv = c.ev('csvFileText(S)');
-  b.click('[data-import]'); b.chooseFile('#imfile', csv, 'meu-orcamento.csv');
+  b.ev('ImportDialog.open()'); b.chooseFile('#imfile', csv, 'meu-orcamento.csv');
   await b.waitFor(() => b.$('#dlg4').hasAttribute('open'), 2000, 'janela do arquivo'); b.choose('substituir');
   await b.waitFor(() => JSON.stringify(b.ev('S.data')).includes('segredo'), 3000, 'arquivo carregado');
   await b.ev('backend.flush()');

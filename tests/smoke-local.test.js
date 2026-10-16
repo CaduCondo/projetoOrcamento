@@ -535,7 +535,7 @@ test('importar fatura do cartão (PDF já em linhas): confere o total, importa, 
   await entrar(app);
   const y = app.ev('selY'), mth = app.ev('selM');
   const FAT = ['Lançamentos: compras e saques', '21/09 LOJA UM 01/03 100,00', 'casa SP', '22/09 LOJA DOIS 50,50', 'outros SP', 'Lançamentos no cartão 150,50', 'Total dos lançamentos atuais 150,50'];
-  app.click('[data-import]');
+  app.ev('ImportDialog.open()');
   assert.ok(app.$('#dlg3').hasAttribute('open'));
   assert.ok(app.$('#imfile') && app.$('#imm') && app.$('#imy'), 'tem arquivo e combos de mês e ano');
   app.ev(`ImportDialog.setLines(${JSON.stringify(FAT)},'fatura.pdf')`);
@@ -578,7 +578,7 @@ test('importar fatura do cartão (PDF já em linhas): confere o total, importa, 
   assert.equal(app.ev(`V('${cc}',${y},${mth},'prev')`), 150.5, 'cartão intacto');
   // importar o mesmo arquivo de novo não duplica
   app.click('[data-close]');
-  app.click('[data-import]');
+  app.ev('ImportDialog.open()');
   app.ev(`ImportDialog.setLines(${JSON.stringify(FAT)},'fatura.pdf')`);
   assert.equal(app.$('[data-imgo]').disabled, true, 'tudo já importado: nada a importar');
   assert.equal(app.$$('.imrow.ja').length, 2);
@@ -592,7 +592,7 @@ test('importar extrato da conta: só o mês escolhido; pagamento da fatura vem d
   const y = app.ev('selY'), mth = app.ev('selM');
   const mm = n => String(n + 1).padStart(2, '0'), prev = (mth + 11) % 12, py = mth === 0 ? y - 1 : y;
   const EXT = ['extrato conta / lançamentos', `10/${mm(mth)}/${y} PIX TRANSF FULANO -50,00`, `09/${mm(mth)}/${y} FATURA ITAU UNICLASS VS IN -200,00`, `05/${mm(mth)}/${y} REMUNERACAO/SALARIO 5.000,00`, `28/${mm(prev)}/${py} PIX OUTRO MES -10,00`, `28/${mm(prev)}/${py} SALDO DO DIA 900,00`];
-  app.click('[data-import]');
+  app.ev('ImportDialog.open()');
   app.ev(`ImportDialog.setLines(${JSON.stringify(EXT)},'extrato.pdf')`);
   assert.equal(app.$$('.imrow').length, 3, 'só as 3 do mês escolhido');
   assert.equal(app.$$('.imrow input:checked').length, 2, 'o pagamento da fatura vem desmarcado');
@@ -649,6 +649,9 @@ test('Ajustes: um só botão de importar (PDF, planilha ou backup) e dois de bai
   await entrar(app);
   app.click('[data-tab="aj"]');
   assert.equal(app.$$('#app input[type=file]').length, 0, 'nada de vários campos de arquivo espalhados');
+  app.click('[data-tab="mes"]');
+  assert.equal(app.$('#app [data-import]'), null, 'importar fica só em Ajustes (não repete na tela Mês)');
+  app.click('[data-tab="aj"]');
   assert.ok(app.$('#app [data-import]') && app.$('#csv') && app.$('#bk'));
   const backup = app.ev('JSON.stringify(S)');
   app.ev(`ens(S.cats[0].id,2026,0).items.push({v:999,d:'depois do backup',ok:true});save()`);
@@ -658,7 +661,7 @@ test('Ajustes: um só botão de importar (PDF, planilha ou backup) e dois de bai
   await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'pergunta substituir ou juntar');
   app.choose('substituir');
   await app.waitFor(() => !JSON.stringify(app.ev('S.data')).includes('depois do backup'), 2000, 'voltou ao backup');
-  app.click('#app [data-import]');
+  app.click('[data-tab="aj"]'); app.click('#app [data-import]');
   app.chooseFile('#imfile', '{"nada":1}', 'x.json');
   await app.sleep(30);
   assert.equal(app.$('#dlg4').hasAttribute('open'), false, 'json estranho: só avisa');
@@ -701,14 +704,14 @@ test('importar de outros bancos: OFX entra direto; CSV mostra as colunas para co
   const y = app.ev('selY'), mth = app.ev('selM'), mm = String(mth + 1).padStart(2, '0');
   // OFX da conta
   const ofx = `OFXHEADER:100\n<OFX><BANKMSGSRSV1><STMTRS><BANKTRANLIST><STMTTRN><DTPOSTED>${y}${mm}03<TRNAMT>-150.00<MEMO>PIX ENVIADO<STMTTRN><DTPOSTED>${y}${mm}05<TRNAMT>5000.00<MEMO>SALARIO</BANKTRANLIST></STMTRS></BANKMSGSRSV1><FI><ORG>Banco Bradesco</FI></OFX>`;
-  app.click('[data-import]'); app.chooseFile('#imfile', ofx, 'extrato.ofx');
+  app.ev('ImportDialog.open()'); app.chooseFile('#imfile', ofx, 'extrato.ofx');
   await app.waitFor(() => app.$$('.imrow').length === 2, 2000, 'OFX lido');
   assert.match(app.$('#imf').textContent, /Extrato da conta · Bradesco · OFX/);
   app.click('[data-imgo]');
   assert.equal(app.ev("S.cats.filter(c=>c.nome==='Movimentação CC Itaú').length"), 2);
   // CSV de cartão (compras positivas): o app adivinha as colunas e o tipo; dá para trocar a coluna
   const csv = `date,title,amount\n${y}-${mm}-21,Padaria,23.50\n${y}-${mm}-22,Uber,18.90\n${y}-${mm}-23,Pagamento recebido,-500.00\n`;
-  app.click('[data-import]'); app.chooseFile('#imfile', csv, 'nubank-fatura.csv');
+  app.ev('ImportDialog.open()'); app.chooseFile('#imfile', csv, 'nubank-fatura.csv');
   await app.waitFor(() => app.$('#imcd'), 2000, 'mapa de colunas');
   assert.equal(app.$('input[name=imk]:checked').value, 'cartao', 'nome do arquivo diz que é fatura');
   assert.equal(app.$$('.imrow').length, 3);
@@ -721,7 +724,7 @@ test('importar de outros bancos: OFX entra direto; CSV mostra as colunas para co
   const cc = app.ev("S.cats.find(c=>c.nome==='CC Itaú').id");
   assert.equal(app.ev(`V('${cc}',${y},${mth},'prev')`), 42.4);
   // arquivo que não dá para ler
-  app.click('[data-import]'); app.chooseFile('#imfile', 'nome;idade\nana;30\n', 'banco-xyz.csv');
+  app.ev('ImportDialog.open()'); app.chooseFile('#imfile', 'nome;idade\nana;30\n', 'banco-xyz.csv');
   await app.waitFor(() => app.$('.imfail'), 2000, 'mensagem amigável');
   assert.match(app.$('.imfail').textContent, /Ainda não consigo ler este arquivo/);
   assert.match(app.$('.imfail').textContent, /OFX/);
@@ -736,7 +739,7 @@ test('importar de outros bancos: OFX entra direto; CSV mostra as colunas para co
   app.click('#errl [data-errdel]');
   await app.waitFor(() => /Nenhum erro registrado/.test(app.$('#errl').textContent), 2000, 'resolvido');
   // Excel binário: explica como salvar em CSV
-  app.click('[data-import]'); app.chooseFile('#imfile', 'PK...', 'fatura.xlsx');
+  app.ev('ImportDialog.open()'); app.chooseFile('#imfile', 'PK...', 'fatura.xlsx');
   await app.waitFor(() => app.$('.imfail'), 2000, 'excel');
   assert.match(app.$('.imfail').textContent, /Salvar como/);
   assert.deepEqual(app.dom.errors || [], []);

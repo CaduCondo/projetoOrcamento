@@ -11,7 +11,6 @@ const TOURS={
     {sel:'#app table.mes .val',t:'Lançar um valor',x:'Toque no valor (ou em “＋ Lançar”) para abrir os itens da categoria: adicionar, marcar como pago ✓ ou como “já está no cartão” 💳.'},
     {sel:'#app table.mes th[data-sort$="|dia"]',t:'Ordenar',x:'Toque nos títulos (Categoria, Dia, Valor) para ordenar. A tela abre por dia, para você acompanhar os vencimentos.'},
     {sel:'#app [data-usecat="pagar"]',t:'Incluir uma categoria no mês',x:'Digite parte do nome e escolha uma categoria que já existe. Criar, mudar e excluir categorias fica na aba Categorias.'},
-    {sel:'#app [data-import]',t:'Importar',x:'Traga a fatura do cartão ou o extrato da conta (PDF do Itaú), uma planilha ou um backup. O app descobre sozinho o tipo.'},
     {sel:'[data-help]',t:'Ajuda',x:'Ficou alguma dúvida? Toque aqui em qualquer tela para ver a explicação dela de novo.'},
   ],
   ano:[
@@ -34,7 +33,7 @@ const TOURS={
   ],
   aj:[
     {sel:'#si',t:'Saldo inicial do ano',x:'Quanto você tinha no começo do ano. Em branco, o app continua de onde o ano anterior terminou.'},
-    {sel:'#app [data-import]',t:'Importar',x:'Um botão só para tudo: PDF do Itaú, planilha CSV ou backup.'},
+    {sel:'#app [data-import]',t:'Importar',x:'Um botão só para tudo: extrato ou fatura de qualquer banco (OFX, CSV ou PDF), a planilha do app ou o backup.'},
     {sel:'#csv',t:'Baixar',x:'Baixe uma planilha para abrir no Excel ou um backup completo para guardar.'},
   ],
   perfil:[
