@@ -52,8 +52,9 @@ test('tela Mês: "＋ Categoria" só INCLUI uma categoria que já existe; criar 
   app.click('[data-newcat="pagar"]');
   assert.ok(app.$('#dlg3').hasAttribute('open'));
   assert.equal(app.$('#cfv'), null, 'a janela de categoria não tem campo valor');
-  assert.equal(app.$$('input[name=cfs]').length, 2, 'duas opções ao criar: só onde eu incluir · ano todo');
-  assert.equal(app.$('input[name=cfs]:checked').value, 'lib', 'padrão: só onde eu incluir no mês');
+  assert.ok(app.$('#cff'), 'um interruptor só: "Fixa — aparece todo mês"');
+  assert.equal(app.$('#cff').checked, false, 'padrão: não é fixa (aparece quando incluída)');
+  assert.equal(app.$$('input[name=cfs]').length, 0, 'acabaram as várias opções de vigência');
   app.submit('#cf');
   assert.match(app.$('#cferr').textContent, /nome/i);
   app.type('#cfn', 'Padaria'); app.type('#cfd', '40'); app.submit('#cf');
@@ -115,23 +116,27 @@ test('incluir categoria: a lista filtra pelo meio do nome, ignora acento, e a me
   app.close();
 });
 
-test('categoria nova: "só onde eu incluir" não aparece sozinha; "ano todo" aparece em todos os meses; meses futuros começam vazios', async () => {
+test('categoria nova: FIXA aparece todo mês (inclusive futuros); desligada só aparece quando incluída; futuros começam vazios', async () => {
   const app = openApp({ html });
   await entrar(app);
+  const hoje = new Date(), y = hoje.getFullYear(), mh = hoje.getMonth();
   app.click('[data-tab="cat"]');
-  const criar = (nome, scope) => { app.click('[data-newcat="receber"]'); app.type('#cfn', nome); app.click(`input[name=cfs][value=${scope}]`); app.submit('#cf'); };
-  criar('AnoTodo', 'ano'); criar('Escondida', 'lib');
-  app.click('[data-tab="mes"]');
-  const linhas = () => app.$$('tr[data-cat]').map(r => r.textContent);
-  const tem = n => linhas().some(t => t.includes(n));
-  for (const mes of [0, 3, 9]) { app.click(`[data-m="${mes}"]`); assert.ok(tem('AnoTodo') && !tem('Escondida'), `mês ${mes + 1}: ano todo sim, "só onde eu incluir" não`); }
-  app.click('[data-m="11"]');                                  // dezembro: futuro
-  assert.ok(tem('AnoTodo'), 'futuro: aparece porque foi criada para o ano todo');
-  assert.ok(!tem('Salário') && !tem('Mercado') && !tem('Moradia'), 'futuro: nenhuma outra categoria já vem na lista');
-  app.click('[data-usecat="receber"]'); app.type('#ufq', 'escond'); app.click('#ufl [data-upick]');
-  assert.ok(tem('Escondida'), 'incluída em dezembro');
-  app.click('[data-m="10"]');
-  assert.ok(!tem('Escondida') && !tem('Salário'), 'novembro continua vazio (só o ano todo)');
+  const criar = (nome, fixa) => { app.click('[data-newcat="receber"]'); app.type('#cfn', nome); if (fixa) app.click('#cff'); app.submit('#cf'); };
+  criar('Fixa Teste', true); criar('Escondida', false);
+  const id = n => app.ev(`S.cats.find(c=>c.nome==='${n}').id`);
+  assert.equal(app.ev(`catById('${id('Fixa Teste')}').fixa`), true);
+  const aparece = (n, yy, mm) => app.ev(`visCats('receber',${yy},${mm}).some(c=>c.nome==='${n}')`);
+  assert.ok(aparece('Fixa Teste', y, mh), 'aparece no mês atual');
+  assert.ok(aparece('Fixa Teste', y + 1, 5), 'e nos meses futuros (até no ano que vem)');
+  assert.ok(!aparece('Escondida', y, mh) && !aparece('Escondida', y + 1, 5), 'desligada não aparece sozinha');
+  if (mh < 11) {
+    app.click('[data-tab="mes"]'); app.click(`[data-m="${mh + 1}"]`);
+    const linhas = () => app.$$('tr[data-cat]').map(r => r.textContent);
+    assert.ok(linhas().some(t => t.includes('Fixa Teste')), 'mês futuro: a fixa está lá');
+    assert.ok(!linhas().some(t => t.includes('Salário') || t.includes('Mercado')), 'mês futuro: nenhuma outra categoria já vem na lista');
+    app.click('[data-usecat="receber"]'); app.type('#ufq', 'escond'); app.click('#ufl [data-upick]');
+    assert.ok(linhas().some(t => t.includes('Escondida')), 'incluída no mês futuro');
+  }
   app.close();
 });
 
@@ -182,10 +187,12 @@ test('página Categorias: criar, buscar, mesclar e excluir', async () => {
   assert.match(app.$$('#cl .vig').map(e => e.textContent).join('|'), /só onde for incluída no mês/, 'a linha mostra onde a categoria vale');
   // buscar
   app.type('#cq', 'merc');
-  assert.deepEqual(app.$$('#cl .cn').map(i => i.value), ['Mercado']);
+  assert.deepEqual(app.$$('#cl .cn').map(i => i.textContent), ['Mercado']);
   // mesclar Mercado → Padaria (pelo combobox, como o usuário faria)
   const pad = app.ev("S.cats.find(c=>c.nome==='Padaria').id");
-  app.click(`[data-cmerge="${merc}"]`);
+  app.click(`#cl [data-cedit="${merc}"]`);                          // toca na linha: abre a janela da categoria
+  assert.ok(app.$('#dlg3').hasAttribute('open'));
+  app.click('#cf [data-cmerge]');
   assert.ok(app.$('#dlg2').hasAttribute('open'));
   app.type('#mgin', 'pada');
   assert.match(app.$('#dlg2 .cbl').textContent, /Padaria/);
@@ -196,55 +203,42 @@ test('página Categorias: criar, buscar, mesclar e excluir', async () => {
   assert.equal(app.ev(`V('${pad}',${y},${mth},'real')`), 70, 'lançamentos foram para a Padaria');
   // excluir
   app.type('#cq', 'pada');
-  app.click(`[data-cdel="${pad}"]`);                               // confirm() do teste responde "sim"
+  app.click(`#cl [data-cedit="${pad}"]`); app.click('#cf [data-cdel]');   // confirm() do teste responde "sim"
   assert.equal(app.ev(`catById('${pad}')`), undefined);
   assert.equal(app.ev(`Object.keys(S.data).some(k=>k.startsWith('${pad}|'))`), false);
   app.close();
 });
 
-test('página Categorias: editar a categoria vale do mês escolhido em diante, mostra a vigência e permite desfazer', async () => {
+test('página Categorias: mudar nome/dia vale do MÊS ATUAL em diante (com aviso); o passado fica com o nome antigo', async () => {
   const app = openApp({ html });
   await entrar(app);
-  const y = app.ev('selY');
-  // cria "Salário Antigo" (ano todo, dia 5) e lança em janeiro e maio
+  const hoje = new Date(), y = hoje.getFullYear(), mh = hoje.getMonth();
   app.click('[data-tab="cat"]');
-  app.click('[data-newcat="receber"]'); app.type('#cfn', 'Salário Antigo'); app.type('#cfd', '5'); app.click('input[name=cfs][value=ano]'); app.submit('#cf');
+  app.click('[data-newcat="receber"]'); app.type('#cfn', 'Salário Antigo'); app.type('#cfd', '5'); app.click('#cff'); app.submit('#cf');
   const velho = app.ev("S.cats.find(c=>c.nome==='Salário Antigo').id");
-  app.ev(`ens('${velho}',${y},0).items.push({v:1000,d:'',ok:true});ens('${velho}',${y},4).items.push({v:1000,d:'',ok:true});save()`);
-  app.click('[data-tab="cat"]');
-  app.click('[data-cf="tipo|receber"]'); app.type('#cq', 'Salário Antigo');
-  assert.match(app.$('#cl .vig').textContent, new RegExp(`ano todo ${y}`));
-  // Editar → a partir de abril, novo nome e dia 10, "deste mês em diante"
-  app.click(`[data-cedit="${velho}"]`);
-  assert.ok(app.$('#dlg3').hasAttribute('open'));
-  assert.equal(app.$('#cfn').value, 'Salário Antigo');
-  assert.equal(app.$('input[name=cfs]:checked').value, 'ano', 'a opção atual vem marcada');
-  app.change('#cfm', '3');
-  app.type('#cfn', 'Salário Empresa X'); app.type('#cfd', '10'); app.click('input[name=cfs][value=futuro]'); app.submit('#cf');
-  const novo = app.ev("S.cats.find(c=>c.nome==='Salário Empresa X').id");
-  assert.equal(app.ev(`catById('${velho}').nome`), 'Salário Antigo', 'o passado não mudou');
-  assert.equal(app.ev(`catById('${velho}').dia`), 5);
-  assert.equal(app.ev(`V('${velho}',${y},0,'real')`), 1000, 'janeiro continua na versão antiga');
-  assert.equal(app.ev(`V('${novo}',${y},4,'real')`), 1000, 'maio foi para a versão nova');
-  assert.equal(app.ev(`catById('${novo}').dia`), 10);
-  app.type('#cq', 'Salário');
-  const nomes = app.$$('#cl .cn').map(i => i.value);
-  assert.ok(nomes.includes('Salário Antigo') && nomes.includes('Salário Empresa X'), 'a lista mostra as duas versões');
-  assert.match(app.$$('#cl .vig').map(e => e.textContent).join('|'), /jan\/\d{4} a mar\/\d{4}/, 'a antiga mostra até quando valeu (de janeiro a março)');
-  // editar o nome direto na linha: vale do mês selecionado em diante e oferece "Desfazer"
-  app.change(`[data-cn="${novo}"]`, 'Salário Empresa Y');
-  assert.equal(app.ev("S.cats.some(c=>c.nome==='Salário Empresa Y')"), true);
-  assert.equal(app.$('#snack').hidden, false);
-  assert.match(app.$('#snack').textContent, /passado não mudou/);
-  app.click('#snack button');                                   // Desfazer
-  assert.equal(app.ev("S.cats.some(c=>c.nome==='Salário Empresa Y')"), false, 'desfez');
-  // corrigir um erro em TODOS os meses (sem criar versão)
+  // sem nada antes deste mês: renomear não cria "versão antiga"
+  app.click(`#cl [data-cedit="${velho}"]`);
+  assert.match(app.$('#cfnote').textContent, /valem de .* em diante/, 'a janela avisa antes de salvar');
+  app.type('#cfn', 'Salário Antigo'); app.submit('#cf');
   const total = app.ev('S.cats.length');
-  app.click(`[data-cedit="${velho}"]`); app.click('input[name=cfq][value=todos]');
-  assert.equal(app.$$('input[name=cfs]').every(r => r.disabled), true, 'as opções de vigência ficam bloqueadas');
-  app.type('#cfn', 'Salário Antigo (corrigido)'); app.submit('#cf');
-  assert.equal(app.ev(`catById('${velho}').nome`), 'Salário Antigo (corrigido)');
-  assert.equal(app.ev('S.cats.length'), total, 'nenhuma versão nova');
+  if (mh === 0) { app.close(); return; }                           // em janeiro não há mês anterior no mesmo ano para testar
+  app.ev(`ens('${velho}',${y},${mh - 1}).items.push({v:1000,d:'',ok:true});ens('${velho}',${y},${mh}).items.push({v:1100,d:'',ok:true});save();render()`);
+  app.click(`#cl [data-cedit="${velho}"]`);
+  app.type('#cfn', 'Salário Empresa X'); app.type('#cfd', '10'); app.submit('#cf');
+  const novo = app.ev("S.cats.find(c=>c.nome==='Salário Empresa X').id");
+  assert.notEqual(novo, velho, 'com passado: guarda a versão antiga');
+  assert.equal(app.ev('S.cats.length'), total + 1);
+  assert.equal(app.ev(`catById('${velho}').nome`), 'Salário Antigo', 'o mês anterior continua com o nome antigo');
+  assert.equal(app.ev(`V('${velho}',${y},${mh - 1},'real')`), 1000);
+  assert.equal(app.ev(`V('${novo}',${y},${mh},'real')`), 1100, 'o mês atual já usa o nome novo');
+  assert.equal(app.ev(`catById('${novo}').dia`), 10);
+  assert.equal(app.ev(`catById('${novo}').fixa`), true, 'continua fixa');
+  assert.equal(app.$('#snack').hidden, false);
+  assert.match(app.$('#snack').textContent, /passa a ser “Salário Empresa X” de .* em diante\. Os meses anteriores continuam com o nome antigo/);
+  // desligar "fixa": deixa de aparecer daqui em diante, sem criar outra versão
+  app.click(`#cl [data-cedit="${novo}"]`); app.click('#cff'); app.submit('#cf');
+  assert.equal(app.ev(`!!catById('${novo}').fixa && !catById('${novo}').vis.to`), false);
+  assert.equal(app.ev('S.cats.length'), total + 1);
   app.close();
 });
 
@@ -470,7 +464,7 @@ test('página Categorias: cabeçalho clicável ordena por nome, dia, onde aparec
   app.ev(`['Zeta:15','Beta:3','Alfa:','Gama:30'].forEach(x=>{const[n,d]=x.split(':');addCat('pagar',n,d?+d:null)});save()`);
   app.click('[data-tab="cat"]');
   app.click('[data-cf="filtro|todas"]'); app.click('[data-cf="tipo|pagar"]');
-  const nomes = () => app.$$('#cl .cn').map(i => i.value).filter(n => ['Zeta', 'Beta', 'Alfa', 'Gama'].includes(n));
+  const nomes = () => app.$$('#cl .cn').map(i => i.textContent).filter(n => ['Zeta', 'Beta', 'Alfa', 'Gama'].includes(n));
   assert.ok(app.$('#cl .cr.hd'), 'a lista tem cabeçalho');
   assert.deepEqual(Array.from(app.$$('#cl .cr.hd .srt'), t => t.textContent.trim()).slice(1, 6), ['Nome', 'Dia', 'Onde aparece', 'Último uso ▼', 'Lanç.']);
   app.click('[data-csort="dia"]');
@@ -646,6 +640,57 @@ test('PDF com senha: o app pergunta a senha (e de novo se errar); cancelar não 
   app.choose('');
   const e = await p2;
   assert.match(String(e.message || e), /cancelada/);
+  assert.deepEqual(app.dom.errors || [], []);
+  app.close();
+});
+
+test('Ajustes: um só botão de importar (PDF, planilha ou backup) e dois de baixar; backup .json pode substituir ou juntar', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  app.click('[data-tab="aj"]');
+  assert.equal(app.$$('#app input[type=file]').length, 0, 'nada de vários campos de arquivo espalhados');
+  assert.ok(app.$('#app [data-import]') && app.$('#csv') && app.$('#bk'));
+  const backup = app.ev('JSON.stringify(S)');
+  app.ev(`ens(S.cats[0].id,2026,0).items.push({v:999,d:'depois do backup',ok:true});save()`);
+  app.click('#app [data-import]');
+  assert.match(app.$('#imfile').getAttribute('accept'), /\.pdf.*\.csv.*\.json/);
+  app.chooseFile('#imfile', backup, 'backup.json');
+  await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'pergunta substituir ou juntar');
+  app.choose('substituir');
+  await app.waitFor(() => !JSON.stringify(app.ev('S.data')).includes('depois do backup'), 2000, 'voltou ao backup');
+  app.click('#app [data-import]');
+  app.chooseFile('#imfile', '{"nada":1}', 'x.json');
+  await app.sleep(30);
+  assert.equal(app.$('#dlg4').hasAttribute('open'), false, 'json estranho: só avisa');
+  assert.deepEqual(app.dom.errors || [], []);
+  app.close();
+});
+
+test('tour de primeira vez: abre sozinho uma vez por tela, destaca um item por vez, e o "?" abre de novo', async () => {
+  const app = openApp({ html, tour: true });
+  await entrar(app);
+  await app.waitFor(() => app.$('#tour'), 3000, 'tour abriu sozinho na tela Mês');
+  assert.match(app.$('.tour-n').textContent, /^1 de \d+$/);
+  const total = +app.$('.tour-n').textContent.split(' de ')[1];
+  assert.ok(total >= 6, 'explica vários pontos da tela');
+  app.click('[data-tnext]');
+  assert.match(app.$('#tourt').textContent, /Escolha o mês/);
+  assert.equal(app.$('[data-tprev]').hidden, false);
+  app.click('[data-tprev]');
+  assert.match(app.$('#tourt').textContent, /Bem-vindo/);
+  for (let i = 0; i < total; i++) app.click('[data-tnext]');
+  assert.equal(app.$('#tour'), null, 'último passo fecha');
+  // trocar de tela e voltar: não abre de novo
+  app.click('[data-tab="ano"]'); await app.waitFor(() => app.$('#tour'), 3000, 'tour da tela Ano');
+  app.click('[data-tskip]'); assert.equal(app.$('#tour'), null, 'pular fecha');
+  app.click('[data-tab="mes"]'); await app.sleep(700);
+  assert.equal(app.$('#tour'), null, 'já visto: não abre sozinho de novo');
+  // botão de ajuda reabre a explicação da tela atual
+  app.click('[data-help]');
+  assert.ok(app.$('#tour'));
+  assert.match(app.$('#tourt').textContent, /Bem-vindo/);
+  app.key('#tour [data-tnext]', 'Escape');
+  assert.equal(app.$('#tour'), null, 'Esc fecha');
   assert.deepEqual(app.dom.errors || [], []);
   app.close();
 });

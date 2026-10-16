@@ -153,7 +153,7 @@ test('PRIVACIDADE — entrar em OUTRO aparelho nunca puxa dados da nuvem; mostra
   // o botão do aviso leva a Ajustes, onde se carrega o arquivo
   b.click('[data-na="ajustes"]'); assert.equal(b.ev('tab'), 'aj');
   const csv = c.ev('csvFileText(S)');
-  b.chooseFile('#csvin', csv, 'meu-orcamento.csv');
+  b.click('[data-import]'); b.chooseFile('#imfile', csv, 'meu-orcamento.csv');
   await b.waitFor(() => b.$('#dlg4').hasAttribute('open'), 2000, 'janela do arquivo'); b.choose('substituir');
   await b.waitFor(() => JSON.stringify(b.ev('S.data')).includes('segredo'), 3000, 'arquivo carregado');
   await b.ev('backend.flush()');
@@ -214,17 +214,17 @@ test('Ajustes: baixar CSV e carregar de volta (substituir ou juntar)', async () 
   const db = createDb(); const app = abrir(db); await criarConta(app);
   const { c } = lancar(app, '2500', 'um');
   app.click('[data-tab="aj"]');
-  assert.ok(app.$('#csv') && app.$('#csvin'), 'botões de baixar e carregar CSV');
+  assert.ok(app.$('#csv') && app.$('#bk') && app.$('#app [data-import]'), 'baixar planilha, baixar backup e um só botão de importar');
   const csv = app.ev('csvFileText(S)');
   assert.ok(csv.includes('um') && csv.startsWith('﻿Meu Orçamento;'));
   lancar(app, '100', 'dois');                                         // muda depois do "arquivo"
   app.click('[data-tab="aj"]');
-  app.chooseFile('#csvin', csv);
+  app.click('[data-import]'); app.chooseFile('#imfile', csv);
   await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'janela'); app.choose('substituir');
   await app.waitFor(() => !JSON.stringify(app.ev('S.data')).includes('dois'), 3000, 'substituiu');
   assert.ok(JSON.stringify(app.ev('S.data')).includes('"um"'));
   app.click('[data-tab="aj"]');
-  app.chooseFile('#csvin', 'isto não é um arquivo nosso');
+  app.click('[data-import]'); app.chooseFile('#imfile', 'isto não é um arquivo nosso');
   await app.sleep(50);                                               // alert() do teste não faz nada; o app não pode quebrar
   assert.ok(JSON.stringify(app.ev('S.data')).includes('"um"'), 'arquivo errado não mexe nos dados');
   assert.deepEqual(app.dom.errors || [], []);

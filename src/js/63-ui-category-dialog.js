@@ -1,53 +1,43 @@
-/* Janela de categoria: criar e editar (página Categorias).
-   Nome, dia (1 a 31) e "onde aparece": só onde eu incluir no mês · o ano todo · (ao editar) só este mês · deste mês em diante.
-   Ao editar, a mudança vale do mês escolhido em diante — o passado não muda — ou, se marcado, em todos os meses (corrigir um erro). */
+/* Janela de categoria (página Categorias): criar e editar, num lugar só.
+   Campos: nome, dia (1 a 31) e "Fixa — aparece todo mês". Na edição também: Mesclar e Excluir.
+   Mudanças de nome/dia valem do MÊS ATUAL em diante: os meses anteriores continuam com o nome antigo (o app avisa). */
 const dlg3=el('dlg3');
+const hojeYM=()=>{const d=new Date();return[d.getFullYear(),d.getMonth()]};
 const CategoryDialog={
-  mode:'new',tipo:null,id:null,y:0,m:0,
-  openNew(tipo,nome=''){Object.assign(this,{mode:'new',tipo,id:null,y:selY,m:selM});this.draw({nome,dia:'',scope:'lib',todos:false});dlg3.showModal();setTimeout(()=>el('cfn')?.focus(),0)},
-  openEdit(id){const c=catById(id);Object.assign(this,{mode:'edit',tipo:c.tipo,id,y:selY,m:selM});this.draw({nome:c.nome,dia:c.dia??'',scope:scopeOf(c),todos:false});dlg3.showModal()},
-
-  /* textos das 3 opções */
-  labels(){const novo=this.mode==='new',{y,m}=this;
-    return novo?{lib:'Só onde eu incluir no mês (recomendado)',ano:`O ano todo (${y}): aparece em todos os meses de ${y}`}
-               :{lib:'Só onde eu incluir no mês',mes:'Só neste mês',ano:'Deste mês até dezembro do mesmo ano',futuro:'Deste mês em diante (até o mês atual; meses futuros começam vazios)'}},
-  draw(v){const novo=this.mode==='new',pagar=this.tipo==='pagar',L=this.labels(),c=novo?null:catById(this.id);
-    const dica=pagar?'Lembrete do dia do vencimento: o dia em que essa conta precisa ser paga.':'Lembrete do dia em que esse dinheiro entra (ou deveria entrar).';
+  mode:'new',tipo:null,id:null,
+  openNew(tipo,nome=''){Object.assign(this,{mode:'new',tipo,id:null});this.draw({nome,dia:'',fixa:false});dlg3.showModal();setTimeout(()=>el('cfn')?.focus(),0)},
+  openEdit(id){if(readOnly)return;const c=catById(id);Object.assign(this,{mode:'edit',tipo:c.tipo,id});this.draw({nome:c.nome,dia:c.dia??'',fixa:!!c.fixa});dlg3.showModal()},
+  draw(v){const novo=this.mode==='new',pagar=this.tipo==='pagar',c=novo?null:catById(this.id),[y,m]=hojeYM(),st=c?catStats()[c.id]:null;
+    const dica=pagar?'Dia em que essa conta vence.':'Dia em que esse dinheiro entra.';
     dlg3.innerHTML=`<form id="cf" novalidate>
-     <div class="dh"><div><h3>${novo?'Nova categoria':'Editar categoria'} · ${pagar?'Despesas':'Receitas'}</h3>
-       <div class="sub">${novo?'Depois de criar, inclua a categoria no mês pela tela Mês (botão “＋ Categoria”) e lance o valor.':`Hoje: ${esc(scopeLabel(c)||'categoria do histórico')}`}</div></div>
+     <div class="dh"><div><h3>${novo?(pagar?'Nova despesa':'Nova receita'):esc(c.nome)}</h3>
+       <div class="sub">${novo?'Depois, inclua no mês pela tela Mês (“＋ Categoria”) ou marque como fixa.':`${pagar?'Despesa':'Receita'} · ${esc(scopeLabel(c)||'histórico')}${st?` · ${st.n} lançamento(s), último em ${lastLabel(st.last)}`:''}`}</div></div>
        <button type="button" class="btn sec" data-cclose>Fechar</button></div>
      <div class="db">
-      ${novo?'':`<div class="note"><b>Quando vale a mudança?</b>
-        <label class="radio"><input type="radio" name="cfq" value="daqui" ${v.todos?'':'checked'}> A partir de
-          <select id="cfm" aria-label="mês">${MESES.map((n,i)=>`<option value="${i}" ${i===this.m?'selected':''}>${n}</option>`).join('')}</select>
-          <select id="cfy" aria-label="ano">${S.anos.map(a=>`<option ${a===this.y?'selected':''}>${a}</option>`).join('')}</select> — o que passou não muda</label>
-        <label class="radio"><input type="radio" name="cfq" value="todos" ${v.todos?'checked':''}> Em todos os meses (corrigir um erro, como um acento no nome)</label></div>`}
-      <label class="f">Nome *<input id="cfn" maxlength="60" autocomplete="off" value="${esc(v.nome)}" placeholder="ex.: Salário"></label>
-      <label class="f"><span>Dia do mês (1 a 31) <span class="info" title="${dica}">ⓘ</span></span><input id="cfd" type="number" min="1" max="31" inputmode="numeric" value="${v.dia}" placeholder="opcional"></label>
-      <p class="hint" style="margin-top:-6px">${dica}</p>
-      <fieldset class="scope" id="cfsc"><legend>Onde esta categoria aparece</legend>
-       ${(novo?['lib','ano']:SCOPES).map(s=>`<label class="radio"><input type="radio" name="cfs" value="${s}" ${v.scope===s?'checked':''}> <span data-scl="${s}">${L[s]}</span></label>`).join('')}
-      </fieldset>
-      <div class="err" id="cferr" role="alert"></div></div>
-     <div class="df"><button type="button" class="btn dan" data-cclose>Cancelar</button><button class="btn">${novo?'Criar categoria':'Salvar alteração'}</button></div></form>`;
-    this.syncScope()},
-  /* "em todos os meses" não mexe na vigência: bloqueia as 3 opções */
-  syncScope(){const todos=dlg3.querySelector('input[name=cfq]:checked')?.value==='todos';
-    dlg3.querySelectorAll('input[name=cfs]').forEach(r=>{r.disabled=todos});el('cfsc')?.classList.toggle('off',todos)},
-  submit(){const err=t=>{el('cferr').textContent=t},input={nome:el('cfn').value,dia:el('cfd').value},scope=dlg3.querySelector('input[name=cfs]:checked')?.value||(this.mode==='new'?'lib':'futuro');
+      <label class="f">Nome *<input id="cfn" maxlength="60" autocomplete="off" value="${esc(v.nome)}" placeholder="${pagar?'ex.: Aluguel':'ex.: Salário'}"></label>
+      <label class="f"><span>Dia do mês (opcional) <span class="info" title="${dica}">ⓘ</span></span><input id="cfd" type="number" min="1" max="31" inputmode="numeric" value="${v.dia}" placeholder="1 a 31"></label>
+      <label class="switch"><input type="checkbox" id="cff" ${v.fixa?'checked':''}><span class="sw"></span><span><b>Fixa — aparece todo mês</b><br><span class="sub">Ex.: aluguel, salário. Desligada: aparece só quando você inclui no mês ou quando tem lançamento.</span></span></label>
+      ${novo?'':`<div class="note" id="cfnote">✏️ Mudanças no <b>nome</b> ou no <b>dia</b> valem de <b>${MESES[m].toLowerCase()}/${y}</b> em diante. Os meses anteriores continuam como estão.</div>`}
+      <div class="err" id="cferr" role="alert"></div>
+      ${novo?'':`<div class="row cfx"><button type="button" class="btn sec sm" data-cmerge="${c.id}" title="Juntar os lançamentos desta categoria com outra">🔀 Mesclar com outra…</button><button type="button" class="btn dan sm" data-cdel="${c.id}">🗑 Excluir</button></div>`}
+     </div>
+     <div class="df"><button type="button" class="btn dan" data-cclose>Cancelar</button><button class="btn">${novo?'Criar':'Salvar'}</button></div></form>`},
+  submit(){const err=t=>{el('cferr').textContent=t},input={nome:el('cfn').value,dia:el('cfd').value},fixa=el('cff').checked,[y,m]=hojeYM();
+    let msg='';
     try{
-      if(this.mode==='new')createCat(this.tipo,input,scope,this.y,this.m);
-      else if(dlg3.querySelector('input[name=cfq]:checked')?.value==='todos')renameCatEverywhere(this.id,input);
-      else reviseCat(this.id,input,scope,this.y,this.m);
+      if(this.mode==='new')createCat(this.tipo,input,fixa?'fixa':'lib',y,m);
+      else{const c=catById(this.id),limpo=cleanInput(input),mudou=limpo.nome!==c.nome||(limpo.dia||null)!==(c.dia||null);
+        let alvo=c;
+        if(mudou){const antigo=c.nome;alvo=reviseCat(c.id,input,'manter',y,m);
+          msg=alvo!==c?`“${antigo}” passa a ser “${alvo.nome}” de ${MESES[m].toLowerCase()}/${y} em diante. Os meses anteriores continuam com o nome antigo.`:'Categoria atualizada.'}
+        if(fixa!==!!alvo.fixa){setFixa(alvo.id,fixa,y,m);msg=msg||(fixa?'Agora ela aparece todo mês.':`Deixou de ser fixa de ${MESES[m].toLowerCase()}/${y} em diante.`)}}
     }catch(e){return err(e.message)}
-    save();dlg3.close()}
+    save();dlg3.close();if(msg)snackbar(msg,null,null,9000)}
 };
-dlg3.addEventListener('click',e=>{if(e.target.closest('[data-cclose]')||e.target===dlg3)dlg3.close()});
-dlg3.addEventListener('change',e=>{
-  if(e.target.id==='cfm')CategoryDialog.m=+e.target.value;
-  else if(e.target.id==='cfy')CategoryDialog.y=+e.target.value;
-  else if(e.target.name==='cfq')CategoryDialog.syncScope()});
+dlg3.addEventListener('click',e=>{const t=e.target;let b;
+  if(t.closest('[data-cclose]')||t===dlg3)dlg3.close();
+  else if(b=t.closest('#cf [data-cmerge]')){const id=b.dataset.cmerge;dlg3.close();MergeDialog.open(id)}
+  else if(b=t.closest('#cf [data-cdel]')){const id=b.dataset.cdel;dlg3.close();confirmDeleteCat(id)}});
 dlg3.addEventListener('submit',e=>{if(e.target.id!=='cf')return;e.preventDefault();CategoryDialog.submit()});
 dlg3.addEventListener('close',()=>render());
 

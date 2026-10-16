@@ -6,15 +6,6 @@ function addYear(){const def=Math.max(...S.anos)+1,v=parseInt(prompt('Qual ano d
   if(v>=1990&&v<=2100){if(!S.anos.includes(v)){S.anos.push(v);S.anos.sort((a,b)=>a-b);save()}selY=v;selM=0;render()}}
 function confirmDeleteCat(id){const c=catById(id),nl=catStats()[id]?.n||0;
   if(confirm(nl?`Excluir “${c.nome}” e os ${nl} lançamentos dela (em todos os anos)? Para juntar com outra categoria, use Mesclar.`:`Excluir “${c.nome}”?`)){deleteCat(id);save();render()}}
-/* nome/dia alterados direto na linha de Ajustes: valem do mês selecionado em diante (com "Desfazer") */
-function inlineCatEdit(id,patchObj){const c=catById(id),novo={nome:patchObj.nome??c.nome,dia:patchObj.dia===undefined?c.dia:patchObj.dia};
-  if(novo.nome===c.nome&&(novo.dia||null)===(c.dia||null))return;
-  const antes=JSON.stringify(S);
-  try{ if(aliveFrom(c,selY,selM)){reviseCat(id,novo,scopeOf(c),selY,selM);
-        snackbar(`Mudança vale de ${MESES[selM].toLowerCase()}/${selY} em diante; o passado não mudou.`,'Desfazer',()=>{S=JSON.parse(antes);save();render()})}
-       else renameCatEverywhere(id,novo);              // versão já encerrada: corrige direto
-    save();render()}
-  catch(e){alert(e.message);render()}}
 function exportBackup(){download(`orcamento-backup-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(S,null,1),'application/json')}
 function exportCsv(){download(`meu-orcamento-${new Date().toISOString().slice(0,10)}.csv`,csvFileText(S),'text/csv;charset=utf-8')}
 /* carrega um CSV do Meu Orçamento: substitui tudo ou junta os anos do arquivo */
@@ -28,14 +19,23 @@ async function importCsvFile(file,input){
 function mergeImport(o){const clash=importClashYears(o);
   if(clash.length&&!confirm(`Os anos ${clash.join(', ')} já têm lançamentos e serão SUBSTITUÍDOS pelos do arquivo. Continuar?`))return;
   applyImport(o);save();render();alert(`Importado: anos ${o.anos.join(', ')}.`)}
-function importFile(file,input){readJsonFile(file,o=>o.cats&&o.data&&o.anos).then(mergeImport).catch(()=>alert('Arquivo de importação inválido.')).finally(()=>{input.value=''})}
-function restoreFile(file){readJsonFile(file,s=>s.cats&&s.data).then(s=>{S=mig(s);if(!S.anos.includes(selY))selY=S.anos[S.anos.length-1];save();render()}).catch(()=>alert('Arquivo de backup inválido.'))}
+/* backup (.json) ou arquivo de anos anteriores: substituir tudo ou juntar os anos do arquivo */
+async function importJsonFile(file,input){
+  try{let o;try{o=JSON.parse(await file.text())}catch{o=null}
+    if(!o||!o.cats||!o.data)return alert('Este arquivo .json não é um backup do Meu Orçamento.');
+    const anos=o.anos||[...new Set(Object.keys(o.data).map(k=>parseKey(k).y))].sort(),clash=importClashYears({...o,anos});
+    const ch=await askChoice({titulo:'Carregar este backup',texto:`<p>O arquivo tem dados de <b>${anos.join(', ')||'—'}</b>.</p>${clash.length?`<p class="hint">Se juntar: ${clash.join(', ')} já têm lançamentos aqui e serão substituídos pelos do arquivo.</p>`:''}`,
+      opcoes:[{id:'substituir',label:'Substituir todos os meus dados pelos do arquivo',cls:''},{id:'juntar',label:'Juntar: os anos do arquivo substituem os mesmos anos daqui',cls:'sec'},{id:'',label:'Cancelar',cls:'dan'}]});
+    if(ch==='substituir'){S=mig(o);initSelection();if(backend.store instanceof DeviceStore)backend.store.fileSynced=true;save();render();snackbar('Backup carregado.')}
+    else if(ch==='juntar'){applyImport({anos,saldoIni:o.saldoIni||{},cats:o.cats,data:o.data});save();render();snackbar('Anos do arquivo juntados aos seus dados.')}
+  }finally{if(input)input.value=''}}
 
 /* ---- menu e cabeçalho ---- */
 document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){tab=b.dataset.tab;render()}});
 document.getElementById('hr').addEventListener('click',e=>{
   const tb=e.target.closest('[data-tab]');if(tb){tab=tb.dataset.tab;render();return}
-  if(e.target.closest('[data-logout]'))logout();
+  if(e.target.closest('[data-help]')){Tour.end();Tour.start(tab)}
+  else if(e.target.closest('[data-logout]'))logout();
   else if(e.target.closest('[data-addyear]'))addYear()});
 document.getElementById('hr').addEventListener('change',e=>{if(e.target.id==='ysel'){selY=+e.target.value;render()}});
 
@@ -93,11 +93,7 @@ app.addEventListener('change',e=>{const t=e.target,d=t.dataset;
   else if(t.id==='si'){if(t.value.trim()==='')delete S.saldoIni[selY];else S.saldoIni[selY]=parseV(t.value);save()}
   else if(d.ln){const[k,i]=d.ln.split('|');S[k][i].nome=t.value;save()}
   else if(d.lv){const[k,i]=d.lv.split('|');S[k][i].valor=parseV(t.value);save();render()}
-  else if(d.cn)inlineCatEdit(d.cn,{nome:t.value})
-  else if(d.cd)inlineCatEdit(d.cd,{dia:parseInt(t.value)||null})
-  else if(t.id==='imp'&&t.files[0])importFile(t.files[0],t)
-  else if(t.id==='csvin'&&t.files[0]&&tab==='aj')importCsvFile(t.files[0],t)
-  else if(t.id==='rs'&&t.files[0])restoreFile(t.files[0])});
+  });
 /* o título das colunas também ordena pelo teclado */
 app.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('th[data-sort]')){e.preventDefault();e.target.click()}});
 app.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('[data-csort]')){e.preventDefault();e.target.click()}});

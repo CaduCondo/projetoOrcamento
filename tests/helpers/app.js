@@ -37,6 +37,7 @@ function openApp(opts) {
       w.HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
       w.HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); this.dispatchEvent(new w.Event('close')); };
       w.URL.createObjectURL = () => 'blob:fake';
+      if (!opts.tour) w.__noTour = true;                                   // o tour de primeira vez só abre nos testes que pedem
       if (opts.storage) for (const [k, v] of Object.entries(opts.storage)) w.localStorage.setItem(k, v);   // simula o mesmo aparelho
       if (opts.setup) opts.setup(w);
       w.addEventListener('error', e => { (dom.errors ||= []).push(e.message); });

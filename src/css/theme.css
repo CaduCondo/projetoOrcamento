@@ -225,3 +225,46 @@ dialog[open]{animation:pop .22s ease-out}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 nav:empty,.right:empty{display:none!important}
 .two{align-items:start}                                         /* cada painel com a sua altura: sem sobra embaixo do menor */
+/* histórico de 6 meses dentro da janela de itens (no celular substitui o balão do mouse) */
+.hist{margin:4px 16px 10px;border:1px solid var(--line);border-radius:14px;padding:8px 12px;background:var(--glass)}
+.hist summary{cursor:pointer;color:var(--mut);font-size:13px;font-weight:600;list-style:none}
+.hist summary::-webkit-details-marker{display:none}
+.hist[open] summary{margin-bottom:8px;color:var(--ink)}
+.histb{font-size:13px}.histb table{width:auto}.histb td{padding:2px 8px 2px 0;border:0;white-space:nowrap}
+.histb .tn{text-align:right;font-variant-numeric:tabular-nums}
+.histb .bar{height:6px;border-radius:3px;background:var(--grad);display:inline-block;vertical-align:middle}
+
+/* página Categorias: cada linha é um botão (toque para editar) */
+button.cr{width:100%;background:none;border:0;border-bottom:1px solid var(--line);color:var(--ink);font:inherit;text-align:left;cursor:pointer;border-radius:12px;transition:background .15s}
+button.cr:hover{background:rgba(139,108,255,.08)}
+.cr,.cr.hd{grid-template-columns:10px minmax(140px,1fr) 48px 220px 130px 80px}
+.cr .cn{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cr .cd{text-align:center;color:var(--mut);font-family:var(--font-num)}
+.vig.fx{background:linear-gradient(135deg,rgba(46,230,166,.18),rgba(34,211,238,.14));box-shadow:inset 0 0 0 1px rgba(46,230,166,.4)}
+.cfx{margin-top:10px;padding-top:12px;border-top:1px solid var(--line)}
+/* interruptor (Fixa) */
+.switch{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line2);border-radius:14px;margin-bottom:12px;cursor:pointer;color:var(--ink);font-size:14px}
+.switch input{position:absolute;opacity:0;width:1px;height:1px}
+.switch .sw{flex:none;width:44px;height:26px;border-radius:999px;background:rgba(148,163,184,.25);position:relative;transition:background .2s;margin-top:2px}
+.switch .sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}
+.switch input:checked+.sw{background:var(--grad-pos)}
+.switch input:checked+.sw::after{transform:translateX(18px)}
+.switch input:focus-visible+.sw{outline:2px solid var(--acc-b);outline-offset:2px}
+@media(max-width:760px){
+  .cr,.cr.hd{grid-template-columns:10px 1fr 40px;gap:6px 10px;padding:12px 6px}
+  .cr .vig{grid-column:2/-1;margin-left:0}
+  .cr .xs{display:none}
+}
+
+/* ---------- tour guiado (primeira vez) ---------- */
+#tour{position:fixed;inset:0;z-index:300}
+.tour-spot{position:fixed;border-radius:14px;pointer-events:none;transition:all .28s cubic-bezier(.2,.8,.2,1);
+  box-shadow:0 0 0 9999px rgba(3,5,12,.8),0 0 0 2px var(--acc-b),0 0 26px rgba(34,211,238,.55)}
+.tour-tip{position:fixed;background:rgba(17,24,41,.97);border:1px solid rgba(139,108,255,.45);border-radius:18px;padding:16px 16px 12px;
+  box-shadow:0 24px 60px rgba(0,0,0,.6),0 0 40px rgba(139,108,255,.2);transition:top .28s,left .28s;animation:pop .22s ease-out}
+.tour-n{font:600 11px/1 var(--font-num);letter-spacing:.12em;color:var(--acc-b);text-transform:uppercase}
+.tour-tip h4{margin:8px 0 6px;font:700 17px/1.25 var(--font-num)}
+.tour-x{margin:0 0 14px;color:#c8d1e4;font-size:14px;line-height:1.5}
+.tour-b{display:flex;gap:8px;align-items:center}.tour-b span{flex:1}
+body.touring{overflow:hidden}
+.btn.help{width:34px;padding:0;font:700 15px/1 var(--font-num);border-radius:50%}

@@ -93,7 +93,7 @@ test('SOMENTE LEITURA: vê todos os dados da pessoa, nada é alterável e NADA �
   assert.ok(adm.$$('#app [data-newcat],#app [data-cedit],#app [data-cdel],#app [data-cmerge]').every(e => e.disabled), 'na página Categorias nada altera');
   adm.click('[data-tab="aj"]');
   const mut = adm.$$('#app input:not([type=search]),#app select,#app button').filter(e => !e.matches('[data-tab],[data-m],[data-modo],#per,#ysel,[data-open],[data-close],[data-na],[data-adm],[data-logout]'));
-  assert.ok(mut.length > 5 && mut.every(e => e.disabled), 'em Ajustes tudo está bloqueado: ' + mut.filter(e => !e.disabled).map(e => e.outerHTML.slice(0, 60)).join(' | '));
+  assert.ok(mut.length >= 3 && mut.every(e => e.disabled), 'em Ajustes tudo está bloqueado: ' + mut.filter(e => !e.disabled).map(e => e.outerHTML.slice(0, 60)).join(' | '));
   // a janela de itens abre para olhar, mas sem poder alterar
   adm.click('[data-tab="mes"]');
   const y = adm.ev('selY'), m = adm.ev('selM'), c = adm.ev("S.cats.find(c=>c.nome==='Mercado').id");

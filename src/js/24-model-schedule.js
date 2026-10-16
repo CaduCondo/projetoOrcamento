@@ -25,7 +25,7 @@ function showsInMonth(c,y,m,st){
   if(c.hide?.includes(exKey(y,m)))return false;
   if(inExtra(c,y,m))return true;
   const t=ym(y,m);if(c.until&&t>ymOf(c.until))return false;
-  if(t>nowIdx())return !!(c.vis&&c.vis.to&&t>=ymOf(c.vis.from)&&t<=ymOf(c.vis.to));   // mês futuro: só com fim definido
+  if(t>nowIdx())return !!(c.vis&&t>=ymOf(c.vis.from)&&(c.vis.to?t<=ymOf(c.vis.to):!!c.fixa));   // mês futuro: só fixa ou com fim definido
   if(c.lib&&!c.vis)return false;
   if(c.vis){const e=ymOf(c.vis.to);return t>=ymOf(c.vis.from)&&(e==null||t<=e)}
   return yearEmpty(y)?isActive(c,st):(yearHas(c,y)||!st[c.id])}                // regra antiga (histórico)
@@ -41,19 +41,22 @@ const visCats=(t,y,m)=>{const st=catStats();return cats(t).filter(c=>m==null?sho
 
 /* ---- criação e alteração ---- */
 const SCOPES=['lib','ano','mes','futuro'];
+/* o que a tela oferece hoje: "fixa" (aparece todo mês) ou "lib" (só quando incluída no mês). As outras continuam valendo para dados antigos. */
 /* intervalo de vigência para a opção escolhida. Ao criar, "ano" cobre o ano inteiro; ao alterar, só do mês em diante */
 function scopeVis(scope,y,m,creating){
-  if(scope==='lib')return null;
+  if(scope==='lib'||scope==='hist')return null;
+  if(scope==='fixa')return{from:[y,m],to:null};
   if(scope==='mes')return{from:[y,m],to:[y,m]};
   if(scope==='ano')return{from:[y,creating?0:m],to:[y,11]};
   return{from:[y,m],to:null}}
 /* qual opção representa a vigência atual (para pré-selecionar na edição) */
-function scopeOf(c){const v=c.vis;if(!v)return c.lib?'lib':'futuro';if(!v.to)return'futuro';
+function scopeOf(c){if(c.fixa)return'fixa';const v=c.vis;if(!v)return c.lib?'lib':'futuro';if(!v.to)return'futuro';
   if(v.from[0]===v.to[0]&&v.from[1]===v.to[1])return'mes';return'ano'}
 const mesAno=a=>`${MC[a[1]].toLowerCase()}/${a[0]}`;
 /* texto curto da vigência (Ajustes) */
 function scopeLabel(c){let s='';if(c.lib&&!c.vis)s='só onde for incluída no mês';
-  if(c.vis){const a=c.vis.from,b=c.vis.to;
+  if(c.fixa&&c.vis)s=c.vis.to?`fixa até ${mesAno(c.vis.to)}`:`fixa · todo mês desde ${mesAno(c.vis.from)}`;
+  else if(c.vis){const a=c.vis.from,b=c.vis.to;
     if(!b)s=`de ${mesAno(a)} em diante`;else if(a[0]===b[0]&&a[1]===0&&b[1]===11)s=`ano todo ${a[0]}`;
     else if(a[0]===b[0]&&a[1]===b[1])s=`só ${mesAno(a)}`;else s=`${mesAno(a)} a ${mesAno(b)}`}
   if(c.until)s+=(s?' · ':'')+`até ${mesAno(c.until)}`;return s}
@@ -67,7 +70,20 @@ function validateCat({nome,dia},tipo,y,m,ignoreId){
 const cleanInput=({nome,dia})=>({nome:(nome||'').trim().replace(/\s+/g,' '),dia:dia===''||dia==null?null:Number(dia)});
 
 /* aplica a opção "onde aparece" à categoria */
-function applyScope(c,scope,y,m,creating){const v=scopeVis(scope,y,m,creating);if(v){c.vis=v;delete c.lib}else{delete c.vis;c.lib=true}}
+function applyScope(c,scope,y,m,creating){const v=scopeVis(scope,y,m,creating);delete c.fixa;
+  if(v){c.vis=v;delete c.lib;if(scope==='fixa')c.fixa=true}else if(scope==='hist'){delete c.vis;delete c.lib}else{delete c.vis;c.lib=true}}
+/* liga/desliga "fixa (aparece todo mês)" a partir do mês (y,m), sem criar versão nova. O passado continua aparecendo como antes. */
+function setFixa(id,on,y,m){const c=catById(id),t=ym(y,m);if(!c)return;
+  if(on){if(c.fixa&&c.vis&&!c.vis.to)return c;const f=c.vis&&ymOf(c.vis.from)<=t?c.vis.from:[y,m];c.vis={from:f,to:null};c.fixa=true;delete c.lib;delete c.until;return c}
+  if(!c.fixa)return c;
+  if(ymOf(c.vis.from)>=t){delete c.vis;delete c.fixa;c.lib=true;return c}      // ainda não tinha começado: vira "quando incluída"
+  c.vis={from:c.vis.from,to:fromYm(t-1)};return c}                                  // até o mês anterior continua fixa; daqui em diante, não
+/* a categoria tem algo antes do mês t (lançamento ou inclusão)? Se não tiver, mudar o nome não precisa guardar "versão antiga" */
+function temPassado(c,t){
+  for(const k of Object.keys(S.data))if(k.startsWith(c.id+'|')&&S.data[k].items.length){const p=parseKey(k);if(ym(p.y,p.m)<t)return true}
+  return(c.extra||[]).some(k=>{const p=k.split('-');return ym(+p[0],+p[1]-1)<t})||!!(c.vis&&ymOf(c.vis.from)<t&&!c.lib)}
+/* modo atual da categoria, para a versão nova continuar igual */
+const modoDe=c=>c.fixa?'fixa':c.lib?'lib':c.vis?scopeOf(c):'hist';
 
 /* cria a categoria já com a vigência escolhida (sem valor: o valor é lançado depois) */
 function createCat(tipo,input,scope,y,m){
@@ -86,8 +102,9 @@ function reviseCat(id,input,scope,y,m){
   const c=catById(id),t=ym(y,m);if(!c)throw new Error('Categoria não encontrada.');
   const err=validateCat(input,c.tipo,y,m,id);if(err)throw new Error(err);
   const{nome,dia}=cleanInput(input);
-  if(c.vis&&ymOf(c.vis.from)>=t){                              // ainda nem começou: muda no lugar
-    const f=c.vis.from;c.nome=nome;c.dia=dia;applyScope(c,scope,f[0],f[1],false);return c}
+  if(scope==='manter')scope=modoDe(c);
+  if(!temPassado(c,t)){                                        // nada antes deste mês (nem lançamento): muda no lugar, sem "versão antiga"
+    c.nome=nome;c.dia=dia;if(c.vis&&ymOf(c.vis.from)>=t){const f=c.vis.from;applyScope(c,scope,f[0],f[1],false)}return c}
   const n=makeCat(c.tipo,nome,dia);applyScope(n,scope,y,m,false);n.prevId=c.id;
   if(c.extra){const ex=c.extra.filter(k=>k>=exKey(y,m)),ficam=c.extra.filter(k=>k<exKey(y,m));if(ex.length)n.extra=ex;if(ficam.length)c.extra=ficam;else delete c.extra}
   if(c.hide){const ex=c.hide.filter(k=>k>=exKey(y,m)),ficam=c.hide.filter(k=>k<exKey(y,m));if(ex.length)n.hide=ex;if(ficam.length)c.hide=ficam;else delete c.hide}

@@ -169,6 +169,12 @@ Pedido: refazer o layout, moderno/futurista, continuar escuro, com o celular com
 - Celular: menu em pílula flutuante embaixo (6 abas), meses rolando de lado (o mês escolhido aparece no meio), **Saldo do mês em destaque no topo**, tabelas em formato de lista, janelas viram "folhas" que sobem de baixo, aviso "Salvo" no topo.
 - Computador: mesmo visual, com o menu no topo.
 
+### 5.18 Simplificações e tour de ajuda (issue #38)
+- **Importar/exportar num lugar só:** um botão **📥 Importar arquivo** (Ajustes e tela Mês) que reconhece sozinho PDF do Itaú, planilha CSV ou backup .json (backup pergunta: substituir tudo ou juntar os anos). Para sair: **Baixar planilha (Excel)** e **Baixar backup**. Antes eram 6 botões espalhados.
+- **Celular sem "passar o mouse":** os balões só aparecem em aparelhos com mouse. O histórico de 6 meses da categoria agora fica dentro da janela de itens ("📈 Últimos 6 meses"), que abre com um toque.
+- **Categorias mais simples:** cada categoria é nome, dia e um interruptor **"Fixa — aparece todo mês"** (inclusive meses futuros). Desligada: aparece só quando incluída no mês ou quando tem lançamento. Na página Categorias, toca-se na linha para abrir a janela (editar, mesclar, excluir); acabou a edição direto na lista e as várias opções de vigência. **Mudar nome/dia vale do mês atual em diante** (decisão do dono): os meses anteriores continuam com o nome antigo, a janela avisa antes e uma mensagem confirma depois. Se a categoria não tem nada antes do mês atual, muda direto (sem guardar "versão antiga").
+- **Tour guiado:** na primeira vez em cada tela (por aparelho), um passo a passo destaca um item por vez e escurece o resto. O botão **?** no topo abre a explicação da tela atual quando quiser. Esc ou "Pular" fecham.
+
 ## 6. Princípios que combinamos
 - **Privacidade primeiro:** planilhas, backups e dados pessoais **nunca** vão para o GitHub (repositório público).
 - **Honestidade com o usuário:** o que a tela promete é o que o sistema faz.

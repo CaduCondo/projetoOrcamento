@@ -54,10 +54,10 @@ const ImportDialog={
           <p class="hint">A linha do pagamento da fatura vem desmarcada porque o cartão já está na categoria <b>${esc(CARTAO_CAT)}</b> (marcar de novo contaria em dobro).</p>`;
       if(selItens.length!==its.length)resumo+=`<p class="hint">${its.filter((it,n)=>this.jaFoi(it,ks[n],ja)).length?`${its.filter((it,n)=>this.jaFoi(it,ks[n],ja)).length} já importado(s) antes ficam de fora. `:''}Marcados: <b>${selItens.length}</b> de ${its.length}${cartao?'':` · saldo dos marcados R$ ${fmtN(Math.round(soma*100)/100)}`}.</p>`}
     dlg3.innerHTML=`<form id="imf" novalidate>
-     <div class="dh"><div><h3>📥 Importar fatura ou extrato (PDF)</h3><div class="sub">O arquivo é lido aqui no seu aparelho; nada é enviado para fora.</div></div><button type="button" class="btn sec" data-cclose>Fechar</button></div>
+     <div class="dh"><div><h3>📥 Importar arquivo</h3><div class="sub">O arquivo é lido aqui no seu aparelho; nada é enviado para fora.</div></div><button type="button" class="btn sec" data-cclose>Fechar</button></div>
      <div class="db">
-      <label class="f">Arquivo PDF (fatura do cartão ou extrato da conta do Itaú)<input type="file" id="imfile" accept="application/pdf,.pdf"></label>
-      <div class="row"><label class="f">Mês em que vai entrar<select id="imm">${MESES.map((n,i)=>`<option value="${i}" ${i===this.m?'selected':''}>${n}</option>`).join('')}</select></label>
+      <label class="f">Arquivo: PDF do Itaú (fatura ou extrato), planilha CSV ou backup (.json)<input type="file" id="imfile" accept=".pdf,.csv,.json,application/pdf,text/csv,application/json"></label>
+      <div class="row"><label class="f">Mês em que vai entrar (para PDF)<select id="imm">${MESES.map((n,i)=>`<option value="${i}" ${i===this.m?'selected':''}>${n}</option>`).join('')}</select></label>
        <label class="f">Ano<select id="imy">${anos.map(a=>`<option ${a===this.y?'selected':''}>${a}</option>`).join('')}</select></label></div>
       <div class="err" id="imerr" role="alert">${esc(this.erro)}</div>
       ${k?`<div class="sub"><b>${cartao?'Fatura do cartão':'Extrato da conta'}</b>${this.nome?' · '+esc(this.nome):''}</div>${resumo}
@@ -75,7 +75,9 @@ const ImportDialog={
 function ensureMonthCatPeek(kind,y,m){const n=normName(kind==='cartao'?CARTAO_CAT:MOV_CAT);return S.cats.find(c=>c.tipo==='pagar'&&normName(c.nome)===n)?.id}
 
 dlg3.addEventListener('change',async e=>{const t=e.target;if(!t.closest('#imf'))return;
-  if(t.id==='imfile'&&t.files[0]){const f=t.files[0];
+  if(t.id==='imfile'&&t.files[0]){const f=t.files[0],nome=(f.name||'').toLowerCase();
+    if(nome.endsWith('.csv')){dlg3.close();return importCsvFile(f,t)}          // planilha do próprio app
+    if(nome.endsWith('.json')){dlg3.close();return importJsonFile(f,t)}       // backup
     try{ImportDialog.setLines(await PdfReader.lines(f),f.name)}catch(x){ImportDialog.erro=x.message;ImportDialog.draw()}}
   else if(t.id==='imm'||t.id==='imy'){ImportDialog.m=+el('imm').value;ImportDialog.y=+el('imy').value;if(ImportDialog.kind){ImportDialog.pick()}ImportDialog.draw()}
   else if(t.dataset.imsel!==undefined){t.checked?ImportDialog.sel.add(+t.dataset.imsel):ImportDialog.sel.delete(+t.dataset.imsel);ImportDialog.draw()}});
