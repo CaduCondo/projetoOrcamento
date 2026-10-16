@@ -38,7 +38,7 @@ function blocoMes(tipo,titulo,total,y,m){
    <div class="pfoot"><button class="btn sec sm" data-usecat="${tipo}" title="Incluir neste mês uma categoria de ${tipo==='pagar'?'despesa':'receita'} que já existe">＋ Categoria</button></div></div>`}
 function vMes(){const y=selY,m=selM,R=MT('receber',y,m,'real'),P=MT('pagar',y,m,'real'),Rp=MT('receber',y,m,'prev'),Pp=MT('pagar',y,m,'prev');
   const curY=new Date().getFullYear(),curMo=new Date().getMonth();
-  return `<div class="chips">${MESES.map((n,i)=>`<button class="chip ${i===m?'on':''} ${i===curMo&&y===curY?'cur':''}" data-m="${i}">${n}</button>`).join('')}<span class="sub" style="margin-left:8px">${MESES[m]} de ${y}</span><button class="btn sec sm" data-import title="Importar fatura/extrato (PDF do Itaú), planilha ou backup" style="margin-left:auto">📥 Importar</button></div>
+  return `<div class="chips">${MESES.map((n,i)=>`<button class="chip ${i===m?'on':''} ${i===curMo&&y===curY?'cur':''}" data-m="${i}">${n}</button>`).join('')}<span class="sub" style="margin-left:8px">${MESES[m]} de ${y}</span></div>
   <div class="cards">
    <div class="card"><div class="l">Recebido</div><div class="v pos">${R$(R)}</div><div class="sub">previsto ${R$(Rp)}</div></div>
    <div class="card"><div class="l">Pago</div><div class="v neg">${RP(P)}</div><div class="sub">previsto ${RP(Pp)}</div></div>
