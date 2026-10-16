@@ -5,7 +5,7 @@ O ponto mais sensível é **a conta do dono**: quem entrar no Google ou no GitHu
 
 Marque cada item quando terminar. Os nomes dos menus podem mudar um pouco com o tempo.
 
-## A. Conta Google (stefcadu@gmail.com) — a mais importante
+## A. Conta Google do dono (a que é administradora) — a mais importante
 - [ ] Abrir https://myaccount.google.com/security → **Verificação em duas etapas** → ativar.
       Preferir **chave de acesso (passkey)** ou o app **Google Authenticator**. Evitar depender só de SMS.
 - [ ] Na mesma página: **Códigos alternativos** → gerar, imprimir/anotar em papel e guardar em lugar seguro.
