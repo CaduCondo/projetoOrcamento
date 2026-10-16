@@ -26,7 +26,7 @@ function rowMes(c,y,m){const r=V(c.id,y,m,'real'),p=V(c.id,y,m,'prev'),neg=c.tip
   const vh=venceHoje(c,y,m);
   return `<tr draggable="true" data-cat="${c.id}" data-tipo="${c.tipo}"${vh?' class="venc" title="Vence hoje e ainda está como previsto: agende/pague e marque como pago para tirar este aviso"':''}><td class="grip" title="Arraste para reordenar">⋮⋮</td>
  <td data-tipcat="${c.id}|${y}|${m}">${esc(c.nome)}${vh?' <span class="vtag">⏰ vence hoje</span>':''}<br>${sumBadge(c,y,m)}</td>
- <td class="dia">${c.dia||''}</td>
+ <td class="dia">${c.dia?`<span class="dd">${c.dia}</span>`:''}</td>
  <td class="n">${n>1?`<span class="cnt" title="Quantidade de itens que formam este valor">${n} itens</span>`:''}<button class="val" data-open="${c.id}|${y}|${m}" data-tipcell="${c.id}|${y}|${m}">${main}</button>${p!==r?`<div class="sub" style="padding-right:8px">previsto ${f(p)}</div>`:''}${noCartao?`<div class="sub infoc" title="Valor lançado como “já está na fatura do cartão”: aparece aqui para você acompanhar, mas NÃO entra no total (já está dentro do valor do cartão de crédito)">💳 ${f(noCartao)} no cartão · não soma</div>`:''}</td></tr>`}
 /* um bloco (Receitas ou Despesas) com as linhas e o botão de nova categoria no canto inferior esquerdo */
 function blocoMes(tipo,titulo,total,y,m){

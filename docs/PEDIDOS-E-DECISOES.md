@@ -162,6 +162,13 @@ Pedido do dono, com PDFs reais do Itaú (fatura e extrato). Decisões:
 - **PDF com senha:** o app pergunta a senha (campo mascarado; pergunta de novo se errar; cancelar desiste). A senha só abre o arquivo: não é guardada nem exibida depois.
 - Dados: cada item importado tem `imp` (chave); cópias do cartão têm `ref`+`lock`+`info`; itens movidos do extrato guardam `moved` (para não voltarem se importar de novo).
 
+### 5.17 Visual novo "Neo" (celular em primeiro lugar) (issue #37)
+Pedido: refazer o layout, moderno/futurista, continuar escuro, com o celular como prioridade. Feito em `src/css/theme.css` (vem depois de `styles.css`, só muda a aparência):
+- Fundo escuro com brilhos suaves (violeta, ciano, verde), cartões de "vidro fosco", botões em degradê, números em fonte geométrica (Space Grotesk) e texto em Inter (com fonte do sistema como reserva, se estiver sem internet).
+- Receitas em verde-neon e despesas em rosa-neon; o dia de cada categoria vira uma "etiqueta"; "vence hoje" ganha brilho âmbar.
+- Celular: menu em pílula flutuante embaixo (6 abas), meses rolando de lado (o mês escolhido aparece no meio), **Saldo do mês em destaque no topo**, tabelas em formato de lista, janelas viram "folhas" que sobem de baixo, aviso "Salvo" no topo.
+- Computador: mesmo visual, com o menu no topo.
+
 ## 6. Princípios que combinamos
 - **Privacidade primeiro:** planilhas, backups e dados pessoais **nunca** vão para o GitHub (repositório público).
 - **Honestidade com o usuário:** o que a tela promete é o que o sistema faz.

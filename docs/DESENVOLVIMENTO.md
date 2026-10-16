@@ -25,7 +25,8 @@ Contas de um ambiente não existem no outro (é preciso criar a conta nos dois).
 ```
 src/
   index.html            casca da página
-  css/styles.css        aparência
+  css/styles.css        aparência (base)
+  css/theme.css         visual "Neo" (escuro, vidro, neon, celular primeiro) — vem depois do styles.css
   js/                   o programa, em ordem de leitura (os números definem a ordem de montagem)
     00-config.js        constantes (valores do ambiente entram aqui pelo build)
     10-format.js        formatar/ler valores em R$, escapar texto

@@ -17,7 +17,7 @@ def build(env, out, vendor=True):
             return f.read()
     html = read('src/index.html')
     js = '\n'.join(read(p) for p in sorted(glob.glob('src/js/*.js')))
-    html = html.replace('/*CSS*/', read('src/css/styles.css'))
+    html = html.replace('/*CSS*/', '\n'.join(read(p) for p in sorted(glob.glob('src/css/*.css'))))   # styles.css e depois theme.css
     html = html.replace('/*CHARTJS*/', (read('src/vendor/chart.js') if vendor else '').replace('</script>', '<\\/script>'))
     # leitor de PDF (importar fatura/extrato): vai como texto e só é executado quando a pessoa usa a importação
     pdf = lambda n: (read(f'src/vendor/{n}') if vendor else '').replace('</script>', '<\\/script>')
