@@ -24,7 +24,10 @@ function parseData(s,anoPadrao=null){const t=String(s??'').trim();let m;
   if(m=/^(\d{4})(\d{2})(\d{2})/.exec(t))return{dia:+m[3],mes:+m[2],ano:+m[1]};
   if(m=/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})\b/.exec(t)){let a=+m[3];if(a<100)a+=2000;return{dia:+m[1],mes:+m[2],ano:a}}
   if(m=/^(\d{1,2})\/(\d{1,2})\b/.exec(t))return{dia:+m[1],mes:+m[2],ano:anoPadrao};
+  if(m=/^(\d{1,2})(?:\s+de)?[\s/.-]+([a-zç]{3})[a-zç]*\.?(?:(?:\s+de)?[\s/.-]+(\d{2,4}))?\b/i.exec(t)){       // "21 SET", "21/set", "21 de setembro de 2026"
+    const mes=MES_NOME[normName(m[2]).slice(0,3)];if(!mes)return null;let a=m[3]?+m[3]:anoPadrao;if(a&&a<100)a+=2000;return{dia:+m[1],mes,ano:a}}
   return null}
+const MES_NOME={jan:1,fev:2,feb:2,mar:3,abr:4,apr:4,mai:5,may:5,jun:6,jul:7,ago:8,aug:8,set:9,sep:9,out:10,oct:10,nov:11,dez:12,dec:12};
 const dataOk=d=>d&&d.dia>=1&&d.dia<=31&&d.mes>=1&&d.mes<=12;
 /* pagamento da fatura dentro do próprio arquivo do cartão (fica desmarcado: não é compra) */
 const pagamentoDeFatura=desc=>/\bPAGAMENTO\b|\bPAGTO\b|PAGAMENTO RECEBIDO|PGTO FATURA/i.test(desc);
@@ -69,7 +72,7 @@ function parseBankCsv(rows,map,{inverter=false,anoPadrao=null}={}){
   return itens}
 
 /* ---- PDF de outros bancos: procura "data … descrição … valor" em cada linha ---- */
-const reGen=/^(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\s+(.+?)\s+((?:R\$\s*)?-?\s?\(?(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}\)?(?:\s?[DC-])?)(?:\s+(?:R\$\s*)?-?(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}(?:\s?[DC])?)?$/;
+const reGen=/^(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|\d{1,2}(?:\s+de)?[\s/]+(?:jan|fev|feb|mar|abr|apr|mai|may|jun|jul|ago|aug|set|sep|out|oct|nov|dez|dec)[a-zç]*\.?(?:\s+\d{4})?)\s+(.+?)\s+((?:R\$\s*)?-?\s?\(?(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}\)?(?:\s?[DC-])?)(?:\s+(?:R\$\s*)?-?(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}(?:\s?[DC])?)?$/i;
 function parseGenerico(lines,anoPadrao=null){
   const ano=(lines.join(' ').match(/\b(20\d{2})\b/)||[])[1],itens=[];
   for(const L of lines){const m=reGen.exec(L);if(!m)continue;const desc=m[2].replace(/\s+/g,' ').trim();

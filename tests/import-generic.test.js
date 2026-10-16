@@ -92,3 +92,16 @@ test('CSV com colunas separadas de Crédito e Débito (sem coluna "Valor")', () 
   assert.ok(mp.cred != null && mp.deb != null);
   assert.deepEqual(Array.from(m.parseBankCsv(rows, mp), i => [i.desc, i.valor]), [['PIX RECEBIDO', 200], ['LUZ', -98.7]]);
 });
+
+test('datas por extenso e faturas de cartão em PDF de outros bancos ("21 SET", "21 de setembro", com R$)', () => {
+  const d = s => JSON.parse(JSON.stringify(m.parseData(s, 2026)));
+  assert.deepEqual(d('21 SET'), { dia: 21, mes: 9, ano: 2026 });
+  assert.deepEqual(d('21/set'), { dia: 21, mes: 9, ano: 2026 });
+  assert.deepEqual(d('3 de outubro de 2026'), { dia: 3, mes: 10, ano: 2026 });
+  assert.equal(m.parseData('21 XYZ', 2026), null);
+  const linhas = ['Fatura do cartão - Banco Exemplo', 'Vencimento 10 OUT 2026', '21 SET Padaria Pão Bom R$ 23,50', '22 SET Uber *Trip 18,90',
+    '23 SET Estorno Loja -15,00', 'Total da fatura R$ 27,40', '25 SET Pagamento recebido R$ 500,00'];
+  const itens = m.parseGenerico(linhas, 2026);
+  assert.deepEqual(Array.from(itens, i => [i.dia, i.mes, i.desc, i.valor]), [[21, 9, 'Padaria Pão Bom', 23.5], [22, 9, 'Uber *Trip', 18.9], [23, 9, 'Estorno Loja', -15], [25, 9, 'Pagamento recebido', 500]]);
+  assert.equal(m.pagamentoDeFatura('Pagamento recebido'), true, 'o pagamento vem desmarcado na tela');
+});
