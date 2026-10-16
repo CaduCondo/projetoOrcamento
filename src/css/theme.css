@@ -268,3 +268,18 @@ button.cr:hover{background:rgba(139,108,255,.08)}
 .tour-b{display:flex;gap:8px;align-items:center}.tour-b span{flex:1}
 body.touring{overflow:hidden}
 .btn.help{width:34px;padding:0;font:700 15px/1 var(--font-num);border-radius:50%}
+
+/* importação: falha amigável, colunas do CSV e tipo do arquivo */
+.imfail{border:1px solid rgba(255,181,71,.45);background:rgba(255,181,71,.08);border-radius:14px;padding:12px 14px;margin:6px 0 10px}
+.imfail-t{font-weight:600;font-size:15px}.imfail-l{margin:4px 0 10px;padding-left:20px}.imfail-l li{margin:3px 0}
+.immap{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;border:1px solid var(--line2);border-radius:14px;padding:10px 12px;margin:8px 0}
+.immap .f{margin:0;min-width:120px;flex:1}.imk{gap:14px}
+.vig:empty{display:none}
+/* registro de erros (administrador) */
+.errlist{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.erow{border:1px solid var(--line2);border-radius:14px;padding:10px 12px;background:var(--glass)}
+.erow-h{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.erow-h .sub{flex:1}
+.etipo{font:600 11px/1 var(--font-num);text-transform:uppercase;letter-spacing:.08em;padding:4px 8px;border-radius:999px;background:rgba(255,95,143,.15);color:var(--neg)}
+.etipo.importacao{background:rgba(255,181,71,.15);color:var(--warn)}
+.emsg{margin:8px 0 4px;font-family:ui-monospace,Consolas,monospace;font-size:13px;word-break:break-word}
+.einfo{display:flex;flex-wrap:wrap;gap:6px}.einfo .tag{font-size:12px;background:rgba(139,108,255,.12);border-radius:8px;padding:2px 8px;color:var(--mut)}

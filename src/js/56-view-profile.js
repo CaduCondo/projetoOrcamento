@@ -12,7 +12,7 @@ const Photo={
 const avatar=(p,email,cls='')=>p&&p.foto?`<img class="avatar ${cls}" src="${p.foto}" alt="Foto de perfil">`:`<span class="avatar ${cls}" aria-hidden="true">${esc(profileInitial(p||{},email))}</span>`;
 
 const TXT_NUVEM='Seus dados ficam guardados com segurança na sua conta e aparecem em qualquer aparelho onde você entrar com seu e-mail e senha. Só você e o administrador do sistema (que apenas visualiza, nunca altera, e só para dar suporte) conseguem vê-los.';
-const TXT_LOCAL='Seus lançamentos não vão para a nuvem: ficam num arquivo CSV (abre no Excel) neste aparelho. Ninguém do sistema consegue ver esses dados — guardamos só o seu cadastro (e-mail, nome e esta escolha). Você só vê seus dados nos aparelhos onde tiver o arquivo; para usar em outro lugar, leve o arquivo e carregue em Ajustes → Carregar arquivo (.csv).';
+const TXT_LOCAL='Seus lançamentos não vão para a nuvem: ficam num arquivo CSV (abre no Excel) neste aparelho. Ninguém do sistema consegue ver esses dados — guardamos só o seu cadastro (e-mail, nome e esta escolha). Você só vê seus dados nos aparelhos onde tiver o arquivo; para usar em outro lugar, leve o arquivo e carregue em Ajustes → Importar arquivo.';
 
 function storageCard(){const local=profile.storage==='local',cloud=profile.storage==='cloud',fs=DeviceStore.fsSupported();   // sem escolha ainda: nenhuma das duas fica marcada
   return `<div class="panel full"><h2>Onde guardar meus dados</h2><div class="pbody">
@@ -25,12 +25,13 @@ function storageCard(){const local=profile.storage==='local',cloud=profile.stora
      <label class="stgopt ${local?'on':''}"><input type="radio" name="stg" value="local" ${local?'checked':''}>
       <div><b>Neste aparelho (arquivo CSV)</b> <span class="info" title="${esc(TXT_LOCAL)}">ⓘ</span>
        <p>Seus lançamentos <b>não vão para a nuvem</b>: ficam num arquivo CSV (abre no Excel) neste aparelho. <b>Ninguém do sistema</b> consegue ver esses dados — guardamos só o seu cadastro (e-mail, nome e esta escolha).</p>
-       <p class="sub">Atenção: você só vê seus dados nos aparelhos onde tiver o arquivo. Para usar em outro lugar, leve o arquivo e carregue em <b>Ajustes → Carregar arquivo (.csv)</b>. Se perder o arquivo e este aparelho, não há como recuperar.</p></div></label>
+       <p class="sub">Atenção: você só vê seus dados nos aparelhos onde tiver o arquivo. Para usar em outro lugar, leve o arquivo e carregue em <b>Ajustes → Importar arquivo</b>. Se perder o arquivo e este aparelho, não há como recuperar.</p></div></label>
     </div>
+    <p class="hint" style="margin-top:12px">🛠 Se algo der errado no app (por exemplo, um arquivo de banco que ainda não é lido), registramos só a <b>descrição técnica do erro</b>, o tipo do arquivo e o nome do banco — <b>nunca</b> seus lançamentos ou valores — para o administrador corrigir. ${profile.storage==='local'?'Como você guarda só neste aparelho, isso só acontece se você apertar <b>“Avisar o administrador”</b>.':'Quem guarda só no aparelho decide se quer avisar.'}</p>
     ${local?`<div class="devbox"><div id="dvstatus" class="sub">Verificando…</div>
       <div class="row">${fs?'<button type="button" class="btn sec sm" data-dv="pick">Escolher / trocar o arquivo (computador)</button>':''}
        <button type="button" class="btn sec sm" data-dv="download">Baixar CSV agora</button>
-       <label class="btn sec sm">Carregar arquivo (.csv)<input type="file" id="csvin" accept=".csv,text/csv" hidden></label></div>
+       <button type="button" class="btn sec sm" data-import>📥 Importar arquivo</button></div>
       <p class="hint">${fs?'No computador (Chrome ou Edge) você escolhe onde o arquivo fica e o sistema lembra. O navegador pode pedir sua autorização ao abrir de novo.':'Neste navegador não dá para escolher a pasta do arquivo: o sistema guarda uma cópia aqui e você usa “Baixar CSV” para levar seus dados para outro aparelho.'}</p></div>`:''}
   </div></div>`}
 
@@ -91,4 +92,4 @@ app.addEventListener('click',async e=>{const b=e.target.closest('[data-pf],[data
 app.addEventListener('change',e=>{const t=e.target;
   if(t.id==='pff'&&t.files[0])setPhoto(t.files[0]);
   else if(t.name==='stg')StorageSwitch.request(t.value);
-  else if(t.id==='csvin'&&t.files[0])importCsvFile(t.files[0],t)});
+  });

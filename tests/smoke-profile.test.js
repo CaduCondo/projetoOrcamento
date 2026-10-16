@@ -143,7 +143,7 @@ test('PRIVACIDADE — entrar em OUTRO aparelho nunca puxa dados da nuvem; mostra
   const b = abrir(db); await entrar(b);
   assert.equal(b.ev('Object.keys(S.data).length'), 0, 'NÃO carregou nada da nuvem, mesmo existindo uma cópia antiga lá');
   assert.match(b.$('#notice').textContent, /Não encontramos seus dados neste aparelho/);
-  assert.match(b.$('#notice').textContent, /Ajustes/); assert.match(b.$('#notice').textContent, /Carregar arquivo \(\.csv\)/);
+  assert.match(b.$('#notice').textContent, /Ajustes/); assert.match(b.$('#notice').textContent, /Importar arquivo/);
   assert.ok(!JSON.stringify(b.ev('S.data')).includes('segredo'));
   // mesmo aparelho de antes: carrega a cópia local sozinho
   db.current = null;

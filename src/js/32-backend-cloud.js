@@ -33,6 +33,12 @@ class CloudBackend {
 
   /* ---- administrador (somente leitura; quem é admin é definido no banco, à mão) ---- */
   async checkAdmin(){try{return (await this.db.collection('admins').doc(this.uid).get()).exists}catch{return false}}
+  /* ---- registro de erros: vai para "errors" no banco; só o administrador lê e apaga (regras do banco) ---- */
+  get canSeeErrors(){return this.isAdmin}
+  get autoReportErrors(){return storesInCloud(profile||defaultProfile())}     // quem guarda só no aparelho decide se quer avisar (botão)
+  async logError(doc){if(!this.uid)return;await this.db.collection('errors').doc('e'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)).set({...doc,uid:this.uid,email:user})}
+  async listErrors(){const r=await this.db.collection('errors').get(),o=[];r.forEach(d=>o.push({id:d.id,...d.data()}));return o.sort((a,b)=>String(b.quando).localeCompare(String(a.quando))).slice(0,300)}
+  async deleteError(id){await this.db.collection('errors').doc(id).delete()}
   async listProfiles(){const r=await this.db.collection('profiles').get(),o=[];r.forEach(d=>o.push({uid:d.id,...d.data()}));return o}
 
   /* ---- escolher o armazém conforme o perfil ---- */
@@ -49,13 +55,13 @@ class CloudBackend {
         else{status('Salvo neste aparelho ✓ (arquivo não atualizado)');setNotice(r.arquivo==='permissao'?'permissao':r.arquivo==='nao-lido'?'arquivo-nao-lido':'arquivo-erro')}
         if(!r.copia)status('Não consegui salvar neste aparelho — baixe o CSV agora',true)}
       else status('Salvo ✓')
-    }catch(e){console.error(e);status('Erro ao salvar — verifique a conexão',true)}}
+    }catch(e){console.error(e);status('Erro ao salvar — verifique a conexão',true);if(e?.code!=='unavailable')ErrorLog.report('salvar',e?.code||e?.message||String(e))}}
 
   /* ---- carregar os dados de quem entrou ---- */
   async start(u){this.uid=u.uid;user=u.email;
     try{
       let salvo=null,perfilOk=true;
-      try{salvo=await this.loadProfile()}catch(e){perfilOk=false;console.error('perfil:',e)}      // regras do banco desatualizadas? abre mesmo assim e avisa
+      try{salvo=await this.loadProfile()}catch(e){perfilOk=false;console.error('perfil:',e);setTimeout(()=>ErrorLog.report('perfil',e?.code||e?.message||String(e)),0)}      // regras do banco desatualizadas? abre mesmo assim e avisa
       const novo=perfilOk&&!salvo;profile=normProfile(salvo);if(novo)profile.criadoEm=new Date().toISOString();
       this.store=this.makeStore();noticeClear();this.admin=await this.checkAdmin();
       let st=null;

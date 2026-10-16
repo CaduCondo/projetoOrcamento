@@ -11,7 +11,7 @@ const CategoryDialog={
     const dica=pagar?'Dia em que essa conta vence.':'Dia em que esse dinheiro entra.';
     dlg3.innerHTML=`<form id="cf" novalidate>
      <div class="dh"><div><h3>${novo?(pagar?'Nova despesa':'Nova receita'):esc(c.nome)}</h3>
-       <div class="sub">${novo?'Depois, inclua no mês pela tela Mês (“＋ Categoria”) ou marque como fixa.':`${pagar?'Despesa':'Receita'} · ${esc(scopeLabel(c)||'histórico')}${st?` · ${st.n} lançamento(s), último em ${lastLabel(st.last)}`:''}`}</div></div>
+       <div class="sub">${novo?'Depois, inclua no mês pela tela Mês (“＋ Categoria”) ou marque como fixa.':`${pagar?'Despesa':'Receita'} · ${esc(scopeLabel(c)||'aparece quando usada')}${st?` · ${st.n} lançamento(s), último em ${lastLabel(st.last)}`:''}`}</div></div>
        <button type="button" class="btn sec" data-cclose>Fechar</button></div>
      <div class="db">
       <label class="f">Nome *<input id="cfn" maxlength="60" autocomplete="off" value="${esc(v.nome)}" placeholder="${pagar?'ex.: Aluguel':'ex.: Salário'}"></label>

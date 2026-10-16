@@ -7,6 +7,13 @@ class LocalBackend {
   get isCloud(){return false}
   get showRemember(){return true}
   get isAdmin(){return false}
+  /* ---- registro de erros: sem servidor, fica neste navegador (quem usa o modo local é o próprio dono) ---- */
+  get canSeeErrors(){return true}
+  get autoReportErrors(){return true}
+  errs(){try{return JSON.parse(localStorage.getItem('orc-errors')||'[]')}catch{return[]}}
+  async logError(doc){const l=this.errs();l.unshift({id:'e'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),...doc});localStorage.setItem('orc-errors',JSON.stringify(l.slice(0,200)))}
+  async listErrors(){return this.errs()}
+  async deleteError(id){localStorage.setItem('orc-errors',JSON.stringify(this.errs().filter(e=>e.id!==id)))}
   get storageChoice(){return false}                     // sem nuvem: os dados ficam sempre neste navegador
   get resetNeedsPassword(){return true}
   get resetTitle(){return 'Definir nova senha'}

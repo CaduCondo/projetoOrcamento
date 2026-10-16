@@ -142,3 +142,31 @@ test('o administrador pode sair da conta durante a visualização sem levar dado
   assert.ok(!Object.entries(db.docs).filter(([k]) => k.startsWith('users/uid2')).some(([, v]) => v.json.includes('segredo-da-ana')));
   adm.close();
 });
+
+test('registro de erros: nuvem avisa sozinho; "só no aparelho" só com o botão; só o administrador vê em Ajustes, sem dados financeiros', async () => {
+  const db = createDb();
+  const ana = abrir(db); await criarConta(ana, 'ana@exemplo.com');
+  ana.ev("profile={...profile,storage:'cloud'}");
+  assert.equal(await ana.ev("ErrorLog.report('importacao','Não leu PDF de Bradesco: sem lançamentos',{arquivo:'pdf',banco:'Bradesco'})"), true);
+  const erros = () => Object.entries(db.docs).filter(([k]) => k.startsWith('errors/')).map(([, v]) => v);
+  assert.equal(erros().length, 1);
+  assert.deepEqual(Object.keys(erros()[0]).sort(), ['agente', 'email', 'env', 'info', 'msg', 'quando', 'tela', 'tipo', 'uid'].sort(), 'só esses campos (nada de lançamentos)');
+  assert.equal(erros()[0].email, 'ana@exemplo.com');
+  ana.ev("profile={...profile,storage:'local'}");
+  assert.equal(await ana.ev("ErrorLog.report('importacao','outro erro',{})"), false, 'quem guarda só no aparelho não envia nada sozinho');
+  assert.equal(erros().length, 1);
+  assert.equal(await ana.ev("ErrorLog.report('importacao','outro erro',{},true)"), true, 'com o botão (consentimento), envia');
+  assert.equal(erros().length, 2);
+  ana.click('[data-tab="aj"]');
+  assert.equal(ana.$('#errp'), null, 'usuário comum não vê o registro');
+  ana.close(); db.current = null;
+  db.docs['admins/uid2'] = { ativo: true };
+  const adm = abrir(db); await criarConta(adm, 'dono@exemplo.com');
+  adm.click('[data-tab="aj"]');
+  await adm.waitFor(() => adm.$$('#errl .erow').length === 2, 3000, 'administrador vê os erros');
+  assert.match(adm.$('#errl').textContent, /ana@exemplo\.com/);
+  assert.match(adm.$('#errl').textContent, /banco: Bradesco/);
+  adm.click('#errl [data-errdel]');
+  await adm.waitFor(() => adm.$$('#errl .erow').length === 1, 3000, 'resolvido some');
+  adm.close();
+});

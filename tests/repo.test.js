@@ -63,11 +63,16 @@ test('regras do Firestore: estrutura segura (a prova completa está em tests/rul
   assert.doesNotMatch(r, /allow read, write;/);
   assert.match(r, /match \/admins\/\{uid\}[\s\S]*?allow write: if false;/, 'ninguém grava em admins pelo site');
   // nenhuma regra de escrita pode depender só de ser administrador
-  const escritas = r.split(/\r?\n/).filter(l => /^\s*allow\s+(write|create|update|delete)/.test(l));
+  // (o registro de erros é à parte e sem dados financeiros: cada um cria o seu; o administrador lê e apaga)
+  const [dados, erros = ''] = r.split('match /errors/{id}');
+  const escritas = dados.split(/\r?\n/).filter(l => /^\s*allow\s+(write|create|update|delete)/.test(l));
   assert.ok(escritas.length >= 5);
   for (const l of escritas) assert.ok(/isOwner\(uid\)|if false/.test(l), 'escrita sem dono: ' + l.trim());
-  for (const l of escritas) assert.ok(!/isAdmin\(\)/.test(l), 'administrador não escreve: ' + l.trim());
-  assert.equal((r.match(/match \//g) || []).length, 4, 'databases, admins, profiles e users — mais nada');
+  for (const l of escritas) assert.ok(!/isAdmin\(\)/.test(l), 'administrador não escreve nos dados das pessoas: ' + l.trim());
+  assert.match(erros, /allow create: if request\.auth != null[\s\S]*?request\.resource\.data\.uid == request\.auth\.uid/, 'erro só em nome próprio');
+  assert.match(erros, /allow update: if false/, 'registro de erro não é alterado depois');
+  assert.match(erros, /allow read, delete: if isAdmin\(\);/, 'só o administrador lê e apaga os erros');
+  assert.equal((r.match(/match \//g) || []).length, 5, 'databases, admins, profiles, users e errors — mais nada');
 });
 
 test('PWA: manifesto válido, ícones existem e a casca da página aponta para eles', () => {

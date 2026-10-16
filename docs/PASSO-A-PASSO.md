@@ -122,7 +122,7 @@ No topo, clique no seu **nome/foto** → **Onde guardar meus dados**:
 - **Neste aparelho (arquivo CSV):** os lançamentos **não vão para a nuvem**; ficam num arquivo CSV (Excel). No computador (Chrome/Edge) você escolhe onde o arquivo fica;
   no celular o app guarda uma cópia no navegador e você usa **Baixar CSV**.
 - Ao trocar para "neste aparelho" o app pergunta se apaga a cópia que está na nuvem. Para voltar à nuvem, o app envia os dados de novo.
-- Abriu o app em **outro aparelho** e escolheu "arquivo"? Aparece o aviso "não encontramos seus dados neste aparelho": vá em **Ajustes → Carregar arquivo (.csv)** e escolha o arquivo.
+- Abriu o app em **outro aparelho** e escolheu "arquivo"? Aparece o aviso "não encontramos seus dados neste aparelho": vá em **Ajustes → 📥 Importar arquivo** e escolha o arquivo.
 
 ## 10c. Conferir a segurança do banco
 `npm run test:rules` roda 8 testes das regras no emulador oficial do Firebase (precisa de Java; leva ~10 s): ninguém lê dados de outra pessoa, o administrador só lê,

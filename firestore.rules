@@ -37,6 +37,20 @@ service cloud.firestore {
       allow delete: if isOwner(uid);
     }
 
+    // Registro de erros (sem dados financeiros): qualquer pessoa logada pode CRIAR um registro em seu próprio nome;
+    // só o administrador lê e apaga. Ninguém altera um registro depois de criado.
+    match /errors/{id} {
+      allow create: if request.auth != null
+          && request.resource.data.keys().hasOnly(['quando', 'tipo', 'msg', 'info', 'env', 'tela', 'agente', 'uid', 'email'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.email == request.auth.token.email
+          && request.resource.data.msg is string && request.resource.data.msg.size() <= 500
+          && request.resource.data.info is string && request.resource.data.info.size() <= 1500
+          && request.resource.data.get('agente', '').size() <= 200;
+      allow read, delete: if isAdmin();
+      allow update: if false;
+    }
+
     // Todo o resto é bloqueado.
   }
 }

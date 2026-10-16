@@ -116,3 +116,21 @@ test('todo o resto é bloqueado, até para o administrador', async () => {
     await assertFails(db.doc('config/segredo').set({ a: 1 }));
   }
 });
+
+test('registro de erros: cada um cria só em nome próprio e sem campos extras; só o administrador lê e apaga; ninguém altera', async () => {
+  const erro = (u, extra = {}) => ({ quando: '2026-10-16T10:00:00Z', tipo: 'importacao', msg: 'Não leu PDF', info: '{"banco":"X"}', env: 'prod', tela: 'mes', agente: 'teste', uid: u.uid, email: u.email, ...extra });
+  const db = dbOf(ANA);
+  await assertSucceeds(db.doc('errors/e1').set(erro(ANA)));
+  await assertFails(db.doc('errors/e2').set(erro(ANA, { uid: 'bia' })), 'não registra em nome de outra pessoa');
+  await assertFails(db.doc('errors/e3').set(erro(ANA, { email: 'outro@exemplo.com' })), 'e-mail precisa ser o da conta');
+  await assertFails(db.doc('errors/e4').set(erro(ANA, { lancamentos: '{"muito":"secreto"}' })), 'campo desconhecido');
+  await assertFails(db.doc('errors/e5').set(erro(ANA, { msg: 'x'.repeat(501) })), 'mensagem limitada');
+  await assertFails(db.doc('errors/e1').get(), 'quem registrou não lê de volta');
+  await assertFails(db.collection('errors').get(), 'usuário comum não lista');
+  await assertFails(db.doc('errors/e1').set(erro(ANA, { msg: 'alterado' })), 'não altera depois');
+  await assertFails(dbOf(null).doc('errors/e9').set(erro(ANA)), 'sem login não registra');
+  const adm = dbOf(ADM);
+  await assertSucceeds(adm.collection('errors').get(), 'administrador lista');
+  await assertFails(adm.doc('errors/e1').set(erro(ANA, { msg: 'mexido' })), 'nem o administrador altera');
+  await assertSucceeds(adm.doc('errors/e1').delete(), 'administrador marca como resolvido (apaga)');
+});

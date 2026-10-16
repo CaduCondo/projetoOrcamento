@@ -7,7 +7,7 @@ const NOTICES={
     html:`<b>Complete seu cadastro.</b> Falta preencher seu nome, data de nascimento e profissão${backend.isCloud&&profile&&!profile.storage?' e escolher onde guardar seus dados':''}. É rápido.`}),
   naoachou:()=>({cls:'warn',acoes:[['Ir para Ajustes','ajustes'],['Entendi','dismiss']],
     html:`<b>Não encontramos seus dados neste aparelho.</b> Você escolheu guardar seus dados em arquivo, e o arquivo não está aqui — talvez você o tenha salvo em outro aparelho (computador ou celular).
-      <br>Para carregar agora: <b>1)</b> abra <b>Ajustes</b>, <b>2)</b> clique em <b>Carregar arquivo (.csv)</b>, <b>3)</b> escolha o arquivo. Pronto!`}),
+      <br>Para carregar agora: <b>1)</b> abra <b>Ajustes</b>, <b>2)</b> clique em <b>📥 Importar arquivo</b>, <b>3)</b> escolha o arquivo. Pronto!`}),
   regras:()=>({cls:'warn',acoes:[['Entendi','dismiss']],
     html:`<b>As regras de segurança do banco estão desatualizadas.</b> Você consegue usar o sistema, mas o seu cadastro (nome, foto e a escolha de onde guardar os dados) ainda não pode ser salvo. Quem administra o sistema precisa publicar o arquivo <b>firestore.rules</b> no Firebase (veja docs/PASSO-A-PASSO.md, procedimento 2).`}),
   permissao:()=>({cls:'warn',acoes:[['Permitir acesso ao arquivo','autorizar'],['Depois','dismiss']],
@@ -17,7 +17,7 @@ const NOTICES={
   'arquivo-erro':()=>({cls:'warn',acoes:[['Baixar CSV agora','baixar'],['Entendi','dismiss']],
     html:`<b>Não consegui gravar no arquivo.</b> Seus dados estão guardados nesta cópia do navegador. Baixe o CSV para garantir uma cópia.`}),
   'erro-arquivo':()=>({cls:'warn',acoes:[['Ir para Ajustes','ajustes'],['Entendi','dismiss']],
-    html:`<b>Não consegui ler o seu arquivo.</b> ${esc(notice?.extra||'')} Você pode carregar outro arquivo em <b>Ajustes → Carregar arquivo (.csv)</b>.`}),
+    html:`<b>Não consegui ler o seu arquivo.</b> ${esc(notice?.extra||'')} Você pode carregar outro arquivo em <b>Ajustes → 📥 Importar arquivo</b>.`}),
 };
 function setNotice(tipo,extra){notice={tipo,extra};renderNotice()}
 /* limpa o aviso atual (ou só se o tipo começar com prefix) */

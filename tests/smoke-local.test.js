@@ -694,3 +694,59 @@ test('tour de primeira vez: abre sozinho uma vez por tela, destaca um item por v
   assert.deepEqual(app.dom.errors || [], []);
   app.close();
 });
+
+test('importar de outros bancos: OFX entra direto; CSV mostra as colunas para conferir; arquivo ilegível dá mensagem amigável e vai para o registro de erros', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  const y = app.ev('selY'), mth = app.ev('selM'), mm = String(mth + 1).padStart(2, '0');
+  // OFX da conta
+  const ofx = `OFXHEADER:100\n<OFX><BANKMSGSRSV1><STMTRS><BANKTRANLIST><STMTTRN><DTPOSTED>${y}${mm}03<TRNAMT>-150.00<MEMO>PIX ENVIADO<STMTTRN><DTPOSTED>${y}${mm}05<TRNAMT>5000.00<MEMO>SALARIO</BANKTRANLIST></STMTRS></BANKMSGSRSV1><FI><ORG>Banco Bradesco</FI></OFX>`;
+  app.click('[data-import]'); app.chooseFile('#imfile', ofx, 'extrato.ofx');
+  await app.waitFor(() => app.$$('.imrow').length === 2, 2000, 'OFX lido');
+  assert.match(app.$('#imf').textContent, /Extrato da conta · Bradesco · OFX/);
+  app.click('[data-imgo]');
+  assert.equal(app.ev("S.cats.filter(c=>c.nome==='Movimentação CC Itaú').length"), 2);
+  // CSV de cartão (compras positivas): o app adivinha as colunas e o tipo; dá para trocar a coluna
+  const csv = `date,title,amount\n${y}-${mm}-21,Padaria,23.50\n${y}-${mm}-22,Uber,18.90\n${y}-${mm}-23,Pagamento recebido,-500.00\n`;
+  app.click('[data-import]'); app.chooseFile('#imfile', csv, 'nubank-fatura.csv');
+  await app.waitFor(() => app.$('#imcd'), 2000, 'mapa de colunas');
+  assert.equal(app.$('input[name=imk]:checked').value, 'cartao', 'nome do arquivo diz que é fatura');
+  assert.equal(app.$$('.imrow').length, 3);
+  assert.equal(app.$$('.imrow input:checked').length, 2, 'o pagamento da fatura vem desmarcado');
+  app.change('#imcv', '1');                                      // escolheu a coluna errada para o valor: nada é lido
+  assert.equal(app.$$('.imrow').length, 0);
+  app.change('#imcv', '2');
+  assert.equal(app.$$('.imrow').length, 3);
+  app.click('[data-imgo]');
+  const cc = app.ev("S.cats.find(c=>c.nome==='CC Itaú').id");
+  assert.equal(app.ev(`V('${cc}',${y},${mth},'prev')`), 42.4);
+  // arquivo que não dá para ler
+  app.click('[data-import]'); app.chooseFile('#imfile', 'nome;idade\nana;30\n', 'banco-xyz.csv');
+  await app.waitFor(() => app.$('.imfail'), 2000, 'mensagem amigável');
+  assert.match(app.$('.imfail').textContent, /Ainda não consigo ler este arquivo/);
+  assert.match(app.$('.imfail').textContent, /OFX/);
+  await app.waitFor(() => /administrador foi avisado/.test(app.$('.imfail').textContent), 2000, 'registrado');
+  const reg = app.ev("JSON.stringify(backend.errs())");
+  assert.match(reg, /importacao/); assert.doesNotMatch(reg, /ana/, 'nenhum conteúdo do arquivo vai para o registro');
+  app.click('[data-cclose]');
+  // o registro aparece em Ajustes (no modo local, para o dono) e pode ser marcado como resolvido
+  app.click('[data-tab="aj"]');
+  await app.waitFor(() => app.$('#errl .erow'), 2000, 'lista de erros');
+  assert.match(app.$('#errl').textContent, /Não leu CSV/);
+  app.click('#errl [data-errdel]');
+  await app.waitFor(() => /Nenhum erro registrado/.test(app.$('#errl').textContent), 2000, 'resolvido');
+  // Excel binário: explica como salvar em CSV
+  app.click('[data-import]'); app.chooseFile('#imfile', 'PK...', 'fatura.xlsx');
+  await app.waitFor(() => app.$('.imfail'), 2000, 'excel');
+  assert.match(app.$('.imfail').textContent, /Salvar como/);
+  assert.deepEqual(app.dom.errors || [], []);
+  app.close();
+});
+
+test('página Categorias: não mostra mais a palavra "histórico"', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  app.click('[data-tab="cat"]'); app.click('[data-cf="filtro|todas"]');
+  assert.doesNotMatch(app.$('#cl').textContent, /hist[oó]rico/i);
+  app.close();
+});
