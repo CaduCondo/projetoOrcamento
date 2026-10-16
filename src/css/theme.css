@@ -267,7 +267,7 @@ button.cr:hover{background:rgba(139,108,255,.08)}
 .tour-x{margin:0 0 14px;color:#c8d1e4;font-size:14px;line-height:1.5}
 .tour-b{display:flex;gap:8px;align-items:center}.tour-b span{flex:1}
 body.touring{overflow:hidden}
-.btn.help{width:34px;padding:0;font:700 15px/1 var(--font-num);border-radius:50%}
+.btn.help{width:34px;height:34px;min-height:34px;flex:none;padding:0;font:700 15px/1 var(--font-num);border-radius:50%}
 
 /* importação: falha amigável, colunas do CSV e tipo do arquivo */
 .imfail{border:1px solid rgba(255,181,71,.45);background:rgba(255,181,71,.08);border-radius:14px;padding:12px 14px;margin:6px 0 10px}
