@@ -7,7 +7,7 @@ function vAj(){
    <p class="hint">Deixe em branco para continuar de onde o ano anterior terminou. Na planilha 2026 havia “TOTAL ACUMULADO 90000” em janeiro.</p></div></div>
   <div class="panel" id="dados"><h2>Dados: importar e exportar</h2><div style="padding:12px 14px">
    <div class="row"><button type="button" class="btn" data-import>📥 Importar arquivo</button></div>
-   <p class="hint">Um botão só para tudo: <b>PDF do Itaú</b> (fatura do cartão ou extrato da conta), <b>planilha CSV</b> do Meu Orçamento ou <b>backup (.json)</b>. O app descobre sozinho o tipo do arquivo.</p>
+   <p class="hint">Um botão só para tudo: <b>extrato da conta ou fatura do cartão de qualquer banco</b> (OFX, CSV ou PDF), a <b>planilha</b> do Meu Orçamento ou o <b>backup (.json)</b>. O app descobre sozinho o tipo do arquivo.</p>
    <div class="row"><button type="button" class="btn sec" id="csv">⬇ Baixar planilha (Excel)</button><button type="button" class="btn sec" id="bk">⬇ Baixar backup</button></div>
    <p class="hint">${backend.backupHint} A planilha traz o resumo de cada ano e todos os detalhes; ela também pode ser carregada de volta aqui sem perder nada.</p></div></div>
 </div>${backend.canSeeErrors&&!readOnly?`<div class="panel" id="errp" style="margin-top:16px"><h2>🛠 Erros registrados <span class="sub">só você vê</span></h2><div class="pbody" id="errl"><p class="hint">Carregando…</p></div></div>`:''}`}
