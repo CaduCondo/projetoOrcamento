@@ -7,3 +7,4 @@ orcamento-backup*.json
 *.csv
 dist/
 node_modules/
+pluggy-teste*.json
