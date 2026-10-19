@@ -32,8 +32,14 @@ def main():
     print('As credenciais ficam em dashboard.pluggy.ai → sua aplicação (demo) → Client ID / Client Secret.')
     print('O Item ID aparece no Dashboard quando você conecta o "Meu Pluggy" na aplicação.\n')
     client_id = input('Client ID: ').strip()
-    secret = getpass.getpass('Client Secret (não aparece ao digitar): ').strip()
-    itens = [i.strip() for i in input('Item ID (se tiver mais de um, separe por vírgula): ').split(',') if i.strip()]
+    limpa = lambda t: t.strip().strip('"\'').replace(' ', '')
+    if input('Mostrar o Client Secret enquanto você cola? (s = sim, mais fácil de conferir; Enter = esconder): ').strip().lower().startswith('s'):
+        secret = limpa(input('Client Secret: '))
+    else:
+        secret = limpa(getpass.getpass('Client Secret (não aparece ao colar; é normal): '))
+    client_id = limpa(client_id)
+    print(f'   (recebi {len(secret)} caracteres no Client Secret e {len(client_id)} no Client ID; o Client ID tem 36)')
+    itens = [limpa(i) for i in input('Item ID (copie da barra de endereço depois de "itemId="; se tiver mais de um, separe por vírgula): ').split(',') if i.strip()]
     if not (client_id and secret and itens):
         raise SystemExit('Faltou alguma informação.')
 
