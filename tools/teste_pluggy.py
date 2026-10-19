@@ -22,6 +22,42 @@ def chamar(metodo, caminho, chave=None, corpo=None):
         corpo = e.read().decode(errors='replace')[:300]
         raise SystemExit(f'\n❌ A Pluggy respondeu {e.code} em {caminho}: {corpo}\n')
 
+class ErroPluggy(Exception):
+    pass
+
+def tentar(metodo, caminho, chave):
+    """como chamar(), mas devolve o erro em vez de parar o programa"""
+    try:
+        return chamar(metodo, caminho, chave)
+    except SystemExit as e:
+        raise ErroPluggy(str(e))
+
+def buscar_lancamentos(chave, conta_id, de, ate):
+    """Lançamentos pelo endereço novo (/v2/transactions, paginação por cursor). Como a documentação pública não deixa claro o nome dos
+    filtros de data, tenta as variações conhecidas e mostra o que a Pluggy respondeu se nenhuma funcionar."""
+    erros = []
+    for filtros in (f'&dateFrom={de}&dateTo={ate}', f'&from={de}&to={ate}', f'&from={de}', ''):
+        todas, url, paginas = [], f'/v2/transactions?accountId={conta_id}{filtros}', 0
+        try:
+            while url and paginas < 60:
+                r = tentar('GET', url, chave)
+                if paginas == 0:
+                    print(f'     (resposta da Pluggy: campos {sorted(r.keys())})')
+                todas += r.get('results', [])
+                prox = r.get('next') or r.get('nextCursor') or r.get('cursor')
+                if not prox:
+                    break
+                if str(prox).startswith('http'):
+                    prox = prox.split('api.pluggy.ai', 1)[-1]
+                url = prox if str(prox).startswith('/') else f'/v2/transactions?accountId={conta_id}{filtros}&after={prox}'
+                paginas += 1
+            if filtros and not ('from' in filtros or 'Date' in filtros):
+                pass
+            return [t for t in todas if str(t.get('date', ''))[:10] >= de] if todas else todas
+        except ErroPluggy as e:
+            erros.append(str(e).strip()[:200])
+    raise SystemExit('\n❌ Não consegui ler os lançamentos. A Pluggy respondeu:\n   ' + '\n   '.join(erros) + '\n')
+
 def mascara(txt):
     t = str(txt or '')
     return ('…' + t[-4:]) if len(t) > 4 else t
@@ -61,13 +97,7 @@ def main():
             print('   (nenhuma conta nesta conexão)')
         for c in contas:
             print(f'   • Conta {c.get("type")}/{c.get("subtype")} · {c.get("name")} · número {mascara(c.get("number"))} · saldo {c.get("balance")}')
-            pagina, todas = 1, []
-            while True:
-                r = chamar('GET', f'/transactions?accountId={c["id"]}&from={de}&to={hoje.isoformat()}&pageSize=500&page={pagina}', chave)
-                todas += r.get('results', [])
-                if pagina >= (r.get('totalPages') or 1):
-                    break
-                pagina += 1
+            todas = buscar_lancamentos(chave, c['id'], de, hoje.isoformat())
             por_mes = collections.defaultdict(lambda: [0, 0.0])
             for t in todas:
                 m = str(t.get('date', ''))[:7]
@@ -79,8 +109,11 @@ def main():
             for m in sorted(por_mes):
                 print(f'       {m}: {por_mes[m][0]} lançamentos, soma {por_mes[m][1]:.2f}')
             if c.get('type') == 'CREDIT':
-                faturas = chamar('GET', f'/bills?accountId={c["id"]}', chave).get('results', [])
-                print(f'     faturas encontradas: {len(faturas)}' + (f' · última: vence {faturas[0].get("dueDate")} valor {faturas[0].get("totalAmount")}' if faturas else ''))
+                try:
+                    faturas = tentar('GET', f'/bills?accountId={c["id"]}', chave).get('results', [])
+                    print(f'     faturas encontradas: {len(faturas)}' + (f' · última: vence {faturas[0].get("dueDate")} valor {faturas[0].get("totalAmount")}' if faturas else ''))
+                except ErroPluggy as e:
+                    print(f'     (faturas: {str(e).strip()[:160]})')
             guardar.append({'conta': {k: c.get(k) for k in ('type', 'subtype', 'name')}, 'lancamentos': [
                 {k: t.get(k) for k in ('date', 'description', 'amount', 'type', 'category', 'creditCardMetadata')} for t in todas]})
         print()
