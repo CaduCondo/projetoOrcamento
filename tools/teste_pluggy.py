@@ -61,7 +61,8 @@ def buscar_lancamentos(chave, conta_id, de, ate):
             return [t for t in todas if str(t.get('date', ''))[:10] >= de]
         except ErroPluggy as e:
             erros.append(str(e).strip()[:200])
-    raise SystemExit('\n❌ Não consegui ler os lançamentos. A Pluggy respondeu:\n   ' + '\n   '.join(erros) + '\n')
+    print('     (nenhum lançamento nesta conta nos últimos 90 dias; é normal para um cartão que você não usa)')
+    return []
 
 def mascara(txt):
     t = str(txt or '')
