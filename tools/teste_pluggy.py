@@ -53,7 +53,12 @@ def buscar_lancamentos(chave, conta_id, de, ate):
                 paginas += 1
             if filtros and not ('from' in filtros or 'Date' in filtros):
                 pass
-            return [t for t in todas if str(t.get('date', ''))[:10] >= de] if todas else todas
+            if not todas:                      # veio vazio: tenta a próxima variação de filtro antes de desistir
+                erros.append(f'vazio com {filtros or "sem filtro de data"}')
+                continue
+            datas = sorted(str(t.get('date', ''))[:10] for t in todas)
+            print(f'     (filtro que funcionou: {filtros or "sem filtro de data"}; datas de {datas[0]} a {datas[-1]})')
+            return [t for t in todas if str(t.get('date', ''))[:10] >= de]
         except ErroPluggy as e:
             erros.append(str(e).strip()[:200])
     raise SystemExit('\n❌ Não consegui ler os lançamentos. A Pluggy respondeu:\n   ' + '\n   '.join(erros) + '\n')
