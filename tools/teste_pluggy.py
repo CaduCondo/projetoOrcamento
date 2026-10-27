@@ -104,6 +104,12 @@ def main():
         for c in contas:
             print(f'   • Conta {c.get("type")}/{c.get("subtype")} · {c.get("name")} · número {mascara(c.get("number"))} · saldo {c.get("balance")}')
             todas = buscar_lancamentos(chave, c['id'], de, hoje.isoformat())
+            if todas:   # só o FORMATO dos campos (nunca valores nem textos): ajuda a ligar o app
+                t0 = todas[0]
+                print('     campos de um lançamento:', sorted(t0.keys()))
+                cm = t0.get('creditCardMetadata') or {}
+                if cm:
+                    print('     campos do cartão:', sorted(cm.keys()), '· com billId:', sum(1 for t in todas if (t.get('creditCardMetadata') or {}).get('billId')), 'de', len(todas))
             por_mes = collections.defaultdict(lambda: [0, 0.0])
             for t in todas:
                 m = str(t.get('date', ''))[:7]
@@ -118,6 +124,8 @@ def main():
                 try:
                     faturas = tentar('GET', f'/bills?accountId={c["id"]}', chave).get('results', [])
                     print(f'     faturas encontradas: {len(faturas)}' + (f' · última: vence {faturas[0].get("dueDate")} valor {faturas[0].get("totalAmount")}' if faturas else ''))
+                    if faturas:
+                        print('     campos de uma fatura:', sorted(faturas[0].keys()))
                 except ErroPluggy as e:
                     print(f'     (faturas: {str(e).strip()[:160]})')
             guardar.append({'conta': {k: c.get(k) for k in ('type', 'subtype', 'name')}, 'lancamentos': [
