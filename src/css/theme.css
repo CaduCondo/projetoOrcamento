@@ -283,3 +283,5 @@ body.touring{overflow:hidden}
 .etipo.importacao{background:rgba(255,181,71,.15);color:var(--warn)}
 .emsg{margin:8px 0 4px;font-family:ui-monospace,Consolas,monospace;font-size:13px;word-break:break-word}
 .einfo{display:flex;flex-wrap:wrap;gap:6px}.einfo .tag{font-size:12px;background:rgba(139,108,255,.12);border-radius:8px;padding:2px 8px;color:var(--mut)}
+
+.bkaccs{display:flex;flex-direction:column;gap:2px;margin:6px 0 10px;border:1px solid var(--line2);border-radius:14px;padding:6px 10px}

@@ -170,3 +170,50 @@ test('registro de erros: nuvem avisa sozinho; "só no aparelho" só com o botão
   await adm.waitFor(() => adm.$$('#errl .erow').length === 1, 3000, 'resolvido some');
   adm.close();
 });
+
+test('Buscar do banco: só o administrador vê; busca pelo porteiro com o token do login; cartão confere a fatura; conta cai em Receitas/Despesas', async () => {
+  const { db, adm } = await cenario();
+  const y = adm.ev('selY'), mm = String(adm.ev('selM') + 1).padStart(2, '0'), chamadas = [];
+  const dados = { ok: true,
+    contas: [{ id: 'cc1', type: 'BANK', subtype: 'CHECKING_ACCOUNT', name: 'itau', number: '26-8', balance: 1000 }, { id: 'ct1', type: 'CREDIT', subtype: 'CREDIT_CARD', name: 'Visa', number: '0498', balance: 100 }],
+    lancamentos: {
+      cc1: [{ id: 'x1', date: `${y}-${mm}-05`, description: 'SALARIO', amount: 5000, type: 'CREDIT' }, { id: 'x2', date: `${y}-${mm}-06`, description: 'PIX LOJA', amount: -150, type: 'DEBIT' },
+        { id: 'x3', date: `${y}-${mm}-07`, description: 'REND PAGO APLIC AUT MAIS', amount: 0.05, type: 'CREDIT' }, { id: 'x4', date: `${y}-${mm}-08`, description: 'REND PAGO APLIC AUT MAIS', amount: 0.07, type: 'CREDIT' }],
+      ct1: [{ id: 'y1', date: `${y}-${mm}-02`, description: 'LOJA UM', amount: 100, type: 'DEBIT', billId: 'b1' }, { id: 'y2', date: `${y}-${mm}-03`, description: 'LOJA DOIS', amount: 20.5, type: 'DEBIT', billId: 'b1' }] },
+    faturas: { ct1: [{ id: 'b1', dueDate: `${y}-${mm}-09`, totalAmount: 120.5 }] } };
+  adm.w.fetch = async (url, init) => { chamadas.push({ url, init }); return { ok: true, status: 200, json: async () => dados }; };
+  adm.click('[data-tab="aj"]');
+  assert.ok(adm.$('[data-bank]'), 'administrador vê o botão');
+  adm.click('[data-bank]');
+  adm.type('#bkurl', 'https://porteiro.exemplo.workers.dev'); adm.change('#bkurl', 'https://porteiro.exemplo.workers.dev');
+  adm.click('[data-bkload]');
+  await adm.waitFor(() => adm.$$('input[name=bkc]').length === 2, 3000, 'contas listadas');
+  assert.equal(chamadas.length, 1);
+  assert.equal(chamadas[0].url, 'https://porteiro.exemplo.workers.dev');
+  assert.equal(chamadas[0].init.headers.Authorization, 'Bearer token-uid2', 'o crachá do login vai junto');
+  assert.match(chamadas[0].init.body, /"de":"\d{4}-\d{2}-\d{2}","ate":"\d{4}-\d{2}-\d{2}"/);
+  // cartão: escolhe a fatura e confere o total
+  adm.click('input[name=bkc][value=ct1]');
+  assert.ok(adm.$('#bkbill'), 'lista de faturas do cartão');
+  adm.click('[data-bkgo]');
+  assert.match(adm.$('#imf').textContent, /direto do banco \(Meu Pluggy\)/);
+  assert.match(adm.$('#imf').textContent, /confere/);
+  assert.equal(adm.$$('.imrow').length, 2);
+  adm.click('[data-imgo]');
+  const cc = adm.ev("S.cats.find(c=>c.nome==='CC Itaú').id");
+  assert.equal(adm.ev(`V('${cc}',${y},${adm.ev('selM')},'prev')`), 120.5);
+  // conta corrente: extrato do mês, rendimentos somados
+  adm.click('[data-tab="aj"]'); adm.click('[data-bank]'); adm.click('[data-bkload]');
+  await adm.waitFor(() => adm.$$('input[name=bkc]').length === 2, 3000, 'contas de novo');
+  adm.click('[data-bkgo]');
+  assert.equal(adm.$$('.imrow').length, 3, 'salário, pix e UM lançamento de rendimentos');
+  adm.click('[data-imgo]');
+  const movs = adm.ev("S.cats.filter(c=>c.nome==='Movimentação CC Itaú').map(c=>c.tipo).sort().join()");
+  assert.equal(movs, 'pagar,receber');
+  assert.deepEqual(adm.dom.errors || [], []);
+  adm.close(); db.current = null;
+  // usuário comum não vê o painel
+  const ana = abrir(db); await criarConta(ana, 'ana2@exemplo.com'); ana.click('[data-tab="aj"]');
+  assert.equal(ana.$('[data-bank]'), null, 'quem não é administrador não vê');
+  ana.close();
+});

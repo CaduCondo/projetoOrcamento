@@ -181,6 +181,12 @@ Pedido: refazer o layout, moderno/futurista, continuar escuro, com o celular com
 - **Registro de erros (Ajustes, só o administrador vê):** erros do programa, falhas ao salvar/ler o perfil e arquivos não lidos, com quem, quando, tela e ambiente; botão "Resolvido" apaga. No banco: coleção `errors` — cada pessoa só cria em nome próprio e com campos limitados; só o administrador lê e apaga; ninguém altera (testado no emulador). **É preciso publicar as regras novas no Firebase (teste e produção).**
 - Página Categorias: tirada a palavra "histórico" (categorias antigas simplesmente não mostram etiqueta).
 
+### 5.20 Buscar do banco (Open Finance via Meu Pluggy)
+- Teste real (27/10/2026) com o Itaú do dono pelo Meu Pluggy (grátis): cartão (110 lançamentos, faturas com total que bate com o PDF) e conta corrente (134 lançamentos) chegaram pela API `/v2/transactions` (filtros `dateFrom`/`dateTo`, paginação por `next`). Para o extrato aparecer, foi preciso **atualizar a conexão** no Meu Pluggy.
+- **Porteiro** (`tools/pluggy-worker/worker.js`, Cloudflare Workers grátis): guarda a Client Secret fora do site, confere o token do login do Firebase (assinatura do Google, validade, projeto e **e-mail do dono**), aceita só o site do app, limita o período (400 dias) e devolve só os campos necessários (sem merchant, saldo por lançamento nem número do cartão).
+- **App:** em Ajustes, painel **🏦 Buscar do banco** (só administrador). Escolhe conta (e fatura, no cartão) ou mês (conta) e cai na **mesma tela de conferência** da importação de arquivo (cartão como previsto com conferência do total da fatura; conta em Receitas/Despesas; rendimentos somados; sem duplicar).
+- Custo: R$ 0 (Meu Pluggy gratuito para uso pessoal, até 5 conexões do mesmo titular; Cloudflare Workers plano grátis). Se um dia a Pluggy cobrar, o plano B é a importação de arquivo. Guia: `docs/BANCO-DIRETO.md`.
+
 ## 6. Princípios que combinamos
 - **Privacidade primeiro:** planilhas, backups e dados pessoais **nunca** vão para o GitHub (repositório público).
 - **Honestidade com o usuário:** o que a tela promete é o que o sistema faz.

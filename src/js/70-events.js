@@ -76,6 +76,7 @@ app.addEventListener('click',e=>{const t=e.target;let b;
   else if(b=t.closest('[data-sort]')){const[tp,col]=b.dataset.sort.split('|'),o=mesSort[tp];
     if(o.col!==col){o.col=col;o.dir=1}else if(o.dir===1)o.dir=-1;else{o.col='manual';o.dir=1}render()}
   else if(t.closest('[data-import]'))ImportDialog.open()
+  else if(t.closest('[data-bank]'))BankDialog.open()
   else if(b=t.closest('[data-errdel]')){backend.deleteError(b.dataset.errdel).then(fillErrors).catch(e=>alert(e.message))}
   else if(t.closest('[data-errclear]')){if(confirm('Apagar todos os registros de erro?'))backend.listErrors().then(l=>Promise.all(l.map(e=>backend.deleteError(e.id)))).then(fillErrors).catch(e=>alert(e.message))}
   else if(b=t.closest('[data-usecat]'))UseCategoryDialog.open(b.dataset.usecat)

@@ -45,6 +45,8 @@ const ImportDialog={
       const tx=normName(lines.slice(0,60).join(' '));
       Object.assign(this,{fonte:'generico',banco,kindFixo:false,all:itens,kind:/fatura|cartao de credito/.test(tx)&&!/extrato de conta|conta corrente/.test(tx)?'cartao':'conta'})}
     this.ajustaMes();this.pick();this.draw()},
+  /* direto do banco (Meu Pluggy): os itens já vêm prontos; cai na mesma tela de conferência */
+  setBank({kind,itens,banco,nome,fatura,y,m}){this.reset();Object.assign(this,{y,m,nome,fonte:'pluggy',banco,kind,all:itens,fatura});this.ajustaMes();this.pick();this.draw()},
   /* OFX de qualquer banco */
   setOfx(text,nome=''){const y=this.y,m=this.m;this.reset();Object.assign(this,{y,m,nome});
     const r=parseOFX(text);if(!r.itens.length)return this.fail('ofx',r.banco,'O arquivo OFX não tem lançamentos que eu consiga ler.',{tamanho:text.length});
@@ -85,11 +87,11 @@ const ImportDialog={
   draw(){const k=this.kind,its=k?this.itens():[],ks=k?impKeys(k,its):[],ja=chavesImportadas(),cartao=k==='cartao',itau=this.fonte==='itau';
     const anos=S.anos.includes(this.y)?S.anos:[...S.anos,this.y].sort((a,b)=>a-b);
     const fmt=n=>fmtN(Math.abs(n)),cls=n=>k==='conta'?(n<0?'neg':'pos'):(n<0?'pos':''),selItens=its.filter((_,n)=>this.sel.has(n));
-    const fonteTxt={itau:'PDF do Itaú',ofx:'OFX',csv:'planilha CSV',generico:'PDF (leitura genérica)'}[this.fonte]||'';
+    const fonteTxt={itau:'PDF do Itaú',ofx:'OFX',csv:'planilha CSV',generico:'PDF (leitura genérica)',pluggy:'direto do banco (Meu Pluggy)'}[this.fonte]||'';
     let resumo='';
     if(k){const soma=selItens.reduce((s,i)=>s+i.valor,0),fa=this.fatura,somaTudo=Math.round(its.reduce((s,i)=>s+i.valor,0)*100)/100;
       resumo=cartao
-        ?(itau?`<p class="hint"><b>${its.length}</b> lançamentos encontrados · soma <b>R$ ${fmtN(somaTudo)}</b> · total da fatura <b>R$ ${fmtN(fa.total??0)}</b> ${fa.confere?'<span class="pos">✓ confere</span>':'<span class="warn">⚠ não bate: confira antes de importar</span>'}</p>
+        ?(this.fatura?`<p class="hint"><b>${its.length}</b> lançamentos encontrados · soma <b>R$ ${fmtN(somaTudo)}</b> · total da fatura <b>R$ ${fmtN(fa.total??0)}</b> ${fa.confere?'<span class="pos">✓ confere</span>':'<span class="warn">⚠ não bate: confira antes de importar</span>'}</p>
           <p class="hint">Entram só “compras e saques” e “internacionais” (e o repasse de IOF, que faz parte do total). Compras parceladas das próximas faturas ficam de fora.</p>`
               :`<p class="hint"><b>${its.length}</b> lançamentos · soma <b>R$ ${fmtN(somaTudo)}</b>. <b>Confira com o total da sua fatura</b> antes de importar. Pagamentos da fatura anterior vêm desmarcados.</p>`)
           +`<p class="hint">Vão para a categoria <b>${esc(CARTAO_CAT)}</b> como <b>previstos</b>; depois você marca o que foi pago.</p>`

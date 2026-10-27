@@ -11,6 +11,7 @@ function install(w, db) {
     const u = db.current;
     return u && {
       uid: u.uid, email: u.email,
+      async getIdToken() { return 'token-' + u.uid; },
       async reauthenticateWithCredential(c) { if (c.p !== u.pw) throw { code: 'auth/wrong-password' }; },
       async updatePassword(p) { if (p.length < 6) throw { code: 'auth/weak-password' }; u.pw = p; },
       async delete() { delete db.users[u.email]; db.current = null; notify(null); },

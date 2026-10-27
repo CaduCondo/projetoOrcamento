@@ -105,3 +105,24 @@ test('datas por extenso e faturas de cartão em PDF de outros bancos ("21 SET", 
   assert.deepEqual(Array.from(itens, i => [i.dia, i.mes, i.desc, i.valor]), [[21, 9, 'Padaria Pão Bom', 23.5], [22, 9, 'Uber *Trip', 18.9], [23, 9, 'Estorno Loja', -15], [25, 9, 'Pagamento recebido', 500]]);
   assert.equal(m.pagamentoDeFatura('Pagamento recebido'), true, 'o pagamento vem desmarcado na tela');
 });
+
+test('dados do banco (Meu Pluggy): itens do cartão por fatura com conferência do total; parcelas no nome; conta com sinal', () => {
+  const trans = [
+    { id: 'a', date: '2026-09-21', description: 'LOJA UM', amount: 100, type: 'DEBIT', billId: 'b1', installment: 2, totalInstallments: 5 },
+    { id: 'b', date: '2026-09-22', description: 'LOJA DOIS 03/04', amount: 50.5, type: 'DEBIT', billId: 'b1', installment: 3, totalInstallments: 4 },
+    { id: 'c', date: '2026-09-23', description: 'ESTORNO', amount: -20, type: 'CREDIT', billId: 'b1' },
+    { id: 'd', date: '2026-09-25', description: 'OUTRA FATURA', amount: 9, type: 'DEBIT', billId: 'b2' },
+    { id: 'e', date: 'lixo', description: 'x', amount: 1 }];
+  const itens = m.pluggyItens(trans, true);
+  assert.equal(itens.length, 4, 'data inválida fica de fora');
+  assert.equal(itens[0].desc, 'LOJA UM 02/05'); assert.equal(itens[1].desc, 'LOJA DOIS 03/04', 'não repete a parcela se já está no texto');
+  const f = { id: 'b1', dueDate: '2026-10-09T00:00:00.000Z', totalAmount: 130.5 };
+  const r = m.itensDaFatura(itens, f);
+  assert.equal(r.itens.length, 3); assert.equal(r.soma, 130.5); assert.equal(r.confere, true);
+  assert.equal(m.itensDaFatura(itens, { ...f, totalAmount: 140 }).confere, false);
+  assert.equal(m.rotuloFatura(f), 'vence 09/10/2026 · R$ 130,50');
+  assert.deepEqual(Array.from(m.faturasOrdenadas([{ dueDate: '2026-08-09' }, { dueDate: '2026-10-09' }]), x => x.dueDate), ['2026-10-09', '2026-08-09'], 'mais nova primeiro');
+  const conta = m.pluggyItens([{ date: '2026-10-05T10:00:00Z', description: 'PIX', amount: -10 }, { date: '2026-10-06', description: 'SALARIO', amount: 500 }], false);
+  assert.deepEqual(Array.from(conta, i => [i.dia, i.mes, i.ano, i.valor]), [[5, 10, 2026, -10], [6, 10, 2026, 500]]);
+  assert.equal(m.nomeConta({ name: 'Visa', number: '0498' }), 'Visa · final 0498');
+});
