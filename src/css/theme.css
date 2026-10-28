@@ -323,3 +323,14 @@ body.touring{overflow:hidden}
 .resumo .rb b{font-family:var(--font-num);font-size:22px}
 .resumo .prox{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .resumo .prox button{border:1px solid var(--line2);background:var(--glass);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+
+/* Computador: a tabela nunca passa da largura do painel (texto longo quebra de linha; o Valor sempre aparece) */
+.two>*{min-width:0}
+@media(min-width:701px){
+  table.mes{table-layout:fixed;width:100%}
+  table.mes td.grip,table.mes th:first-child{width:26px;padding-left:6px;padding-right:0}
+  table.mes th.dia,table.mes td.dia{width:56px}
+  table.mes th.n,table.mes td.n{width:190px}
+  table.mes td:nth-child(2){overflow-wrap:anywhere;word-break:break-word}
+  table.mes td.n .sub{white-space:normal}
+}

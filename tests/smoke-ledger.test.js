@@ -94,6 +94,10 @@ test('resumo do mês atual: quanto pode gastar por dia, o que ainda falta pagar 
   assert.match(app.$('.resumo').textContent, new RegExp(`${dias} dia`));
   assert.match(app.$('.resumo').textContent, /Ainda a pagar.*1 conta/);
   assert.ok(app.$('.resumo .prox button'), 'mostra o próximo vencimento');
+  // o saldo acumulado (dinheiro guardado de meses anteriores) não entra na conta
+  const antes = app.$('.resumo .rb b').textContent;
+  app.ev(`S.saldoIni[selY]=1000000;render()`);
+  assert.equal(app.$('.resumo .rb b').textContent, antes, 'saldo inicial/acumulado não muda o "pode gastar por dia"');
   app.click('[data-m="0"]');
   assert.equal(app.$('.resumo'), null, 'em outros meses não aparece');
   app.close();

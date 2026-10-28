@@ -36,12 +36,13 @@ function blocoMes(tipo,titulo,total,y,m){
    <tbody>${linhas||`<tr><td colspan="4" class="sub" style="padding:16px">Nenhuma categoria neste mês. Use “＋ Categoria” para incluir uma que já existe.</td></tr>`}</tbody>
    <tfoot><tr><td></td><td colspan="2">Total de ${titulo.toLowerCase()}</td><td class="n"><b class="${tipo==='pagar'?'neg':'pos'}">${total}</b></td></tr></tfoot></table>
    <div class="pfoot"><button class="btn sec sm" data-usecat="${tipo}" title="Incluir neste mês uma categoria de ${tipo==='pagar'?'despesa':'receita'} que já existe">＋ Categoria</button></div></div>`}
-/* Resumo do mês atual: quanto dá para gastar por dia até o fim do mês e o que ainda vence. (Só no mês de hoje.) */
+/* Resumo do mês atual: quanto dá para gastar por dia até o fim do mês e o que ainda vence. (Só no mês de hoje.)
+   Conta só o que é DESTE mês (receitas − despesas previstas). O saldo acumulado/investido NÃO entra: é dinheiro guardado. */
 function resumoMes(y,m){const h=new Date();if(y!==h.getFullYear()||m!==h.getMonth())return'';
-  const hoje=h.getDate(),dias=new Date(y,m+1,0).getDate()-hoje+1,fim=acum(y,m,'prev');
+  const hoje=h.getDate(),dias=new Date(y,m+1,0).getDate()-hoje+1,sobra=MT('receber',y,m,'prev')-MT('pagar',y,m,'prev');
   const pend=visCats('pagar',y,m).map(c=>({c,p:Math.round((V(c.id,y,m,'prev')-V(c.id,y,m,'real'))*100)/100})).filter(x=>x.p>0);
   const falta=pend.reduce((s,x)=>s+x.p,0),prox=pend.filter(x=>x.c.dia&&x.c.dia>=hoje).sort((a,b)=>a.c.dia-b.c.dia).slice(0,3);
-  return `<div class="resumo"><div class="rb"><span class="l">Pode gastar por dia</span><b class="${fim>0?'pos':'neg'}">${fim>0?R$(fim/dias):'sem folga'}</b><span class="sub">${fim>0?`saldo previsto ${R$(fim)} ÷ ${dias} dia${dias>1?'s':''}`:`saldo previsto do mês: ${R$(fim)}`}</span></div>
+  return `<div class="resumo"><div class="rb"><span class="l">Pode gastar por dia</span><b class="${sobra>0?'pos':'neg'}">${sobra>0?R$(sobra/dias):'sem folga'}</b><span class="sub">${sobra>0?`sobra prevista do mês ${R$(sobra)} ÷ ${dias} dia${dias>1?'s':''}`:`receitas − despesas previstas: ${R$(sobra)}`} · sem contar o que está guardado</span></div>
    <div class="rb"><span class="l">Ainda a pagar</span><b class="neg">${RP(falta)}</b><span class="sub">${pend.length} conta${pend.length===1?'':'s'} no mês</span></div>
    ${prox.length?`<div class="prox"><span class="l">Próximos vencimentos</span>${prox.map(x=>`<button type="button" data-open="${key(x.c.id,y,m)}"><b>dia ${x.c.dia}</b> ${esc(x.c.nome)} <span class="neg">${R$(x.p)}</span></button>`).join('')}</div>`:''}</div>`}
 function vMes(){const y=selY,m=selM,R=MT('receber',y,m,'real'),P=MT('pagar',y,m,'real'),Rp=MT('receber',y,m,'prev'),Pp=MT('pagar',y,m,'prev');
