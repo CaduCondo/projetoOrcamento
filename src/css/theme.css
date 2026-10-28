@@ -317,3 +317,9 @@ body.touring{overflow:hidden}
 .lsum b{font-family:var(--font-num);font-size:14px;margin-left:4px}
 .seg.lf{display:flex;width:100%;margin:2px 0 6px}.seg.lf button{flex:1;padding-left:4px;padding-right:4px}
 .cico.sem{background:rgba(255,181,71,.2);color:var(--warn);font-weight:700}
+.resumo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 12px}
+.resumo .rb{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:var(--r);background:var(--card);border:1px solid var(--line)}
+.resumo .l{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.resumo .rb b{font-family:var(--font-num);font-size:22px}
+.resumo .prox{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.resumo .prox button{border:1px solid var(--line2);background:var(--glass);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}

@@ -83,3 +83,18 @@ test('categoria: ícone e cor escolhidos na janela e mostrados nas telas', async
   assert.equal(app.ev(`catById('${id}').ico`), undefined);
   app.close();
 });
+
+test('resumo do mês atual: quanto pode gastar por dia, o que ainda falta pagar e próximos vencimentos', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  assert.ok(app.$('.resumo'), 'aparece no mês de hoje');
+  const hoje = app.ev('new Date().getDate()'), dias = app.ev('new Date(selY,selM+1,0).getDate()') - hoje + 1;
+  app.ev(`const c=S.cats.find(c=>c.tipo==='receber');useCatInMonth(c.id,selY,selM);ens(c.id,selY,selM).items.push({v:3100,d:'',ok:true});
+    const p=S.cats.find(c=>c.nome==='Moradia');p.dia=new Date().getDate();useCatInMonth(p.id,selY,selM);ens(p.id,selY,selM).items.push({v:1000,d:'',ok:false});render()`);
+  assert.match(app.$('.resumo').textContent, new RegExp(`${dias} dia`));
+  assert.match(app.$('.resumo').textContent, /Ainda a pagar.*1 conta/);
+  assert.ok(app.$('.resumo .prox button'), 'mostra o próximo vencimento');
+  app.click('[data-m="0"]');
+  assert.equal(app.$('.resumo'), null, 'em outros meses não aparece');
+  app.close();
+});
