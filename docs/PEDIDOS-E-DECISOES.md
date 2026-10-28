@@ -187,8 +187,18 @@ Pedido: refazer o layout, moderno/futurista, continuar escuro, com o celular com
 - **App:** em Ajustes, painel **🏦 Buscar do banco** (só administrador). Escolhe conta (e fatura, no cartão) ou mês (conta) e cai na **mesma tela de conferência** da importação de arquivo (cartão como previsto com conferência do total da fatura; conta em Receitas/Despesas; rendimentos somados; sem duplicar).
 - Custo: R$ 0 (Meu Pluggy gratuito para uso pessoal, até 5 conexões do mesmo titular; Cloudflare Workers plano grátis). Se um dia a Pluggy cobrar, o plano B é a importação de arquivo. Guia: `docs/BANCO-DIRETO.md`.
 
+### 5.21 Lançamentos, Automações e ícone/cor (inspirado em outro app financeiro; ideias, sem copiar marca nem textos)
+Pedido: aproveitar o que o outro app faz bem (categoria como etiqueta em cada lançamento, automações, ícone e cor, detalhe do lançamento) **sem complicar** o uso. Comparação honesta: o nosso é de *planejamento* (categoria do mês, previsto × realizado); o deles é de *acompanhamento*. Decidimos **juntar os dois**, sem trocar o modelo.
+- **Tela Mês ganhou um alternador "Por categoria | Lançamentos"** (continuam as mesmas 6 abas e o menu de baixo). Em **Lançamentos**: todos os itens do mês numa lista por dia (total do dia, entrada +/saída −), busca, filtros Todos/Entradas/Saídas/Sem categ., aviso "⚠ N lançamentos sem categoria — resolver" e botão **＋ Lançamento** (novo lançamento rápido).
+- **"Sem categoria"** = o que ainda está na Movimentação CC Itaú (extrato) ou item do cartão ainda não levado a uma categoria. Nenhum dado foi migrado: é só uma forma de ver.
+- **Janela do lançamento** (toque na linha): descrição, valor, categoria (busca; cria na hora), "já pago/recebido", excluir e **"Lembrar para os próximos"** = cria a **automação** (texto que se repete → categoria). Ao salvar, o app já organiza os parecidos que estavam sem categoria.
+- **Automações** (`S.autos`, guardadas junto das categorias; painel com ✕ na página Categorias): na importação (arquivo ou banco) o extrato já cai na categoria certa (realizado) e o item de cartão ganha a cópia informativa 💳 (não soma) na categoria; o que não casa fica "sem categoria". A regra mais específica ganha; entrada e saída não se misturam. Texto da regra: sem acento, data, parcela e símbolos, mínimo 3 letras.
+- **Ícone e cor da categoria** (enfeite, opcionais): 30 ícones e 10 cores na janela da categoria; sem escolha, o app sugere o ícone pelo nome (ex.: Mercado 🛒). Renomear (nova versão da categoria) leva ícone e cor junto. Aparecem na tela Mês, em Categorias e nos Lançamentos.
+- Ainda não feito (próximos passos combinados): **Início** com saldo previsto e "quanto por dia", **Parcelas/faturas futuras**, **Carteira** (dinheiro em papel), assinaturas/recorrentes, subcategorias, relatórios em perguntas e tags. Princípio reforçado pelo dono: **sempre facilitar o uso; não encher de informação**.
+
 ## 6. Princípios que combinamos
 - **Privacidade primeiro:** planilhas, backups e dados pessoais **nunca** vão para o GitHub (repositório público).
 - **Honestidade com o usuário:** o que a tela promete é o que o sistema faz.
 - **Testar antes de publicar:** tudo vai primeiro para `dev`; só vai para produção com aprovação do dono.
+- **Usabilidade acima de tudo:** o app tem muita informação; cada novidade deve ficar simples (poucos botões, escolhas padrão boas, nada obrigatório).
 - **Linguagem simples** com o dono (não é da área de TI): passos clicáveis, um por vez.

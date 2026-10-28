@@ -3,7 +3,7 @@
 function serializeState(s){
   const years={};
   for(const[k,v]of Object.entries(s.data)){const{c,y,m}=parseKey(k);(years[y]??={})[c+'|'+m]=v}
-  return{meta:JSON.stringify({cats:s.cats,anos:s.anos,saldoIni:s.saldoIni,saldos:s.saldos,dividas:s.dividas,bens:s.bens}),
+  return{meta:JSON.stringify({cats:s.cats,anos:s.anos,saldoIni:s.saldoIni,saldos:s.saldos,dividas:s.dividas,bens:s.bens,autos:s.autos||[]}),
          years:Object.fromEntries(Object.entries(years).map(([y,v])=>[y,JSON.stringify(v)]))}}
 /* yearJsons: {"2026": "<json>", ...} */
 function deserializeState(metaJson,yearJsons){

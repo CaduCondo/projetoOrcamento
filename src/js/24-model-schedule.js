@@ -105,7 +105,7 @@ function reviseCat(id,input,scope,y,m){
   if(scope==='manter')scope=modoDe(c);
   if(!temPassado(c,t)){                                        // nada antes deste mês (nem lançamento): muda no lugar, sem "versão antiga"
     c.nome=nome;c.dia=dia;if(c.vis&&ymOf(c.vis.from)>=t){const f=c.vis.from;applyScope(c,scope,f[0],f[1],false)}return c}
-  const n=makeCat(c.tipo,nome,dia);applyScope(n,scope,y,m,false);n.prevId=c.id;
+  const n=makeCat(c.tipo,nome,dia);applyScope(n,scope,y,m,false);n.prevId=c.id;if(c.ico)n.ico=c.ico;if(c.cor)n.cor=c.cor;
   if(c.extra){const ex=c.extra.filter(k=>k>=exKey(y,m)),ficam=c.extra.filter(k=>k<exKey(y,m));if(ex.length)n.extra=ex;if(ficam.length)c.extra=ficam;else delete c.extra}
   if(c.hide){const ex=c.hide.filter(k=>k>=exKey(y,m)),ficam=c.hide.filter(k=>k<exKey(y,m));if(ex.length)n.hide=ex;if(ficam.length)c.hide=ficam;else delete c.hide}
   const prev=fromYm(t-1);

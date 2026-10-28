@@ -25,7 +25,7 @@ function rowMes(c,y,m){const r=V(c.id,y,m,'real'),p=V(c.id,y,m,'prev'),neg=c.tip
   const main=vazio?'<span class="lancar">＋ Lançar</span>':`<span class="${neg?'neg':'pos'}" ${r?'':'style="opacity:.5"'}>${f(r)}</span>`;
   const vh=venceHoje(c,y,m);
   return `<tr draggable="true" data-cat="${c.id}" data-tipo="${c.tipo}"${vh?' class="venc" title="Vence hoje e ainda está como previsto: agende/pague e marque como pago para tirar este aviso"':''}><td class="grip" title="Arraste para reordenar">⋮⋮</td>
- <td data-tipcat="${c.id}|${y}|${m}">${esc(c.nome)}${vh?' <span class="vtag">⏰ vence hoje</span>':''}<br>${sumBadge(c,y,m)}</td>
+ <td data-tipcat="${c.id}|${y}|${m}">${catBadge(c)} ${esc(c.nome)}${vh?' <span class="vtag">⏰ vence hoje</span>':''}<br>${sumBadge(c,y,m)}</td>
  <td class="dia">${c.dia?`<span class="dd">${c.dia}</span>`:''}</td>
  <td class="n">${n>1?`<span class="cnt" title="Quantidade de itens que formam este valor">${n} itens</span>`:''}<button class="val" data-open="${c.id}|${y}|${m}" data-tipcell="${c.id}|${y}|${m}">${main}</button>${p!==r?`<div class="sub" style="padding-right:8px">previsto ${f(p)}</div>`:''}${noCartao?`<div class="sub infoc" title="Valor lançado como “já está na fatura do cartão”: aparece aqui para você acompanhar, mas NÃO entra no total (já está dentro do valor do cartão de crédito)">💳 ${f(noCartao)} no cartão · não soma</div>`:''}</td></tr>`}
 /* um bloco (Receitas ou Despesas) com as linhas e o botão de nova categoria no canto inferior esquerdo */
@@ -39,10 +39,11 @@ function blocoMes(tipo,titulo,total,y,m){
 function vMes(){const y=selY,m=selM,R=MT('receber',y,m,'real'),P=MT('pagar',y,m,'real'),Rp=MT('receber',y,m,'prev'),Pp=MT('pagar',y,m,'prev');
   const curY=new Date().getFullYear(),curMo=new Date().getMonth();
   return `<div class="chips">${MESES.map((n,i)=>`<button class="chip ${i===m?'on':''} ${i===curMo&&y===curY?'cur':''}" data-m="${i}">${n}</button>`).join('')}<span class="sub" style="margin-left:8px">${MESES[m]} de ${y}</span></div>
-  <div class="cards">
+  <div class="row mvrow"><div class="seg" title="Escolha como ver o mês"><button data-mv="cat" class="${mesVis==='cat'?'on':''}">Por categoria</button><button data-mv="lanc" class="${mesVis==='lanc'?'on':''}">Lançamentos</button></div></div>
+  ${mesVis==='lanc'?`<div class="lsum"><span>Recebido <b class="pos">${R$(R)}</b></span><span>Pago <b class="neg">${RP(P)}</b></span><span>Saldo <b class="${R-P>=0?'pos':'neg'}">${R$(R-P)}</b></span></div>`:`  <div class="cards">
    <div class="card"><div class="l">Recebido</div><div class="v pos">${R$(R)}</div><div class="sub">previsto ${R$(Rp)}</div></div>
    <div class="card"><div class="l">Pago</div><div class="v neg">${RP(P)}</div><div class="sub">previsto ${RP(Pp)}</div></div>
    <div class="card"><div class="l">Saldo do mês</div><div class="v ${R-P>=0?'pos':'neg'}">${R$(R-P)}</div><div class="sub">previsto ${R$(Rp-Pp)}</div></div>
-   <div class="card"><div class="l">Acumulado</div><div class="v">${R$(acum(y,m,'real'))}</div><div class="sub">previsto ${R$(acum(y,m,'prev'))}</div></div></div>
-  <div class="two">${blocoMes('receber','Receitas',R$(R),y,m)}${blocoMes('pagar','Despesas',RP(P),y,m)}</div>
-  <p class="hint">Só o que está marcado como pago/recebido entra nos totais; o resto é previsão. Clique em “Lançar” (ou no valor) para lançar e editar os itens, passe o mouse para espiar, arraste ⋮⋮ para reordenar.</p>`}
+   <div class="card"><div class="l">Acumulado</div><div class="v">${R$(acum(y,m,'real'))}</div><div class="sub">previsto ${R$(acum(y,m,'prev'))}</div></div></div>`}
+  ${mesVis==='lanc'?vLanc(y,m):`<div class="two">${blocoMes('receber','Receitas',R$(R),y,m)}${blocoMes('pagar','Despesas',RP(P),y,m)}</div>
+  <p class="hint">Só o que está marcado como pago/recebido entra nos totais; o resto é previsão. Clique em “Lançar” (ou no valor) para lançar e editar os itens, passe o mouse para espiar, arraste ⋮⋮ para reordenar.</p>`}`}

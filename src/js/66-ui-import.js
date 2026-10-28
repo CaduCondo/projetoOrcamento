@@ -122,7 +122,7 @@ const ImportDialog={
   go(){const its=this.itens().filter((_,n)=>this.sel.has(n));if(!its.length)return;
     const antes=this.kind==='cartao'?(cellOf(ensureMonthCatPeek(this.kind,this.y,this.m),this.y,this.m)?.items.filter(i=>!i.imp).length||0):0;
     const r=importStatement(this.kind,its,this.y,this.m);save();dlg3.close();
-    snackbar(`${r.novos} item(ns) importado(s) em “${r.cats.map(c=>c.nome+(this.kind==='conta'?(c.tipo==='receber'?' (Receitas)':' (Despesas)'):'')).join(' e ')}” (${MESES[this.m].toLowerCase()}/${this.y})${r.atualizados?`; rendimentos atualizados`:''}${r.repetidos?`; ${r.repetidos} já existiam`:''}${antes?`. Atenção: já havia ${antes} item(ns) lançado(s) à mão nesta categoria, que continuam somando`:''}.`,null,null,14000)},
+    snackbar(`${r.novos} item(ns) importado(s) em “${r.cats.map(c=>c.nome+(this.kind==='conta'?(c.tipo==='receber'?' (Receitas)':' (Despesas)'):'')).join(' e ')}” (${MESES[this.m].toLowerCase()}/${this.y})${r.atualizados?`; rendimentos atualizados`:''}${r.auto?`; ${r.auto} já foram para a categoria certa pelas suas automações`:''}${r.repetidos?`; ${r.repetidos} já existiam`:''}${antes?`. Atenção: já havia ${antes} item(ns) lançado(s) à mão nesta categoria, que continuam somando`:''}.`,null,null,14000)},
   /* abre o arquivo escolhido conforme o tipo */
   async arquivo(f,input){const nome=(f.name||'').toLowerCase();
     try{

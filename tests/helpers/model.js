@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const SRC = path.join(__dirname, '..', '..', 'src', 'js');
-const MODEL_FILES = ['00-config.js', '10-format.js', '20-model-state.js', '21-model-calc.js', '22-model-categories.js', '23-model-serialize.js', '24-model-schedule.js', '25-model-csv.js', '27-model-password.js', '28-model-import.js', '29-model-import-generic.js', '29-model-pluggy.js'];
+const MODEL_FILES = ['00-config.js', '10-format.js', '20-model-state.js', '21-model-calc.js', '22-model-categories.js', '23-model-serialize.js', '24-model-schedule.js', '25-model-csv.js', '27-model-password.js', '28-model-import.js', '29-model-import-generic.js', '29-model-pluggy.js', '29-model-rules.js'];
 
 class FakeDate extends Date {
   constructor(...a) { if (a.length) super(...a); else super(2026, 9, 15); }
@@ -22,6 +22,7 @@ function loadModel() {
   mergeCat, reorderCats, deleteCat, importClashYears, applyImport,
   pluggyItens, faturasOrdenadas, rotuloFatura, itensDaFatura, contaCartao, nomeConta, detectStatement, detectBank, parseValor, parseData, parseOFX, csvGuess, parseBankCsv, parseGenerico, pagamentoDeFatura, parseCsv, parseFatura, parseExtrato, extratoMeses, extratoDoMes, extratoParaImportar, rendDiferente, agruparRendimentos, pareceFatura, importStatement, cardItemToCategory, cardItemToExisting, unlinkCardItem, cardLinks, contaItemMove, chavesImportadas, impKeys, ensureMonthCat, useCatInMonth, removeCatFromMonth, pickableCats, applyScope, applyOrder, setFixa, temPassado, serializeState, deserializeState, PASSWORD_RULES, passwordChecks, passwordOk, passwordProblem,
   stateToCsv, csvFileText, csvToState, parseCsv,
+  addAuto, delAuto, autoFor, autoTxt, autos, lancamentos, semCategoria, categoriaDe, moveLancamento, aplicarAutomacoes, catIco, catBadge, descLimpa,
   ym, ymOf, fromYm, aliveFrom, showsInMonth, showsInYear, scopeVis, scopeOf, scopeLabel, validateCat, createCat, reviseCat,
   get S(){return S}, set S(v){S=v},
   get modo(){return modo}, set modo(v){modo=v},

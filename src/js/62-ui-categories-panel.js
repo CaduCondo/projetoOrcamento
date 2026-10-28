@@ -17,14 +17,14 @@ function catRows(){const st=catStats(),nq=normName(catUI.q);
   else if(catUI.filtro==='antigas')l=l.filter(c=>st[c.id]&&!isActive(c,st));
   sortCats(l,st);
   const tot=l.length;
-  const html=l.slice(0,catUI.lim).map(c=>{const x=st[c.id];return `<button type="button" class="cr" data-cedit="${c.id}" title="Toque para editar, mesclar ou excluir"><span class="dot ${c.tipo}" title="${c.tipo==='pagar'?'Despesas':'Receitas'}"></span>
+  const html=l.slice(0,catUI.lim).map(c=>{const x=st[c.id];return `<button type="button" class="cr" data-cedit="${c.id}" title="Toque para editar, mesclar ou excluir"><span title="${c.tipo==='pagar'?'Despesa':'Receita'}">${catBadge(c)}</span>
    <span class="cn">${esc(c.nome)}</span><span class="cd">${c.dia??''}</span>
    <span class="vig ${c.fixa?'fx':''}" title="Onde esta categoria aparece nas telas">${esc(scopeLabel(c))}</span>
    <span class="sub xs">${x?'último uso '+lastLabel(x.last):'sem lançamentos'}</span><span class="sub xs">${x?x.n+' lanç.':''}</span></button>`}).join('')||'<p class="hint" style="padding:14px 4px">Nenhuma categoria com esse filtro.</p>';
   return{html:catHead()+html+(tot>catUI.lim?`<div style="padding:10px 4px"><button class="btn sec sm" data-cmore>Mostrar mais ${Math.min(40,tot-catUI.lim)} (${tot-catUI.lim} restantes)</button></div>`:''),tot}}
 function renderCatList(){const r=catRows(),el=document.getElementById('cl');if(!el)return;el.innerHTML=r.html;document.getElementById('cc').textContent=`${r.tot} de ${S.cats.length}`}
 /* Página Categorias: o lugar de CRIAR, EDITAR, MESCLAR e EXCLUIR categorias */
-function vCat(){return catPanel()}
+function vCat(){return catPanel()+autoPanel()}
 function catPanel(){const r=catRows(),sg=(k,opts)=>`<div class="seg">${opts.map(([v,l])=>`<button data-cf="${k}|${v}" class="${catUI[k]===v?'on':''}">${l}</button>`).join('')}</div>`;
   return `<div class="panel" ><h2>Categorias <span class="sub" id="cc">${r.tot} de ${S.cats.length}</span></h2><div style="padding:12px 14px">
    <div class="row"><input id="cq" type="search" placeholder="🔍 Buscar categoria…" value="${esc(catUI.q)}" style="flex:1;min-width:200px">

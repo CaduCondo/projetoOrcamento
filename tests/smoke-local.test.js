@@ -370,7 +370,7 @@ test('tela Mês: tabelas com cabeçalho que ordena (nome, dia, valor), sem dia n
   const y = app.ev('selY'), mth = app.ev('selM');
   app.ev(`['Zeta:15','Beta:3','Alfa:','Gama:30','Delta:6'].forEach((x,i)=>{const[n,d]=x.split(':');const c=addCat('pagar',n,d?+d:null);c.lib=true;useCatInMonth(c.id,${y},${mth});ens(c.id,${y},${mth}).items.push({v:(i+1)*10,d:'',ok:true})});save();render()`);
   const nomes = () => app.$$('table.mes')[1].querySelectorAll('tbody tr[data-cat]');
-  const lista = () => Array.from(nomes(), r => r.cells[1].childNodes[0].textContent.trim()).filter(n => ['Zeta', 'Beta', 'Alfa', 'Gama', 'Delta'].includes(n));
+  const lista = () => Array.from(nomes(), r => r.cells[1].querySelector('.cico').nextSibling.textContent.trim()).filter(n => ['Zeta', 'Beta', 'Alfa', 'Gama', 'Delta'].includes(n));
   const th = col => app.$(`th[data-sort="pagar|${col}"]`);
   assert.equal(app.$$('table.mes thead').length, 2, 'as duas tabelas têm cabeçalho');
   assert.deepEqual(Array.from(app.$$('table.mes')[1].querySelectorAll('thead th'), t => t.textContent.trim()), ['', 'Categoria', 'Dia ▲', 'Valor']);
