@@ -35,7 +35,7 @@ const BankDialog={
       <div class="row"><label class="f">Trazer os últimos<select id="bkmeses">${[3,6,12].map(n=>`<option value="${n}" ${n===this.meses?'selected':''}>${n} meses</option>`).join('')}</select></label>
        <button type="button" class="btn sec" data-bkload ${this.carregando?'disabled':''}>${this.carregando?'Buscando…':d?'Buscar de novo':'Conectar e listar contas'}</button></div>
       <div class="err" id="bkerr" role="alert">${esc(this.erro)}</div>
-      ${d&&d.contas?.length?`<div class="bkaccs">${d.contas.map(x=>`<label class="radio"><input type="radio" name="bkc" value="${esc(x.id)}" ${x.id===this.conta?'checked':''}> <span><b>${esc(nomeConta(x))}</b> <span class="sub">${contaCartao(x)?'cartão de crédito':'conta corrente'} · saldo R$ ${fmtN(x.balance??0)}</span></span></label>`).join('')}</div>
+      ${d&&d.contas?.length?`<div class="bkaccs">${d.contas.map(x=>`<label class="radio"><input type="radio" name="bkc" value="${esc(x.id)}" ${x.id===this.conta?'checked':''}> <span><b>${esc(nomeConta(x))}</b> <span class="sub">${contaCartao(x)?`cartão de crédito${x.balance?` · total devido segundo o banco R$ ${fmtN(x.balance)} (pode incluir parcelas futuras; a fatura certa você escolhe abaixo)`:''}`:`conta corrente · saldo R$ ${fmtN(x.balance??0)}`}</span></span></label>`).join('')}</div>
        ${cartao?(fs.length?`<label class="f">Qual fatura?<select id="bkbill">${fs.map(f=>`<option value="${esc(f.id)}">${esc(rotuloFatura(f))}</option>`).join('')}</select></label>
           <p class="hint">A fatura traz os lançamentos que o banco ligou a ela; o app confere a soma com o total da fatura.</p>`
           :'<p class="hint">Nenhuma fatura encontrada para este cartão.</p>')
