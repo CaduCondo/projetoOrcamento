@@ -147,6 +147,9 @@ dlg3.addEventListener('change',async e=>{const t=e.target,D=ImportDialog;if(!t.c
   else if(t.name==='imk'){D.kind=t.value;if(D.csv)return D.recalcCsv();D.ajustaMes();D.pick();D.draw()}
   else if(['imcd','imcs','imcv'].includes(t.id)){D.csv.map={...D.csv.map,[{imcd:'data',imcs:'desc',imcv:'valor'}[t.id]]:+t.value};D.recalcCsv()}
   else if(t.id==='iminv'){D.csv.inverter=t.checked;D.recalcCsv()}
-  else if(t.dataset.imsel!==undefined){t.checked?D.sel.add(+t.dataset.imsel):D.sel.delete(+t.dataset.imsel);D.draw()}});
+  else if(t.dataset.imsel!==undefined){const n=t.dataset.imsel,rolagens=['.db','.imlist'].map(s=>dlg3.querySelector(s)?.scrollTop||0);   // a tela é refeita: guarda a rolagem e o foco
+    t.checked?D.sel.add(+n):D.sel.delete(+n);D.draw();
+    ['.db','.imlist'].forEach((s,i)=>{const b=dlg3.querySelector(s);if(b)b.scrollTop=rolagens[i]});
+    dlg3.querySelector(`[data-imsel="${n}"]`)?.focus({preventScroll:true})}});
 dlg3.addEventListener('click',e=>{if(e.target.closest('[data-imgo]'))ImportDialog.go();else if(e.target.closest('[data-imrep]'))ImportDialog.avisar()});
 dlg3.addEventListener('submit',e=>{if(e.target.id==='imf')e.preventDefault()});

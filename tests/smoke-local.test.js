@@ -158,8 +158,14 @@ test('janela de itens: previsto x realizado, cartão (💳) e total', async () =
   assert.match(nbsp(app.$('#dr').textContent), /-R\$ 150,00/);
   app.type('#nv', '5000'); app.type('#nd', 'novo'); app.click('[data-add]');   // adiciona 50,00
   assert.equal(app.ev(`V('${merc}',${y},${mth},'prev')`), 200);
-  app.click('[data-del="0"]');                                     // remove o primeiro (100)
-  assert.equal(app.ev(`V('${merc}',${y},${mth},'prev')`), 100);
+  app.click('[data-del="0"]');                                     // pede confirmação antes de apagar
+  await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'pede confirmação para apagar');
+  assert.match(app.$('#dlg4').textContent, /Apagar .*R\$ 100,00/);
+  app.choose('');                                                  // Cancelar: nada some
+  assert.equal(app.ev(`V('${merc}',${y},${mth},'prev')`), 200);
+  app.click('[data-del="0"]');
+  await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'confirma apagar'); app.choose('sim');   // remove o primeiro (100)
+  await app.waitFor(() => app.ev(`V('${merc}',${y},${mth},'prev')`) === 100, 2000, 'apagou');
   // quantidade de itens: fica ao lado ESQUERDO do valor (não embaixo do nome)
   app.type('#nv', '1000'); app.type('#nd', 'mais um'); app.click('[data-add]'); app.click('[data-close]');
   const linha = app.$(`tr[data-cat="${merc}"]`);
@@ -571,6 +577,12 @@ test('importar fatura do cartão (PDF já em linhas): confere o total, importa, 
   app.click(`[data-open="${cc}|${y}|${mth}"]`);
   app.click('[data-toex="1"]');
   await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'escolher categoria');
+  assert.match(app.$('#dlg4').textContent, /da movimentação .*LOJA/i, 'a janela diz qual movimentação está sendo lançada');
+  assert.equal(app.$$('#dlg4 .cb').length, 1);
+  assert.equal(app.$('#dlg4 .cb').dataset.tipo, 'pagar', 'só categorias do mesmo tipo da que foi aberta');
+  app.type('#mvcin', 'categoria que nao existe'); app.choose('ok');
+  assert.ok(app.$('#dlg4').hasAttribute('open'), 'sem categoria válida a janela continua aberta');
+  assert.match(app.$('#chErr').textContent, /Não existe categoria com esse nome/);
   app.type('#mvcin', 'merc'); app.key('#mvcin', 'Enter');
   app.choose('ok');
   await app.waitFor(() => app.ev(`(S.data['${merc}|${y}|${mth}']?.items||[]).some(i=>i.info&&i.lock)`), 2000, 'lançado em Mercado');
