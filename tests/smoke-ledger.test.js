@@ -102,3 +102,20 @@ test('resumo do mês atual: quanto pode gastar por dia, o que ainda falta pagar 
   assert.equal(app.$('.resumo'), null, 'em outros meses não aparece');
   app.close();
 });
+
+test('zerar dados (só fora da produção): pede para digitar APAGAR e volta ao começo', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  app.ev(`addAuto('conta vivo','pagar','Moradia')`);
+  app.click('[data-tab="aj"]');
+  app.click('[data-reset]');
+  await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'pede confirmação');
+  app.type('#atx', 'apagar'); app.choose('ok');
+  assert.equal(app.ev('autos().length'), 1, 'sem digitar APAGAR nada some');
+  app.click('[data-reset]');
+  await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'pede de novo');
+  app.type('#atx', 'APAGAR'); app.choose('ok');
+  await app.waitFor(() => app.ev('autos().length') === 0, 2000, 'zerou');
+  assert.equal(app.ev('S.cats.some(c=>c.nome==="Mercado")'), true, 'volta com as categorias básicas');
+  app.close();
+});
