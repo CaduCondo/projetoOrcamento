@@ -17,8 +17,8 @@ const BankSync={
 const isoDia=d=>d.toISOString().slice(0,10);
 
 const BankDialog={
-  dados:null,conta:null,mes:0,ano:0,erro:'',carregando:false,meses:6,
-  open(){this.dados=null;this.conta=null;this.erro='';this.mes=selM;this.ano=selY;this.draw();dlg3.showModal()},
+  dados:null,conta:null,mes:0,ano:0,erro:'',carregando:false,meses:6,feitos:[],
+  open(){this.dados=null;this.conta=null;this.erro='';this.feitos=[];this.mes=selM;this.ano=selY;this.draw();dlg3.showModal()},
   async carregar(){this.erro='';this.carregando=true;this.draw();
     try{const ate=new Date(),de=new Date(Date.now()-this.meses*30.5*864e5);this.dados=await BankSync.buscar(isoDia(de),isoDia(ate));
       const cs=this.dados.contas||[];this.conta=(cs.find(c=>!contaCartao(c))||cs[0]||{}).id||null;
@@ -35,6 +35,7 @@ const BankDialog={
       <div class="row"><label class="f">Trazer os últimos<select id="bkmeses">${[3,6,12].map(n=>`<option value="${n}" ${n===this.meses?'selected':''}>${n} meses</option>`).join('')}</select></label>
        <button type="button" class="btn sec" data-bkload ${this.carregando?'disabled':''}>${this.carregando?'Buscando…':d?'Buscar de novo':'Conectar e listar contas'}</button></div>
       <div class="err" id="bkerr" role="alert">${esc(this.erro)}</div>
+      ${this.feitos.length?`<div class="okmsg">${this.feitos.map(f=>'✓ '+esc(f)).join('<br>')}<br><b>Pode escolher outra conta ou outro mês e importar de novo.</b></div>`:''}
       ${d&&d.contas?.length?`<div class="bkaccs">${d.contas.map(x=>`<label class="radio"><input type="radio" name="bkc" value="${esc(x.id)}" ${x.id===this.conta?'checked':''}> <span><b>${esc(nomeConta(x))}</b> <span class="sub">${contaCartao(x)?`cartão de crédito${x.balance?` · total devido segundo o banco R$ ${fmtN(x.balance)} (pode incluir parcelas futuras; a fatura certa você escolhe abaixo)`:''}`:`conta corrente · saldo R$ ${fmtN(x.balance??0)}`}</span></span></label>`).join('')}</div>
        ${cartao?(fs.length?`<label class="f">Qual fatura?<select id="bkbill">${fs.map(f=>`<option value="${esc(f.id)}">${esc(rotuloFatura(f))}</option>`).join('')}</select></label>
           <p class="hint">A fatura traz os lançamentos que o banco ligou a ela; o app confere a soma com o total da fatura.</p>`
@@ -42,12 +43,12 @@ const BankDialog={
          :`<div class="row"><label class="f">Mês do extrato<select id="bkm">${MESES.map((n,i)=>`<option value="${i}" ${i===this.mes?'selected':''}>${n}</option>`).join('')}</select></label>
           <label class="f">Ano<select id="bky">${anos.map(a=>`<option ${a===this.ano?'selected':''}>${a}</option>`).join('')}</select></label></div>`}`:''}
      </div>
-     <div class="df"><button type="button" class="btn dan" data-cclose>Cancelar</button><button type="button" class="btn" data-bkgo ${d&&c&&(!cartao||fs.length)?'':'disabled'}>Ver lançamentos para conferir</button></div></form>`},
+     <div class="df"><button type="button" class="btn ${this.feitos.length?'':'dan'}" data-cclose>${this.feitos.length?'Concluir':'Cancelar'}</button><button type="button" class="btn" data-bkgo ${d&&c&&(!cartao||fs.length)?'':'disabled'}>Ver lançamentos para conferir</button></div></form>`},
   ver(){const d=this.dados,c=this.cc();if(!d||!c)return;const trans=d.lancamentos?.[c.id]||[],cartao=contaCartao(c),itens=pluggyItens(trans,cartao);
     if(cartao){const f=faturasOrdenadas(d.faturas?.[c.id]).find(x=>x.id===(el('bkbill')?.value||''));if(!f)return;
       const r=itensDaFatura(itens,f);
       if(!r.itens.length){this.erro='O banco não ligou nenhum lançamento a esta fatura ainda.';return this.draw()}
-      ImportDialog.setBank({kind:'cartao',itens:r.itens,banco:'Itaú',nome:`${nomeConta(c)} · fatura ${rotuloFatura(f)}`,fatura:{total:r.total,confere:r.confere},y:selY,m:selM})}
+      ImportDialog.setBank({kind:'cartao',itens:r.itens,banco:'Itaú',nome:`${nomeConta(c)} · fatura ${rotuloFatura(f)}`,fatura:{total:r.total,confere:r.confere},y:this.ano,m:this.mes})}
     else ImportDialog.setBank({kind:'conta',itens,banco:'Itaú',nome:nomeConta(c),fatura:null,y:this.ano,m:this.mes})}
 };
 dlg3.addEventListener('change',e=>{const t=e.target;if(!t.closest('#bkf'))return;

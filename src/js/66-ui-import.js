@@ -118,11 +118,13 @@ const ImportDialog={
           <span class="imd">${it.dia?String(it.dia).padStart(2,'0')+'/'+String(it.mes).padStart(2,'0'):''}</span><span class="imn">${esc(it.desc)}${this.jaFoi(it,ks[n],ja)?' <i>(já importado)</i>':it.rend&&ja.has(ks[n])?' <i>(atualiza a soma já importada)</i>':this.fora(it)?' <i>(pagamento da fatura)</i>':''}</span>
           <span class="imv ${cls(it.valor)}">${it.valor<0?'-':''}${fmt(it.valor)}</span></label>`).join('')||'<p class="hint">Nada deste mês neste arquivo.</p>'}</div>`:''}
      </div>
-     <div class="df"><button type="button" class="btn dan" data-cclose>Cancelar</button><button type="button" class="btn" data-imgo ${k&&selItens.length?'':'disabled'}>Importar ${selItens.length||''} ${selItens.length===1?'item':'itens'}</button></div></form>`},
+     <div class="df">${this.fonte==='pluggy'&&BankDialog.dados?'<button type="button" class="btn sec" data-imback>← Voltar</button>':'<button type="button" class="btn dan" data-cclose>Cancelar</button>'}<button type="button" class="btn" data-imgo ${k&&selItens.length?'':'disabled'}>Importar ${selItens.length||''} ${selItens.length===1?'item':'itens'}</button></div></form>`},
   go(){const its=this.itens().filter((_,n)=>this.sel.has(n));if(!its.length)return;
     const antes=this.kind==='cartao'?(cellOf(ensureMonthCatPeek(this.kind,this.y,this.m),this.y,this.m)?.items.filter(i=>!i.imp).length||0):0;
-    const r=importStatement(this.kind,its,this.y,this.m);save();dlg3.close();
-    snackbar(`${r.novos} item(ns) importado(s) em “${r.cats.map(c=>c.nome+(this.kind==='conta'?(c.tipo==='receber'?' (Receitas)':' (Despesas)'):'')).join(' e ')}” (${MESES[this.m].toLowerCase()}/${this.y})${r.atualizados?`; rendimentos atualizados`:''}${r.auto?`; ${r.auto} já foram para a categoria certa pelas suas automações`:''}${r.repetidos?`; ${r.repetidos} já existiam`:''}${antes?`. Atenção: já havia ${antes} item(ns) lançado(s) à mão nesta categoria, que continuam somando`:''}.`,null,null,14000)},
+    const r=importStatement(this.kind,its,this.y,this.m);save();
+    const msg=`${r.novos} item(ns) importado(s) em “${r.cats.map(c=>c.nome+(this.kind==='conta'?(c.tipo==='receber'?' (Receitas)':' (Despesas)'):'')).join(' e ')}” (${MESES[this.m].toLowerCase()}/${this.y})${r.atualizados?`; rendimentos atualizados`:''}${r.auto?`; ${r.auto} já foram para a categoria certa pelas suas automações`:''}${r.repetidos?`; ${r.repetidos} já existiam`:''}${antes?`. Atenção: já havia ${antes} item(ns) lançado(s) à mão nesta categoria, que continuam somando`:''}.`;
+    if(this.fonte==='pluggy'&&BankDialog.dados){BankDialog.feitos.push(msg);BankDialog.erro='';BankDialog.mes=this.m;BankDialog.ano=this.y;BankDialog.draw();render();return}   // Buscar do banco: volta para escolher a próxima conta/mês sem recomeçar
+    dlg3.close();snackbar(msg,null,null,14000)},
   /* abre o arquivo escolhido conforme o tipo */
   async arquivo(f,input){const nome=(f.name||'').toLowerCase();
     try{
@@ -151,5 +153,5 @@ dlg3.addEventListener('change',async e=>{const t=e.target,D=ImportDialog;if(!t.c
     t.checked?D.sel.add(+n):D.sel.delete(+n);D.draw();
     ['.db','.imlist'].forEach((s,i)=>{const b=dlg3.querySelector(s);if(b)b.scrollTop=rolagens[i]});
     dlg3.querySelector(`[data-imsel="${n}"]`)?.focus({preventScroll:true})}});
-dlg3.addEventListener('click',e=>{if(e.target.closest('[data-imgo]'))ImportDialog.go();else if(e.target.closest('[data-imrep]'))ImportDialog.avisar()});
+dlg3.addEventListener('click',e=>{if(e.target.closest('[data-imback]'))BankDialog.draw();else if(e.target.closest('[data-imgo]'))ImportDialog.go();else if(e.target.closest('[data-imrep]'))ImportDialog.avisar()});
 dlg3.addEventListener('submit',e=>{if(e.target.id==='imf')e.preventDefault()});

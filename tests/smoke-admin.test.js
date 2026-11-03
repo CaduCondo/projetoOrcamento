@@ -202,9 +202,13 @@ test('Buscar do banco: só o administrador vê; busca pelo porteiro com o token 
   adm.click('[data-imgo]');
   const cc = adm.ev("S.cats.find(c=>c.nome==='CC Itaú').id");
   assert.equal(adm.ev(`V('${cc}',${y},${adm.ev('selM')},'prev')`), 120.5);
+  // depois de importar volta para a escolha de contas (sem recomeçar) e avisa o que foi feito
+  assert.ok(adm.$('#bkf'), 'a janela do banco continua aberta');
+  assert.equal(adm.$$('input[name=bkc]').length, 2, 'as contas continuam listadas');
+  assert.match(adm.$('#bkf .okmsg').textContent, /importado/);
+  assert.equal(chamadas.length, 1, 'não buscou de novo no banco');
   // conta corrente: extrato do mês, rendimentos somados
-  adm.click('[data-tab="aj"]'); adm.click('[data-bank]'); adm.click('[data-bkload]');
-  await adm.waitFor(() => adm.$$('input[name=bkc]').length === 2, 3000, 'contas de novo');
+  adm.click('input[name=bkc][value=cc1]');
   adm.click('[data-bkgo]');
   assert.equal(adm.$$('.imrow').length, 3, 'salário, pix e UM lançamento de rendimentos');
   adm.click('[data-imgo]');
