@@ -11,6 +11,14 @@ function catStats(){const st={},n=nowIdx();
   for(const[k,v]of Object.entries(S.data)){if(!v.items.length)continue;const{c,y,m}=parseKey(k),i=y*12+m,x=st[c]??={n:0,last:-1,recent:0};
     x.n+=v.items.length;if(i>x.last)x.last=i;if(i>n-6&&i<=n)x.recent+=v.items.length}
   return st}
+/* categorias que mudaram de nome ganham uma "versão" nova (prevId aponta para a antiga). Na lista aparece UMA linha só: a atual,
+   somando o uso das anteriores. */
+const catsAtuais=()=>{const velhas=new Set(S.cats.map(c=>c.prevId).filter(Boolean));return S.cats.filter(c=>!velhas.has(c.id))};
+function statsComHistorico(){const st=catStats(),out={...st};
+  for(const c of S.cats){if(!c.prevId)continue;let n=0,last=-1,recent=0,any=false;
+    for(let p=c,g=0;p&&g<50;p=catById(p.prevId),g++){const x=st[p.id];if(x){any=true;n+=x.n;last=Math.max(last,x.last);recent+=x.recent||0}}
+    if(any)out[c.id]={...(st[c.id]||{}),n,last,recent}}
+  return out}
 /* "ativa" = usada nos últimos 24 meses (ou ainda sem nenhum lançamento) */
 const isActive=(c,st)=>{const x=st[c.id];return !x||x.last>=nowIdx()-23};
 const lastLabel=i=>`${MC[i%12].toLowerCase()}/${Math.floor(i/12)}`;

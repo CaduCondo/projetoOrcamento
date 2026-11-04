@@ -224,7 +224,7 @@ test('página Categorias: mudar nome/dia vale do MÊS ATUAL em diante (com aviso
   const velho = app.ev("S.cats.find(c=>c.nome==='Salário Antigo').id");
   // sem nada antes deste mês: renomear não cria "versão antiga"
   app.click(`#cl [data-cedit="${velho}"]`);
-  assert.match(app.$('#cfnote').textContent, /valem de .* em diante/, 'a janela avisa antes de salvar');
+  assert.match(app.$('#cfnote').textContent, /vale de .* em diante/, 'a janela avisa antes de salvar');
   app.type('#cfn', 'Salário Antigo'); app.submit('#cf');
   const total = app.ev('S.cats.length');
   if (mh === 0) { app.close(); return; }                           // em janeiro não há mês anterior no mesmo ano para testar

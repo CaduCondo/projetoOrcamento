@@ -7,7 +7,7 @@ const CategoryDialog={
   mode:'new',tipo:null,id:null,
   openNew(tipo,nome=''){Object.assign(this,{mode:'new',tipo,id:null,ico:'',cor:''});this.draw({nome,dia:'',fixa:false});dlg3.showModal();setTimeout(()=>el('cfn')?.focus(),0)},
   openEdit(id){if(readOnly)return;const c=catById(id);Object.assign(this,{mode:'edit',tipo:c.tipo,id,ico:c.ico||'',cor:c.cor||''});this.draw({nome:c.nome,dia:c.dia??'',fixa:!!c.fixa});dlg3.showModal()},
-  draw(v){const novo=this.mode==='new',pagar=this.tipo==='pagar',c=novo?null:catById(this.id),[y,m]=hojeYM(),st=c?catStats()[c.id]:null;
+  draw(v){const novo=this.mode==='new',pagar=this.tipo==='pagar',c=novo?null:catById(this.id),[y,m]=hojeYM(),st=c?statsComHistorico()[c.id]:null;
     const dica=pagar?'Dia em que essa conta vence.':'Dia em que esse dinheiro entra.';
     dlg3.innerHTML=`<form id="cf" novalidate>
      <div class="dh"><div><h3>${novo?(pagar?'Nova despesa':'Nova receita'):esc(c.nome)}</h3>
@@ -18,7 +18,7 @@ const CategoryDialog={
       <label class="f"><span>Dia do mês (opcional) <span class="info" title="${dica}">ⓘ</span></span><input id="cfd" type="number" min="1" max="31" inputmode="numeric" value="${v.dia}" placeholder="1 a 31"></label>
       <label class="switch"><input type="checkbox" id="cff" ${v.fixa?'checked':''}><span class="sw"></span><span><b>Fixa — aparece todo mês</b><br><span class="sub">Ex.: aluguel, salário. Desligada: aparece só quando você inclui no mês ou quando tem lançamento.</span></span></label>
       <div class="f"><span>Ícone e cor <span class="sub">(só enfeite, para achar a categoria de relance)</span></span><div id="cfvis">${this.visual()}</div></div>
-      ${novo?'':`<div class="note" id="cfnote">✏️ Mudanças no <b>nome</b> ou no <b>dia</b> valem de <b>${MESES[m].toLowerCase()}/${y}</b> em diante. Os meses anteriores continuam como estão.</div>`}
+      ${novo?'':`<div class="note" id="cfnote">✏️ O <b>dia</b> vale para todos os meses. Se mudar o <b>nome</b>, ele vale de <b>${MESES[m].toLowerCase()}/${y}</b> em diante e os meses anteriores continuam com o nome antigo.</div>`}
       <div class="err" id="cferr" role="alert"></div>
       ${novo?'':`<div class="row cfx"><button type="button" class="btn sec sm" data-cmerge="${c.id}" title="Juntar os lançamentos desta categoria com outra">🔀 Mesclar com outra…</button><button type="button" class="btn dan sm" data-cdel="${c.id}">🗑 Excluir</button></div>`}
      </div>
@@ -36,7 +36,7 @@ const CategoryDialog={
       else{const c=catById(this.id),limpo=cleanInput(input),mudou=limpo.nome!==c.nome||(limpo.dia||null)!==(c.dia||null);
         let alvo=c;
         if(mudou){const antigo=c.nome;alvo=reviseCat(c.id,input,'manter',y,m);
-          msg=alvo!==c?`“${antigo}” passa a ser “${alvo.nome}” de ${MESES[m].toLowerCase()}/${y} em diante. Os meses anteriores continuam com o nome antigo.`:'Categoria atualizada.'}
+          msg=alvo!==c?`“${antigo}” passa a ser “${alvo.nome}” de ${MESES[m].toLowerCase()}/${y} em diante. Os meses anteriores continuam com o nome antigo.`:'Categoria atualizada (o dia vale para todos os meses).'}
         if(fixa!==!!alvo.fixa){setFixa(alvo.id,fixa,y,m);msg=msg||(fixa?'Agora ela aparece todo mês.':`Deixou de ser fixa de ${MESES[m].toLowerCase()}/${y} em diante.`)}
         this.guardaVisual(alvo);if(alvo!==c)this.guardaVisual(c)}
     }catch(e){return err(e.message)}

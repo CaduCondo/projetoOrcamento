@@ -119,3 +119,17 @@ test('as automações viajam com os dados (meta) e voltam', () => {
   assert.equal(back.autos.length, 1); assert.equal(back.autos[0].txt, 'conta vivo');
   assert.deepEqual(plain(m.mig({ anos: [2026], cats: [], data: {}, saldoIni: {} }).autos), []);
 });
+
+test('mudar só o dia da categoria edita no lugar (sem criar versão nova) e a lista mostra uma linha só', () => {
+  fresh();
+  const c = m.cats('pagar').find(x => x.nome === 'Celular');
+  m.ens(c.id, 2026, 7).items.push({ v: 1, d: 'x', ok: true });
+  const n = m.reviseCat(c.id, { nome: 'Celular', dia: '10' }, 'manter', Y, M);
+  assert.equal(n.id, c.id); assert.equal(n.dia, 10);
+  assert.equal(m.S.cats.filter(x => x.nome === 'Celular').length, 1);
+  const r = m.reviseCat(c.id, { nome: 'Celular Novo', dia: '10' }, 'manter', Y, M);   // trocar o nome continua criando versão
+  assert.notEqual(r.id, c.id);
+  const atuais = m.catsAtuais();
+  assert.ok(atuais.includes(r) && !atuais.includes(m.catById(c.id)), 'a versão antiga some da lista');
+  assert.equal(m.statsComHistorico()[r.id].n, 2, 'a atual soma o uso das anteriores');
+});
