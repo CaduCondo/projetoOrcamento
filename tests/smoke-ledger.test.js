@@ -134,6 +134,19 @@ test('parcelas do cartão: o resumo mostra o que já está comprometido e abre o
   app.close();
 });
 
+test('perguntas rápidas: tela Gráficos responde em palavras', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  app.ev(`const c=S.cats.find(c=>c.tipo==='receber');useCatInMonth(c.id,selY,selM);ens(c.id,selY,selM).items.push({v:3000,d:'',ok:true});
+    const p=S.cats.find(c=>c.nome==='Moradia');useCatInMonth(p.id,selY,selM);ens(p.id,selY,selM).items.push({v:1000,d:'Aluguel',ok:true})`);
+  app.click('[data-tab="graf"]');
+  const t = app.$('.perg').textContent;
+  assert.match(t, /Onde gastei mais\?/);
+  assert.equal(app.$$('.perg details').length, 6);
+  assert.match(t, /Moradia/); assert.match(t, /sobrou/);
+  app.close();
+});
+
 test('carteira: painel no Patrimônio, botões rápidos e "paguei em dinheiro" no novo lançamento', async () => {
   const app = openApp({ html });
   await entrar(app);
