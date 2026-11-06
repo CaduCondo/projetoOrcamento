@@ -338,3 +338,4 @@ body.touring{overflow:hidden}
 .pit{display:grid;grid-template-columns:1fr auto auto;gap:10px;padding:5px 0;font-size:14px}
 .cth{margin-top:10px}
 .perg details{border-bottom:1px solid var(--line);padding:8px 0}.perg summary{cursor:pointer;font-weight:500}.perg .pa{padding:6px 2px 2px;color:var(--ink)}.perg ul{margin:4px 0 0 18px;padding:0}
+.tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0}.tagb{border:1px solid var(--line2);background:var(--glass);color:var(--ink);border-radius:999px;padding:4px 10px;font:inherit;font-size:13px;cursor:pointer}.tagb.on{border-color:var(--acc,#7c6cff);background:rgba(124,108,255,.18)}

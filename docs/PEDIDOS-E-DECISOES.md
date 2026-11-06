@@ -194,8 +194,20 @@ Pedido: aproveitar o que o outro app faz bem (categoria como etiqueta em cada la
 - **Janela do lançamento** (toque na linha): descrição, valor, categoria (busca; cria na hora), "já pago/recebido", excluir e **"Lembrar para os próximos"** = cria a **automação** (texto que se repete → categoria). Ao salvar, o app já organiza os parecidos que estavam sem categoria.
 - **Automações** (`S.autos`, guardadas junto das categorias; painel com ✕ na página Categorias): na importação (arquivo ou banco) o extrato já cai na categoria certa (realizado) e o item de cartão ganha a cópia informativa 💳 (não soma) na categoria; o que não casa fica "sem categoria". A regra mais específica ganha; entrada e saída não se misturam. Texto da regra: sem acento, data, parcela e símbolos, mínimo 3 letras.
 - **Ícone e cor da categoria** (enfeite, opcionais): 30 ícones e 10 cores na janela da categoria; sem escolha, o app sugere o ícone pelo nome (ex.: Mercado 🛒). Renomear (nova versão da categoria) leva ícone e cor junto. Aparecem na tela Mês, em Categorias e nos Lançamentos.
-- **Resumo do mês** (só no mês de hoje, topo da tela Mês): "Pode gastar por dia" = saldo previsto do fim do mês ÷ dias que faltam; "Ainda a pagar"; próximos 3 vencimentos (toque abre a categoria).
-- Ainda não feito (próximos passos combinados): **Parcelas/faturas futuras**, **Carteira** (dinheiro em papel), assinaturas/recorrentes, subcategorias, relatórios em perguntas e tags. Princípio reforçado pelo dono: **sempre facilitar o uso; não encher de informação**.
+- **Resumo do mês** (só no mês de hoje, topo da tela Mês): "Pode gastar por dia" = (receitas − despesas PREVISTAS só deste mês) ÷ dias que faltam, **sem contar o saldo acumulado/investido** (dinheiro guardado não entra; "sem folga" se ≤ 0); "Ainda a pagar"; próximos 3 vencimentos (toque abre a categoria).
+- Ainda não feito: subcategorias (o resto foi feito: ver §5.22). Princípio reforçado pelo dono: **sempre facilitar o uso; não encher de informação**.
+
+### 5.22 Parcelas, Carteira, Recorrentes, Perguntas, Tags e ajustes de uso (nov/2026)
+- **Parcelas do cartão já comprometidas** (`29-model-parcelas.js`, `69-ui-parcelas.js`): lê "LOJA 03/08" nos itens que vieram da **fatura do cartão** e projeta as parcelas que faltam, usando sempre a parcela MAIS RECENTE que o app conhece (não conta a mesma compra duas vezes quando a fatura seguinte é importada). Aparece no Resumo do mês ("Parcelas do cartão já comprometidas: dez R$ …") e abre o detalhe por mês ("parcela 4 de 5"). É previsão: mantém o valor da última fatura.
+- **Carteira** (`29-model-carteira.js`): dinheiro em papel = um saldo do Patrimônio marcado `carteira:true`, com histórico (30 últimos). Painel no Patrimônio (＋ Entrou dinheiro / － Gastei em dinheiro) e, ao criar lançamento novo, a chave "Paguei/Recebi em dinheiro" mexe na Carteira.
+- **Assinaturas e contas recorrentes** (`29-model-recorrentes.js`, painel na página Categorias): despesas que aparecem em 3+ dos últimos 6 meses com valor parecido (variação até 30%); ignora parcelas; avisa "ainda não veio" neste mês.
+- **Perguntas rápidas** (topo de Gráficos): 6 perguntas respondidas em palavras (onde gastei mais, quanto sobrou, maior gasto, média mensal, o que mais cresceu, o que já está comprometido).
+- **Tags**: escrever `#palavra` na descrição; na lista de Lançamentos aparecem chips de tag para filtrar (junta categorias diferentes).
+- **Buscar do banco**: depois de importar a janela volta à lista de contas (dá para importar conta e cartão na mesma sessão); a rolagem não pula ao marcar itens; o "saldo" do cartão é explicado como total devido (pode incluir parcelas futuras).
+- **Apagar item (✕)** na janela de itens pede confirmação; **"Lançar em categoria"** só oferece categorias do mesmo tipo, mostra qual movimentação é e avisa quando a categoria digitada não existe.
+- **Categorias**: mudar só o DIA edita no lugar (sem criar "versão"); renomear continua criando versão, mas a lista mostra UMA linha por categoria (somando o uso das versões antigas, "antes: …") e marca Receita/Despesa quando o nome se repete.
+- **Zerar meus dados** (Ajustes, só em dev/local; pede para digitar APAGAR). Não existe em produção.
+- Ainda não feito: **subcategorias** (mudança grande no modelo; combinar antes).
 
 ## 6. Princípios que combinamos
 - **Privacidade primeiro:** planilhas, backups e dados pessoais **nunca** vão para o GitHub (repositório público).

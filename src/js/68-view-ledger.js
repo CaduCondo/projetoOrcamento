@@ -9,6 +9,10 @@ function lancFiltrados(y,m){let l=lancamentos(y,m);const tk=normName(lancUI.q).s
   if(lancUI.f==='sem')l=l.filter(x=>x.sem);else if(lancUI.f==='receber'||lancUI.f==='pagar')l=l.filter(x=>x.tipo===lancUI.f);
   if(tk.length)l=l.filter(x=>{const t=normName(descLimpa(x.it)+' '+x.cat.nome);return tk.every(k=>t.includes(k))});
   return l}
+/* tags: palavras com # na descrição (ex.: "Hotel #viagem"). Servem para juntar lançamentos de categorias diferentes. */
+const TAG_RE=/#[\p{L}\d_]+/gu;
+function tagsDoMes(y,m){const c={};for(const x of lancamentos(y,m))for(const t of descLimpa(x.it).match(TAG_RE)||[]){const k=t.toLowerCase();c[k]=(c[k]||0)+1}
+  return Object.entries(c).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))}
 const sinal=n=>(n<0?'−':'+')+' '+fmtN(Math.abs(n));
 function linhaLanc(x,y,m){const nome=x.sem?'<span class="semcat">⚠ Sem categoria</span>':esc(x.cat.nome);
   return `<button type="button" class="lrow ${x.it.ok?'':'prev'}" data-lanc="${key(x.cid,y,m)}|${x.idx}">${x.sem?'<span class="cico sem">?</span>':catBadge(x.cat)}
@@ -26,6 +30,7 @@ function vLanc(y,m){const todos=lancamentos(y,m),sem=todos.filter(x=>x.sem).leng
    <div class="row"><input id="lq" type="search" placeholder="🔍 Buscar lançamento ou categoria…" value="${esc(lancUI.q)}" style="flex:1;min-width:180px">
     <button class="btn sm" data-lnew>＋ Lançamento</button></div>
    <div class="seg lf">${f('todos','Todos')}${f('receber','Entradas')}${f('pagar','Saídas')}${f('sem','Sem categ.')}</div>
+   ${tagsDoMes(y,m).length?`<div class="tags"><span class="sub">Tags:</span>${tagsDoMes(y,m).map(([t,n])=>`<button type="button" class="tagb ${normName(lancUI.q)===normName(t)?'on':''}" data-ltag="${esc(t)}">${esc(t)} <span class="sub">${n}</span></button>`).join('')}</div>`:''}
    <div id="ll">${listaLanc(y,m)}</div></div></div>`}
 const refazLista=()=>{const b=el('ll');if(b)b.innerHTML=listaLanc(selY,selM)};
 
@@ -42,7 +47,7 @@ const LancDialog={
      <div class="dh"><div><h3>${r?esc(nome):'Novo lançamento'}</h3><div class="sub">${r?`${MESES[r.m]} de ${r.y}${it.imp?' · veio do banco/extrato':''}`:`${MESES[selM]} de ${selY}`}</div></div><button type="button" class="btn sec" data-lclose>Fechar</button></div>
      <div class="db">
       ${r?'':`<div class="seg" style="margin-bottom:10px"><button type="button" data-ltipo="pagar" class="${pagar?'on':''}">Saída (despesa)</button><button type="button" data-ltipo="receber" class="${pagar?'':'on'}">Entrada (receita)</button></div>`}
-      <label class="f">Descrição<input id="lid" maxlength="80" autocomplete="off" value="${esc(nome)}" placeholder="ex.: Padaria"></label>
+      <label class="f">Descrição<input id="lid" maxlength="80" autocomplete="off" value="${esc(nome)}" placeholder="ex.: Padaria (use #tag para agrupar, ex.: Hotel #viagem)"></label>
       <div class="row2"><label class="f">Valor (R$)<input id="liv" class="money" inputmode="decimal" value="${it?fmtN(it.v):''}" placeholder="0,00"></label>
        ${r?'':`<label class="f">Dia<input id="lia" type="number" min="1" max="31" inputmode="numeric" placeholder="1 a 31" value="${selM===new Date().getMonth()&&selY===new Date().getFullYear()?new Date().getDate():''}"></label>`}</div>
       <label class="f">Categoria${sem?' <span class="semcat">— escolha uma</span>':''}${combo('lic',{value:sem?undefined:cat?.id,tipo:tipoCombo,ph:'Buscar categoria…',create:1})}</label>
@@ -87,6 +92,7 @@ document.addEventListener('cbpick',e=>{if(e.detail.id==='lic'&&el('lir')&&!el('l
 app.addEventListener('click',e=>{let b;
   if(b=e.target.closest('[data-mv]')){mesVis=b.dataset.mv;render()}
   else if(b=e.target.closest('[data-lf]')){lancUI.f=b.dataset.lf;mesVis='lanc';render()}
+  else if(b=e.target.closest('[data-ltag]')){lancUI.q=lancUI.q===b.dataset.ltag?'':b.dataset.ltag;lancUI.f='todos';render()}
   else if(b=e.target.closest('[data-lanc]')){const p=b.dataset.lanc.split('|');LancDialog.open({cid:p[0],y:+p[1],m:+p[2],idx:+p[3]})}
   else if(e.target.closest('[data-lnew]'))LancDialog.open(null)
   else if(b=e.target.closest('[data-adel]')){delAuto(b.dataset.adel);save();render();snackbar('Automação apagada. Os lançamentos que ela já organizou continuam onde estão.')}});

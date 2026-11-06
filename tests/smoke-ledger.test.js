@@ -134,6 +134,20 @@ test('parcelas do cartão: o resumo mostra o que já está comprometido e abre o
   app.close();
 });
 
+test('tags: #palavra na descrição vira filtro na lista de lançamentos', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  app.ev(`const a=S.cats.find(c=>c.nome==='Moradia'),b=S.cats.find(c=>c.nome==='Mercado');useCatInMonth(a.id,selY,selM);useCatInMonth(b.id,selY,selM);
+    ens(a.id,selY,selM).items.push({v:300,d:'05/'+String(selM+1).padStart(2,'0')+' Hotel #viagem',ok:true});ens(b.id,selY,selM).items.push({v:80,d:'Lanche #viagem',ok:true});ens(b.id,selY,selM).items.push({v:20,d:'Pão',ok:true})`);
+  app.click('[data-mv="lanc"]');
+  assert.equal(app.$$('.lrow').length, 3);
+  assert.equal(app.$$('.tagb').length, 1);
+  assert.match(app.$('.tagb').textContent, /#viagem\s*2/);
+  app.click('.tagb');
+  assert.equal(app.$$('.lrow').length, 2, 'só os da tag, de categorias diferentes');
+  app.close();
+});
+
 test('perguntas rápidas: tela Gráficos responde em palavras', async () => {
   const app = openApp({ html });
   await entrar(app);
