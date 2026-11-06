@@ -334,3 +334,5 @@ body.touring{overflow:hidden}
   table.mes td:nth-child(2){overflow-wrap:anywhere;word-break:break-word}
   table.mes td.n .sub{white-space:normal}
 }
+.pmes{margin-bottom:12px}.pmh{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)}
+.pit{display:grid;grid-template-columns:1fr auto auto;gap:10px;padding:5px 0;font-size:14px}

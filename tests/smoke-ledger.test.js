@@ -119,3 +119,17 @@ test('zerar dados (só fora da produção): pede para digitar APAGAR e volta ao 
   assert.equal(app.ev('S.cats.some(c=>c.nome==="Mercado")'), true, 'volta com as categorias básicas');
   app.close();
 });
+
+test('parcelas do cartão: o resumo mostra o que já está comprometido e abre o detalhe por mês', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  assert.equal(app.$('[data-parc]'), null, 'sem compra parcelada não mostra nada');
+  const fat = ['Lançamentos: compras e saques', '21/10 LOJA TRES 03/05 100,00', 'Total dos lançamentos atuais 100,00'];
+  app.ev(`importStatement('cartao',parseFatura(${JSON.stringify(fat)}).itens,selY,selM);render()`);
+  assert.ok(app.$('.resumo [data-parc]'), 'aparece no resumo do mês atual');
+  assert.match(app.$('.resumo .prox').textContent, /Parcelas do cartão já comprometidas/);
+  app.click('.resumo [data-parc]');
+  assert.match(app.$('#dlg3').textContent, /LOJA TRES/);
+  assert.match(app.$('#dlg3').textContent, /parcela 4 de 5/);
+  app.close();
+});

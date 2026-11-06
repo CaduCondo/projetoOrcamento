@@ -38,12 +38,16 @@ function blocoMes(tipo,titulo,total,y,m){
    <div class="pfoot"><button class="btn sec sm" data-usecat="${tipo}" title="Incluir neste mês uma categoria de ${tipo==='pagar'?'despesa':'receita'} que já existe">＋ Categoria</button></div></div>`}
 /* Resumo do mês atual: quanto dá para gastar por dia até o fim do mês e o que ainda vence. (Só no mês de hoje.)
    Conta só o que é DESTE mês (receitas − despesas previstas). O saldo acumulado/investido NÃO entra: é dinheiro guardado. */
+/* parcelas do cartão dos próximos meses (só aparece se houver compra parcelada nas faturas importadas) */
+function parcBloco(y,m){const pm=parcelasPorMes(y,m,12);if(!pm.length)return'';
+  return`<div class="prox"><span class="l">Parcelas do cartão já comprometidas</span>${pm.slice(0,3).map(x=>`<button type="button" data-parc><b>${MC[x.m].toLowerCase()}</b> <span class="neg">${R$(x.total)}</span></button>`).join('')}<button type="button" data-parc>ver todas</button></div>`}
 function resumoMes(y,m){const h=new Date();if(y!==h.getFullYear()||m!==h.getMonth())return'';
   const hoje=h.getDate(),dias=new Date(y,m+1,0).getDate()-hoje+1,sobra=MT('receber',y,m,'prev')-MT('pagar',y,m,'prev');
   const pend=visCats('pagar',y,m).map(c=>({c,p:Math.round((V(c.id,y,m,'prev')-V(c.id,y,m,'real'))*100)/100})).filter(x=>x.p>0);
   const falta=pend.reduce((s,x)=>s+x.p,0),prox=pend.filter(x=>x.c.dia&&x.c.dia>=hoje).sort((a,b)=>a.c.dia-b.c.dia).slice(0,3);
   return `<div class="resumo"><div class="rb"><span class="l">Pode gastar por dia</span><b class="${sobra>0?'pos':'neg'}">${sobra>0?R$(sobra/dias):'sem folga'}</b><span class="sub">${sobra>0?`sobra prevista do mês ${R$(sobra)} ÷ ${dias} dia${dias>1?'s':''}`:`receitas − despesas previstas: ${R$(sobra)}`} · sem contar o que está guardado</span></div>
    <div class="rb"><span class="l">Ainda a pagar</span><b class="neg">${RP(falta)}</b><span class="sub">${pend.length} conta${pend.length===1?'':'s'} no mês</span></div>
+   ${parcBloco(y,m)}
    ${prox.length?`<div class="prox"><span class="l">Próximos vencimentos</span>${prox.map(x=>`<button type="button" data-open="${key(x.c.id,y,m)}"><b>dia ${x.c.dia}</b> ${esc(x.c.nome)} <span class="neg">${R$(x.p)}</span></button>`).join('')}</div>`:''}</div>`}
 function vMes(){const y=selY,m=selM,R=MT('receber',y,m,'real'),P=MT('pagar',y,m,'real'),Rp=MT('receber',y,m,'prev'),Pp=MT('pagar',y,m,'prev');
   const curY=new Date().getFullYear(),curMo=new Date().getMonth();

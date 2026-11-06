@@ -133,3 +133,18 @@ test('mudar só o dia da categoria edita no lugar (sem criar versão nova) e a l
   assert.ok(atuais.includes(r) && !atuais.includes(m.catById(c.id)), 'a versão antiga some da lista');
   assert.equal(m.statsComHistorico()[r.id].n, 2, 'a atual soma o uso das anteriores');
 });
+
+test('parcelas futuras: lê "LOJA 03/08" da fatura e projeta as que faltam, sem duplicar a compra', () => {
+  fresh();
+  assert.equal(m.parcelaDe('LOJA 03/08').n, 3); assert.equal(m.parcelaDe('LOJA 03/08').base, 'LOJA');
+  assert.equal(m.parcelaDe('MERCADO'), null); assert.equal(m.parcelaDe('X 31/12'), null);
+  const FAT2 = ['Lançamentos: compras e saques', '21/09 LOJA TRES 03/05 100,00', '22/09 PADARIA 12,00', 'Total dos lançamentos atuais 112,00'];
+  m.importStatement('cartao', m.parseFatura(FAT2).itens, Y, 8);                  // fatura de setembro
+  const FAT3 = ['Lançamentos: compras e saques', '21/10 LOJA TRES 04/05 100,00', 'Total dos lançamentos atuais 100,00'];
+  m.importStatement('cartao', m.parseFatura(FAT3).itens, Y, 9);                  // a de outubro traz a parcela seguinte
+  const c = m.comprasParceladas(Y, 9);
+  assert.equal(c.length, 1); assert.equal(c[0].n, 4); assert.equal(c[0].faltam, 1, 'usa a parcela mais recente, não conta em dobro');
+  const pm = m.parcelasPorMes(Y, 9);
+  assert.equal(pm.length, 1); assert.equal(pm[0].m, 10); assert.equal(pm[0].total, 100); assert.equal(pm[0].itens[0].n, 5);
+  assert.equal(m.parcelasPorMes(Y, 10).length, 0, 'depois da última parcela nada sobra');
+});
