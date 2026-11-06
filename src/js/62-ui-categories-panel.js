@@ -25,7 +25,7 @@ function catRows(){const st=statsComHistorico(),nq=normName(catUI.q),atuais=cats
   return{html:catHead()+html+(tot>catUI.lim?`<div style="padding:10px 4px"><button class="btn sec sm" data-cmore>Mostrar mais ${Math.min(40,tot-catUI.lim)} (${tot-catUI.lim} restantes)</button></div>`:''),tot}}
 function renderCatList(){const r=catRows(),el=document.getElementById('cl');if(!el)return;el.innerHTML=r.html;document.getElementById('cc').textContent=`${r.tot} de ${catsAtuais().length}`}
 /* Página Categorias: o lugar de CRIAR, EDITAR, MESCLAR e EXCLUIR categorias */
-function vCat(){return catPanel()+autoPanel()}
+function vCat(){return catPanel()+autoPanel()+recPanel()}
 function catPanel(){const r=catRows(),sg=(k,opts)=>`<div class="seg">${opts.map(([v,l])=>`<button data-cf="${k}|${v}" class="${catUI[k]===v?'on':''}">${l}</button>`).join('')}</div>`;
   return `<div class="panel" ><h2>Categorias <span class="sub" id="cc">${r.tot} de ${catsAtuais().length}</span></h2><div style="padding:12px 14px">
    <div class="row"><input id="cq" type="search" placeholder="🔍 Buscar categoria…" value="${esc(catUI.q)}" style="flex:1;min-width:200px">

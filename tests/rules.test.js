@@ -158,3 +158,14 @@ test('carteira: saldo de dinheiro em papel com histórico; cria o saldo na prime
   assert.equal(m.carteiraItem().hist.length, 2); assert.equal(m.carteiraItem().hist[0].d, 'Feira');
   assert.throws(() => m.carteiraMov(0), /valor/);
 });
+
+test('recorrentes: despesa que repete em 3+ meses com valor parecido; ignora parcelas e valores que variam muito', () => {
+  fresh();
+  const mk = (mes, desc, v) => m.importStatement('cartao', m.parseFatura(['Lançamentos: compras e saques', `10/${String(mes + 1).padStart(2, '0')} ${desc} ${v}`, `Total dos lançamentos atuais ${v}`]).itens, Y, mes);
+  mk(6, 'NETFLIX', '39,90'); mk(7, 'NETFLIX', '39,90'); mk(8, 'NETFLIX', '39,90'); mk(9, 'NETFLIX', '39,90');
+  mk(6, 'LOJA UM 01/10', '50,00'); mk(7, 'LOJA UM 02/10', '50,00'); mk(8, 'LOJA UM 03/10', '50,00');
+  mk(6, 'MERCADO X', '20,00'); mk(7, 'MERCADO X', '180,00'); mk(8, 'MERCADO X', '60,00');
+  const r = m.recorrentes(Y, 9);
+  assert.deepEqual(plain(r.map(x => x.txt)), ['netflix']);
+  assert.equal(r[0].v, 39.9); assert.equal(r[0].noMes, true); assert.ok(r[0].n >= 4);
+});

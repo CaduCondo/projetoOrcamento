@@ -99,3 +99,11 @@ function autoPanel(){const l=autos();
    ${l.length?l.map(a=>{const c=S.cats.find(x=>x.tipo===a.tipo&&normName(x.nome)===normName(a.nome));
      return `<div class="arow"><span class="atx">“${esc(a.txt)}”</span><span class="aar">→</span><span class="acat">${c?catBadge(c):''} ${esc(a.nome)} <span class="sub">${a.tipo==='pagar'?'(despesa)':'(receita)'}</span></span><button type="button" class="btn sec sm" data-adel="${a.id}" title="Apagar esta automação" ${readOnly?'disabled':''}>✕</button></div>`}).join(''):'<p class="hint">Ainda não há automações.</p>'}
    </div></div>`}
+
+/* painel Categorias: o que se repete todo mês (assinaturas e contas fixas), achado nos lançamentos dos últimos meses */
+function recPanel(){const[y,m]=hojeYM(),l=recorrentes(y,m),tot=l.reduce((s,x)=>s+x.v,0);
+  return `<div class="panel" id="recp"><h2>🔁 Assinaturas e contas recorrentes <span class="sub">${l.length?R$(tot)+' por mês':''}</span></h2><div style="padding:12px 14px">
+   <p class="hint" style="margin:0 0 8px">O app procura despesas que aparecem em pelo menos 3 dos últimos 6 meses com valor parecido. Serve para você ver o que já está “comprometido” todo mês.</p>
+   ${l.length?l.map(x=>`<div class="arow"><span class="atx">${esc(x.nome)}</span><span class="acat">${x.cat?esc(x.cat):'<span class="sub">sem categoria</span>'}</span><span class="sub">${R$(x.v)} · ${x.n} de 6 meses</span>${x.noMes?'':'<span class="vtag" title="Ainda não apareceu neste mês">ainda não veio</span>'}</div>`).join('')
+     :'<p class="hint">Ainda não encontrei nenhuma. Importe alguns meses do extrato e da fatura para o app aprender o que se repete.</p>'}
+   </div></div>`}
