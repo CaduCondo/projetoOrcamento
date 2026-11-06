@@ -133,3 +133,21 @@ test('parcelas do cartão: o resumo mostra o que já está comprometido e abre o
   assert.match(app.$('#dlg3').textContent, /parcela 4 de 5/);
   app.close();
 });
+
+test('carteira: painel no Patrimônio, botões rápidos e "paguei em dinheiro" no novo lançamento', async () => {
+  const app = openApp({ html });
+  await entrar(app);
+  app.click('[data-tab="pat"]');
+  assert.match(app.$('#cartp').textContent, /Carteira \(dinheiro em papel\)/);
+  app.click('[data-cart="entrou"]');
+  app.type('#cartv', '300,00'); app.type('#cartd', 'Saque'); app.submit('#cartf');
+  assert.equal(app.ev('carteiraSaldo()'), 300);
+  app.click('[data-tab="mes"]'); app.click('[data-mv="lanc"]');
+  app.click('[data-lnew]');
+  app.type('#lid', 'Feira'); app.type('#liv', '45,50'); app.type('#lia', '3');
+  app.ev(`Combobox.set('lic','${catId(app, 'pagar', 'Mercado')}')`);
+  app.click('#lcart'); app.submit('#lf2');
+  await app.waitFor(() => !app.$('#dlg3').open, 2000, 'janela fecha');
+  assert.equal(app.ev('carteiraSaldo()'), 254.5, 'pagou em dinheiro: sai da carteira');
+  app.close();
+});

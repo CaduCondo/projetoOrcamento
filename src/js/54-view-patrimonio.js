@@ -4,8 +4,16 @@ function list(k,title,hint){const a=S[k],tot=a.reduce((x,i)=>x+(+i.valor||0),0);
   return `<div class="panel"><h2>${title} <b>${R$(tot)}</b></h2><div style="padding:12px 14px">${hint?`<p class="hint">${hint}</p>`:''}
    ${a.map((i,n)=>`<div class="row"><input data-ln="${k}|${n}" value="${esc(i.nome)}" style="flex:1"><input class="money" data-lv="${k}|${n}" value="${fmtN(i.valor)}" size="14" inputmode="decimal" placeholder="0,00"><button class="btn dan" data-ld="${k}|${n}">✕</button></div>`).join('')}
    <button class="btn sec" data-la="${k}">＋ Adicionar</button></div></div>`}
+/* Carteira (dinheiro em papel): saldo e duas ações rápidas */
+function carteiraPanel(){const c=carteiraItem(),h=(c?.hist||[]).slice(0,5);
+  return `<div class="panel" id="cartp"><h2>💵 Carteira (dinheiro em papel) <b>${R$(carteiraSaldo())}</b></h2><div style="padding:12px 14px">
+   <p class="hint">Anote o dinheiro vivo que você tem. Quando gastar em dinheiro, marque “Paguei em dinheiro” ao criar o lançamento, ou use os botões abaixo.</p>
+   <div class="row"><button type="button" class="btn sm" data-cart="entrou">＋ Entrou dinheiro</button><button type="button" class="btn sec sm" data-cart="saiu">－ Gastei em dinheiro</button></div>
+   ${h.length?`<div class="cth">${h.map(x=>`<div class="pit"><span>${esc(x.d||(x.v>0?'Entrou':'Saiu'))}</span><span class="sub">${x.t.split('-').reverse().join('/')}</span><span class="${x.v>0?'pos':'neg'}">${R$(x.v)}</span></div>`).join('')}</div>`:''}</div></div>
+  `}
 function vPat(){const s=S.saldos.reduce((x,i)=>x+i.valor,0),d=S.dividas.reduce((x,i)=>x+i.valor,0);
   return `<div class="cards"><div class="card"><div class="l">Saldos nas contas</div><div class="v pos">${R$(s)}</div></div><div class="card"><div class="l">Total que devo</div><div class="v neg">${RP(d)}</div></div><div class="card"><div class="l">Saldos − dívidas</div><div class="v ${s-d>=0?'pos':'neg'}">${R$(s-d)}</div></div></div>
+  ${carteiraPanel()}
   <div class="two">${list('saldos','Saldos por banco/conta')}${list('dividas','Dívidas e valores a devolver','Valores negativos abatem a dívida (ex.: “paguei com carro”).')}</div>
   <div class="charts" style="margin-top:16px"><div class="cbox"><h3>Onde está o dinheiro</h3><p>Saldos por banco/conta.</p><div class="cw"><canvas id="p1"></canvas></div></div><div class="cbox"><h3>Dívidas</h3><p>Cada item que você deve.</p><div class="cw"><canvas id="p2"></canvas></div></div></div>
   <div style="margin-top:16px">${list('bens','Bens e valores','Migrado do bloco contas/casa/ape da planilha. Renomeie como quiser.')}</div>`}

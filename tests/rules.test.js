@@ -148,3 +148,13 @@ test('parcelas futuras: lê "LOJA 03/08" da fatura e projeta as que faltam, sem 
   assert.equal(pm.length, 1); assert.equal(pm[0].m, 10); assert.equal(pm[0].total, 100); assert.equal(pm[0].itens[0].n, 5);
   assert.equal(m.parcelasPorMes(Y, 10).length, 0, 'depois da última parcela nada sobra');
 });
+
+test('carteira: saldo de dinheiro em papel com histórico; cria o saldo na primeira vez', () => {
+  fresh();
+  assert.equal(m.carteiraItem(), null); assert.equal(m.carteiraSaldo(), 0);
+  m.carteiraMov(200, 'Saque'); m.carteiraMov(-35.5, 'Feira');
+  assert.equal(m.carteiraSaldo(), 164.5);
+  assert.equal(m.S.saldos.filter(i => i.carteira).length, 1, 'um item só, dentro dos saldos do Patrimônio');
+  assert.equal(m.carteiraItem().hist.length, 2); assert.equal(m.carteiraItem().hist[0].d, 'Feira');
+  assert.throws(() => m.carteiraMov(0), /valor/);
+});

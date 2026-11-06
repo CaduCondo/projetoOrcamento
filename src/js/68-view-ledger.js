@@ -47,6 +47,7 @@ const LancDialog={
        ${r?'':`<label class="f">Dia<input id="lia" type="number" min="1" max="31" inputmode="numeric" placeholder="1 a 31" value="${selM===new Date().getMonth()&&selY===new Date().getFullYear()?new Date().getDate():''}"></label>`}</div>
       <label class="f">Categoria${sem?' <span class="semcat">— escolha uma</span>':''}${combo('lic',{value:sem?undefined:cat?.id,tipo:tipoCombo,ph:'Buscar categoria…',create:1})}</label>
       <label class="switch"><input type="checkbox" id="lik" ${!it||it.ok?'checked':''}><span class="sw"></span><span><b>Já ${pagar?'pago':'recebido'}</b><br><span class="sub">Só o que está marcado entra nos totais.</span></span></label>
+      ${r?'':`<label class="switch"><input type="checkbox" id="lcart"><span class="sw"></span><span><b>${pagar?'Paguei em dinheiro':'Recebi em dinheiro'}</b><br><span class="sub">${pagar?'Sai do saldo da Carteira (Patrimônio).':'Entra no saldo da Carteira (Patrimônio).'}</span></span></label>`}
       <div class="auto"><label class="switch"><input type="checkbox" id="lir" ${sem?'checked':''}><span class="sw"></span><span><b>Lembrar para os próximos</b><br><span class="sub">Sempre que aparecer este texto, já vai para a categoria escolhida:</span></span></label>
        <input id="lit" maxlength="40" autocomplete="off" value="${esc(txt)}" placeholder="texto que se repete (ex.: conta vivo)"></div>
       <div class="err" id="lerr" role="alert"></div>
@@ -67,7 +68,8 @@ const LancDialog={
         if(dest&&dest!==atual.id)c=moveLancamento(cid,y,m,idx,dest)}
       else{if(!dest)return err('Escolha a categoria.');y=selY;m=selM;c=catById(dest);const dia=+el('lia').value;
         const pre=dia>=1&&dia<=31?`${String(dia).padStart(2,'0')}/${String(m+1).padStart(2,'0')} `:'';
-        useCatInMonth(c.id,y,m);ens(c.id,y,m).items.push({v,d:pre+desc,ok:el('lik').checked})}
+        useCatInMonth(c.id,y,m);ens(c.id,y,m).items.push({v,d:pre+desc,ok:el('lik').checked});
+        if(el('lcart')?.checked&&v)carteiraMov(c.tipo==='pagar'?-v:v,desc)}
       let extra='';
       if(el('lir').checked){const a=addAuto(el('lit').value,c.tipo,c.nome),n=aplicarAutomacoes();extra=` Automação criada: “${a.txt}” → ${c.nome}${n?` (${n} parecido${n>1?'s':''} também organizado${n>1?'s':''})`:''}.`}
       save();dlg3.close();snackbar(`Salvo${c?` em “${c.nome}”`:''}.${extra}`,null,null,9000)
