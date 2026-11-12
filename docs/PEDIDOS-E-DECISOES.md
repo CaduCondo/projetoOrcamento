@@ -181,8 +181,37 @@ Pedido: refazer o layout, moderno/futurista, continuar escuro, com o celular com
 - **Registro de erros (Ajustes, só o administrador vê):** erros do programa, falhas ao salvar/ler o perfil e arquivos não lidos, com quem, quando, tela e ambiente; botão "Resolvido" apaga. No banco: coleção `errors` — cada pessoa só cria em nome próprio e com campos limitados; só o administrador lê e apaga; ninguém altera (testado no emulador). **É preciso publicar as regras novas no Firebase (teste e produção).**
 - Página Categorias: tirada a palavra "histórico" (categorias antigas simplesmente não mostram etiqueta).
 
+### 5.20 Buscar do banco (Open Finance via Meu Pluggy)
+- Teste real (27/10/2026) com o Itaú do dono pelo Meu Pluggy (grátis): cartão (110 lançamentos, faturas com total que bate com o PDF) e conta corrente (134 lançamentos) chegaram pela API `/v2/transactions` (filtros `dateFrom`/`dateTo`, paginação por `next`). Para o extrato aparecer, foi preciso **atualizar a conexão** no Meu Pluggy.
+- **Porteiro** (`tools/pluggy-worker/worker.js`, Cloudflare Workers grátis): guarda a Client Secret fora do site, confere o token do login do Firebase (assinatura do Google, validade, projeto e **e-mail do dono**), aceita só o site do app, limita o período (400 dias) e devolve só os campos necessários (sem merchant, saldo por lançamento nem número do cartão).
+- **App:** em Ajustes, painel **🏦 Buscar do banco** (só administrador). Escolhe conta (e fatura, no cartão) ou mês (conta) e cai na **mesma tela de conferência** da importação de arquivo (cartão como previsto com conferência do total da fatura; conta em Receitas/Despesas; rendimentos somados; sem duplicar).
+- Custo: R$ 0 (Meu Pluggy gratuito para uso pessoal, até 5 conexões do mesmo titular; Cloudflare Workers plano grátis). Se um dia a Pluggy cobrar, o plano B é a importação de arquivo. Guia: `docs/BANCO-DIRETO.md`.
+
+### 5.21 Lançamentos, Automações e ícone/cor (inspirado em outro app financeiro; ideias, sem copiar marca nem textos)
+Pedido: aproveitar o que o outro app faz bem (categoria como etiqueta em cada lançamento, automações, ícone e cor, detalhe do lançamento) **sem complicar** o uso. Comparação honesta: o nosso é de *planejamento* (categoria do mês, previsto × realizado); o deles é de *acompanhamento*. Decidimos **juntar os dois**, sem trocar o modelo.
+- **Tela Mês ganhou um alternador "Por categoria | Lançamentos"** (continuam as mesmas 6 abas e o menu de baixo). Em **Lançamentos**: todos os itens do mês numa lista por dia (total do dia, entrada +/saída −), busca, filtros Todos/Entradas/Saídas/Sem categ., aviso "⚠ N lançamentos sem categoria — resolver" e botão **＋ Lançamento** (novo lançamento rápido).
+- **"Sem categoria"** = o que ainda está na Movimentação CC Itaú (extrato) ou item do cartão ainda não levado a uma categoria. Nenhum dado foi migrado: é só uma forma de ver.
+- **Janela do lançamento** (toque na linha): descrição, valor, categoria (busca; cria na hora), "já pago/recebido", excluir e **"Lembrar para os próximos"** = cria a **automação** (texto que se repete → categoria). Ao salvar, o app já organiza os parecidos que estavam sem categoria.
+- **Automações** (`S.autos`, guardadas junto das categorias; painel com ✕ na página Categorias): na importação (arquivo ou banco) o extrato já cai na categoria certa (realizado) e o item de cartão ganha a cópia informativa 💳 (não soma) na categoria; o que não casa fica "sem categoria". A regra mais específica ganha; entrada e saída não se misturam. Texto da regra: sem acento, data, parcela e símbolos, mínimo 3 letras.
+- **Ícone e cor da categoria** (enfeite, opcionais): 30 ícones e 10 cores na janela da categoria; sem escolha, o app sugere o ícone pelo nome (ex.: Mercado 🛒). Renomear (nova versão da categoria) leva ícone e cor junto. Aparecem na tela Mês, em Categorias e nos Lançamentos.
+- **Resumo do mês** (só no mês de hoje, topo da tela Mês): "Pode gastar por dia" = (receitas − despesas PREVISTAS só deste mês) ÷ dias que faltam, **sem contar o saldo acumulado/investido** (dinheiro guardado não entra; "sem folga" se ≤ 0); "Ainda a pagar"; próximos 3 vencimentos (toque abre a categoria).
+- Ainda não feito: subcategorias (o resto foi feito: ver §5.22). Princípio reforçado pelo dono: **sempre facilitar o uso; não encher de informação**.
+
+### 5.22 Parcelas, Carteira, Recorrentes, Perguntas, Tags e ajustes de uso (nov/2026)
+- **Parcelas do cartão já comprometidas** (`29-model-parcelas.js`, `69-ui-parcelas.js`): lê "LOJA 03/08" nos itens que vieram da **fatura do cartão** e projeta as parcelas que faltam, usando sempre a parcela MAIS RECENTE que o app conhece (não conta a mesma compra duas vezes quando a fatura seguinte é importada). Aparece no Resumo do mês ("Parcelas do cartão já comprometidas: dez R$ …") e abre o detalhe por mês ("parcela 4 de 5"). É previsão: mantém o valor da última fatura.
+- **Carteira** (`29-model-carteira.js`): dinheiro em papel = um saldo do Patrimônio marcado `carteira:true`, com histórico (30 últimos). Painel no Patrimônio (＋ Entrou dinheiro / － Gastei em dinheiro) e, ao criar lançamento novo, a chave "Paguei/Recebi em dinheiro" mexe na Carteira.
+- **Assinaturas e contas recorrentes** (`29-model-recorrentes.js`, painel na página Categorias): despesas que aparecem em 3+ dos últimos 6 meses com valor parecido (variação até 30%); ignora parcelas; avisa "ainda não veio" neste mês.
+- **Perguntas rápidas** (topo de Gráficos): 6 perguntas respondidas em palavras (onde gastei mais, quanto sobrou, maior gasto, média mensal, o que mais cresceu, o que já está comprometido).
+- **Tags**: escrever `#palavra` na descrição; na lista de Lançamentos aparecem chips de tag para filtrar (junta categorias diferentes).
+- **Buscar do banco**: depois de importar a janela volta à lista de contas (dá para importar conta e cartão na mesma sessão); a rolagem não pula ao marcar itens; o "saldo" do cartão é explicado como total devido (pode incluir parcelas futuras).
+- **Apagar item (✕)** na janela de itens pede confirmação; **"Lançar em categoria"** só oferece categorias do mesmo tipo, mostra qual movimentação é e avisa quando a categoria digitada não existe.
+- **Categorias**: mudar só o DIA edita no lugar (sem criar "versão"); renomear continua criando versão, mas a lista mostra UMA linha por categoria (somando o uso das versões antigas, "antes: …") e marca Receita/Despesa quando o nome se repete.
+- **Zerar meus dados** (Ajustes, só em dev/local; pede para digitar APAGAR). Não existe em produção.
+- Ainda não feito: **subcategorias** (mudança grande no modelo; combinar antes).
+
 ## 6. Princípios que combinamos
 - **Privacidade primeiro:** planilhas, backups e dados pessoais **nunca** vão para o GitHub (repositório público).
 - **Honestidade com o usuário:** o que a tela promete é o que o sistema faz.
 - **Testar antes de publicar:** tudo vai primeiro para `dev`; só vai para produção com aprovação do dono.
+- **Usabilidade acima de tudo:** o app tem muita informação; cada novidade deve ficar simples (poucos botões, escolhas padrão boas, nada obrigatório).
 - **Linguagem simples** com o dono (não é da área de TI): passos clicáveis, um por vez.

@@ -102,10 +102,11 @@ function reviseCat(id,input,scope,y,m){
   const c=catById(id),t=ym(y,m);if(!c)throw new Error('Categoria não encontrada.');
   const err=validateCat(input,c.tipo,y,m,id);if(err)throw new Error(err);
   const{nome,dia}=cleanInput(input);
+  if(nome===c.nome&&scope==='manter'){c.dia=dia;return c}                        // só o dia mudou: vale para todos os meses, sem criar "versão" nova da categoria
   if(scope==='manter')scope=modoDe(c);
   if(!temPassado(c,t)){                                        // nada antes deste mês (nem lançamento): muda no lugar, sem "versão antiga"
     c.nome=nome;c.dia=dia;if(c.vis&&ymOf(c.vis.from)>=t){const f=c.vis.from;applyScope(c,scope,f[0],f[1],false)}return c}
-  const n=makeCat(c.tipo,nome,dia);applyScope(n,scope,y,m,false);n.prevId=c.id;
+  const n=makeCat(c.tipo,nome,dia);applyScope(n,scope,y,m,false);n.prevId=c.id;if(c.ico)n.ico=c.ico;if(c.cor)n.cor=c.cor;
   if(c.extra){const ex=c.extra.filter(k=>k>=exKey(y,m)),ficam=c.extra.filter(k=>k<exKey(y,m));if(ex.length)n.extra=ex;if(ficam.length)c.extra=ficam;else delete c.extra}
   if(c.hide){const ex=c.hide.filter(k=>k>=exKey(y,m)),ficam=c.hide.filter(k=>k<exKey(y,m));if(ex.length)n.hide=ex;if(ficam.length)c.hide=ficam;else delete c.hide}
   const prev=fromYm(t-1);

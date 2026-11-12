@@ -22,7 +22,8 @@ test('privacidade: nenhum e-mail real no código (só exemplos)', () => {
   const achados = [];
   for (const f of files) {
     for (const mt of read(f).matchAll(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g)) {
-      if (!/@(exemplo\.com|example\.com|x\.com|users\.noreply\.github\.com)$/.test(mt[0]) && !/^noreply@/.test(mt[0])) achados.push(`${f}: ${mt[0]}`);
+      // (system.gserviceaccount.com = endereço público de chaves do Google, usado pelo porteiro; não é pessoa)
+      if (!/@(exemplo\.com|example\.com|x\.com|users\.noreply\.github\.com|system\.gserviceaccount\.com)$/.test(mt[0]) && !/^noreply@/.test(mt[0])) achados.push(`${f}: ${mt[0]}`);
     }
   }
   assert.deepEqual(achados, []);

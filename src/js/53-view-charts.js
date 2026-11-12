@@ -9,10 +9,28 @@ function heat(){const y=selY,L=lastActive(y);const rows=cats('pagar').map(c=>({c
   if(!rows.length)return'<p class="hint">Sem dados.</p>';
   return `<div class="heat"><table><tr><th>Categoria</th>${MC.slice(0,L+1).map(m=>`<th class="n">${m}</th>`).join('')}<th class="n">Total</th></tr>${rows.map(r=>{const mx=Math.max(...r.v.slice(0,L+1),1);
    return `<tr><td>${esc(r.c.nome)}</td>${r.v.slice(0,L+1).map((v,m)=>`<td class="h" data-open="${r.c.id}|${y}|${m}" style="background:rgba(239,68,68,${(v/mx*.65).toFixed(2)})">${v?K(Math.round(v)):''}</td>`).join('')}<td class="n"><b>${R$(r.v.reduce((a,b)=>a+b,0))}</b></td></tr>`}).join('')}</table></div>`}
+/* Perguntas rápidas: respostas em palavras (sem gráfico) para o período escolhido. Cada pergunta abre e fecha sozinha (<details>). */
+function perguntas(){const y=selY,ms=period==='ano'?MC.map((_,i)=>i):[+period],ate=period==='ano'?lastActive(y):+period,rot=period==='ano'?`em ${y}`:`em ${MESES[+period].toLowerCase()} de ${y}`;
+  const pag=cats('pagar'),rec=cats('receber'),tot=l=>l.reduce((s,c)=>s+ms.reduce((a,m)=>a+V(c.id,y,m,'real'),0),0);
+  const R=tot(rec),P=tot(pag),porCat=pag.map(c=>({c,v:ms.reduce((a,m)=>a+V(c.id,y,m,'real'),0)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+  const itens=[];for(const c of pag)for(const m of ms)for(const it of cellOf(c.id,y,m)?.items||[])if(!it.info&&it.ok&&it.v>0)itens.push({c,m,it});itens.sort((a,b)=>b.it.v-a.it.v);
+  const mesesCom=ms.filter(m=>pag.some(c=>V(c.id,y,m,'real')>0)).length;
+  const cresc=ate>0?pag.map(c=>({c,d:V(c.id,y,ate,'real')-V(c.id,y,ate-1,'real')})).filter(x=>x.d>0).sort((a,b)=>b.d-a.d)[0]:null;
+  const rc=recorrentes(y,ate),parc=parcelasPorMes(y,ate,1)[0];
+  const li=a=>`<ul>${a.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+  return[
+   ['Onde gastei mais?',porCat.length?li(porCat.slice(0,5).map(x=>`<b>${esc(x.c.nome)}</b>: ${R$(x.v)} (${Math.round(x.v/P*100)}% das despesas)`)):'Ainda sem despesas pagas neste período.'],
+   ['Quanto sobrou?',`Entrou <b>${R$(R)}</b> e saiu <b>${R$(P)}</b> ${rot}: ${R-P>=0?'sobrou':'faltou'} <b class="${R-P>=0?'pos':'neg'}">${R$(Math.abs(R-P))}</b>.`],
+   ['Qual foi meu maior gasto?',itens.length?`<b>${esc(itens[0].it.d||itens[0].c.nome)}</b>, ${R$(itens[0].it.v)}, em ${esc(itens[0].c.nome)} (${MESES[itens[0].m].toLowerCase()}).`:'Sem gastos pagos neste período.'],
+   ['Quanto gasto por mês, em média?',mesesCom?`Cerca de <b>${R$(P/mesesCom)}</b> por mês (média de ${mesesCom} mês${mesesCom>1?'es':''} com gastos).`:'Sem dados ainda.'],
+   ['O que mais cresceu em relação ao mês anterior?',cresc?`<b>${esc(cresc.c.nome)}</b> subiu <b>${R$(cresc.d)}</b> de ${MESES[ate-1].toLowerCase()} para ${MESES[ate].toLowerCase()}.`:'Nada cresceu (ou não há mês anterior para comparar).'],
+   ['O que já está comprometido todo mês?',rc.length||parc?`${rc.length?`Assinaturas e contas que se repetem: <b>${R$(rc.reduce((s,x)=>s+x.v,0))}</b> por mês (${rc.length}).`:''} ${parc?`Parcelas do cartão em ${MESES[parc.m].toLowerCase()}: <b>${R$(parc.total)}</b>.`:''}`:'Nada encontrado ainda. Importe alguns meses do extrato e da fatura.']]}
+function vPerguntas(){return `<div class="panel perg"><h2>❓ Perguntas rápidas</h2><div style="padding:8px 14px">${perguntas().map(([q,a])=>`<details><summary>${q}</summary><div class="pa">${a}</div></details>`).join('')}</div></div>`}
 function vGraf(){const opts=`<option value="ano">Ano todo</option>${MESES.map((m,i)=>`<option value="${i}" ${period==i?'selected':''}>${m}</option>`).join('')}`;
   if(!S.cats.some(c=>c.id===catSel))catSel=cats('pagar')[0]?.id;
   const box=(id,t,p,cls='')=>`<div class="cbox ${cls}"><h3>${t}</h3><p>${p}</p><div class="cw"><canvas id="${id}"></canvas></div></div>`;
   return `<div class="row">${seg()}<label class="row" style="margin:0">Período das categorias: <select id="per">${opts}</select></label><span class="sub">Ano ${selY} · ${modo==='real'?'só o que já foi pago/recebido':'tudo, inclusive previsão'}</span></div>
+  ${vPerguntas()}
   <div class="cards" id="kpis"></div>
   <div class="gh">Visão geral</div><div class="charts">
    ${box('c1','Receber × pagar por mês','Barras: entradas e saídas. Linha: saldo do mês.')}

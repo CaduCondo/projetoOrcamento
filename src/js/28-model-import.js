@@ -81,7 +81,7 @@ const rendDiferente=(it,k,y,m)=>{if(!it.rend)return false;for(const c of S.cats)
 function importStatement(kind,itens,y,m){
   const cartao=kind==='cartao',keys=impKeys(kind,itens),have=chavesImportadas(),dest={};
   const destino=tipo=>dest[tipo]??=ensureMonthCat(tipo,cartao?CARTAO_CAT:MOV_CAT,y,m);
-  let novos=0,repetidos=0,atualizados=0,criada=false;
+  let novos=0,repetidos=0,atualizados=0,criada=false,auto=0;
   if(itens.some(i=>i.rend))limparRendimentosAvulsos(y,m);
   itens.forEach((it,n)=>{const k=keys[n],tipo=cartao||it.valor<0?'pagar':'receber';
     if(have.has(k)){
@@ -90,11 +90,18 @@ function importStatement(kind,itens,y,m){
         const ex=c&&cellOf(c.id,y,m).items.find(i=>i.imp===k);
         if(ex&&ex.v!==it.valor){ex.v=it.valor;ex.d=(dataTxt(it)+it.desc).trim();atualizados++;return}}
       repetidos++;return}
-    const d=destino(tipo);criada=criada||d.criada;
     // despesa guarda gasto como positivo; receita guarda entrada como positivo (valores sempre positivos nas Movimentações)
-    const v=cartao?it.valor:Math.abs(it.valor);ens(d.cat.id,y,m).items.push({v,d:(dataTxt(it)+it.desc).trim(),ok:!cartao,imp:k});novos++});
+    const v=cartao?it.valor:Math.abs(it.valor),texto=(dataTxt(it)+it.desc).trim(),a=it.rend?null:autoFor(it.desc,tipo);
+    if(a&&!cartao){                                   // automação: a movimentação já cai na categoria certa (como se tivesse sido levada para lá)
+      const r=ensureMonthCat(a.tipo,a.nome,y,m);criada=criada||r.criada;
+      ens(r.cat.id,y,m).items.push({v,d:texto,ok:true,moved:k});auto++;novos++;return}
+    const d=destino(tipo);criada=criada||d.criada;
+    ens(d.cat.id,y,m).items.push({v,d:texto,ok:!cartao,imp:k});novos++;
+    if(a&&cartao){                                    // cartão: o item fica no cartão (soma lá) e ganha a cópia só informativa na categoria
+      const r=ensureMonthCat(a.tipo,a.nome,y,m);criada=criada||r.criada;
+      if(r.cat.id!==d.cat.id){ens(r.cat.id,y,m).items.push({v,d:texto,ok:true,info:true,lock:true,ref:k});auto++}}});
   const cats=Object.values(dest).map(d=>d.cat);
-  return{cat:cats[0],cats,novos,atualizados,repetidos,criada}}
+  return{cat:cats[0],cats,novos,atualizados,repetidos,criada,auto}}
 
 /* ---- depois de importado ---- */
 const itemsLinked=ref=>{const r=[];for(const[k,v]of Object.entries(S.data))v.items.forEach((i,n)=>{if(i.ref===ref)r.push({key:k,n,item:i})});return r};

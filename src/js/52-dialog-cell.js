@@ -63,12 +63,15 @@ async function itemToCategory(k){const x=ens(cur.cid,cur.y,cur.m),it=x.items[k],
   try{cartao?cardItemToCategory(cur.cid,cur.y,cur.m,k,nome):contaItemMove(cur.cid,cur.y,cur.m,k,{nome})}catch(e){return alert(e.message)}
   save();drawDlg();snackbar(`Categoria “${nome}” criada em ${MESES[cur.m].toLowerCase()}/${cur.y}${cartao?' (com 💳: não soma; o valor continua no cartão)':' (o valor saiu da Movimentação)'}.`)}
 async function itemToExisting(k){const x=ens(cur.cid,cur.y,cur.m),it=x.items[k],cartao=it.imp.startsWith('cartao|');
-  const r=await askChoice({titulo:'Lançar em qual categoria?',texto:`<p class="hint">${cartao?'O valor entra na categoria escolhida com o 💳 (informativo, não soma) e continua somando no cartão.':'O valor sai da Movimentação e passa a somar na categoria escolhida.'}</p>${combo('mvc',{tipo:cartao?'pagar':'',ph:'Buscar categoria…'})}`,
-    opcoes:[{id:'ok',label:'Lançar nesta categoria',cls:''},{id:'',label:'Cancelar',cls:'dan'}]});
-  if(r!=='ok')return;const dest=Combobox.get('mvc');if(!dest)return alert('Escolha uma categoria da lista.');
+  const orig=catById(cur.cid),qual=`o valor <b>${R$(it.v)}</b> da movimentação <b>“${esc(it.d)}”</b>`;
+  const r=await askChoice({titulo:'Lançar em qual categoria?',texto:`<p class="hint">${cartao?`Vai levar ${qual} para a categoria escolhida, com o 💳 (informativo, não soma); ele continua somando em “${esc(orig.nome)}”.`:`Ao confirmar, ${qual} sai da categoria “${esc(orig.nome)}” e passa a somar na categoria escolhida.`}</p>${combo('mvc',{tipo:orig.tipo,ph:`Buscar categoria de ${orig.tipo==='pagar'?'despesa':'receita'}…`})}`,
+    opcoes:[{id:'ok',label:'Lançar nesta categoria',cls:'',chk:true},{id:'',label:'Cancelar',cls:'dan'}],
+    validar:()=>Combobox.get('mvc')?'':el('mvcin')?.value.trim()?'Não existe categoria com esse nome. Escolha uma da lista que aparece ao digitar (para criar uma nova, use a página Categorias).':'Escolha uma categoria da lista antes de continuar.'});
+  if(r!=='ok')return;const dest=Combobox.get('mvc');if(!dest)return;
   try{cartao?cardItemToExisting(cur.cid,cur.y,cur.m,k,dest):contaItemMove(cur.cid,cur.y,cur.m,k,dest)}catch(e){return alert(e.message)}
   save();drawDlg();snackbar(`Lançado em “${catById(dest).nome}”.`)}
 /* apagar item: se for do cartão e já foi levado para outras categorias, apaga as cópias junto (com confirmação) */
-async function delItem(k){const x=ens(cur.cid,cur.y,cur.m),it=x.items[k];
-  if(it.imp&&cardLinks(it).length){if(!await confirmAsync('Este item do cartão foi levado para outra categoria. Apagar também a cópia informativa de lá?','Apagar os dois','Cancelar'))return;unlinkCardItem(it)}
+async function delItem(k){const x=ens(cur.cid,cur.y,cur.m),it=x.items[k],liga=it.imp&&cardLinks(it).length;
+  if(!await confirmAsync(`Apagar ${it.d?`“${it.d}” `:'este item '}(${R$(it.v)}) de “${catById(cur.cid).nome}”?${liga?' Ele foi levado para outra categoria: a cópia informativa de lá também será apagada.':''}`,'Apagar','Cancelar'))return;
+  if(liga)unlinkCardItem(it);
   x.items.splice(k,1);save();drawDlg()}

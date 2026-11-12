@@ -45,6 +45,8 @@ const ImportDialog={
       const tx=normName(lines.slice(0,60).join(' '));
       Object.assign(this,{fonte:'generico',banco,kindFixo:false,all:itens,kind:/fatura|cartao de credito/.test(tx)&&!/extrato de conta|conta corrente/.test(tx)?'cartao':'conta'})}
     this.ajustaMes();this.pick();this.draw()},
+  /* direto do banco (Meu Pluggy): os itens já vêm prontos; cai na mesma tela de conferência */
+  setBank({kind,itens,banco,nome,fatura,y,m}){this.reset();Object.assign(this,{y,m,nome,fonte:'pluggy',banco,kind,all:itens,fatura});this.ajustaMes();this.pick();this.draw()},
   /* OFX de qualquer banco */
   setOfx(text,nome=''){const y=this.y,m=this.m;this.reset();Object.assign(this,{y,m,nome});
     const r=parseOFX(text);if(!r.itens.length)return this.fail('ofx',r.banco,'O arquivo OFX não tem lançamentos que eu consiga ler.',{tamanho:text.length});
@@ -85,11 +87,11 @@ const ImportDialog={
   draw(){const k=this.kind,its=k?this.itens():[],ks=k?impKeys(k,its):[],ja=chavesImportadas(),cartao=k==='cartao',itau=this.fonte==='itau';
     const anos=S.anos.includes(this.y)?S.anos:[...S.anos,this.y].sort((a,b)=>a-b);
     const fmt=n=>fmtN(Math.abs(n)),cls=n=>k==='conta'?(n<0?'neg':'pos'):(n<0?'pos':''),selItens=its.filter((_,n)=>this.sel.has(n));
-    const fonteTxt={itau:'PDF do Itaú',ofx:'OFX',csv:'planilha CSV',generico:'PDF (leitura genérica)'}[this.fonte]||'';
+    const fonteTxt={itau:'PDF do Itaú',ofx:'OFX',csv:'planilha CSV',generico:'PDF (leitura genérica)',pluggy:'direto do banco (Meu Pluggy)'}[this.fonte]||'';
     let resumo='';
     if(k){const soma=selItens.reduce((s,i)=>s+i.valor,0),fa=this.fatura,somaTudo=Math.round(its.reduce((s,i)=>s+i.valor,0)*100)/100;
       resumo=cartao
-        ?(itau?`<p class="hint"><b>${its.length}</b> lançamentos encontrados · soma <b>R$ ${fmtN(somaTudo)}</b> · total da fatura <b>R$ ${fmtN(fa.total??0)}</b> ${fa.confere?'<span class="pos">✓ confere</span>':'<span class="warn">⚠ não bate: confira antes de importar</span>'}</p>
+        ?(this.fatura?`<p class="hint"><b>${its.length}</b> lançamentos encontrados · soma <b>R$ ${fmtN(somaTudo)}</b> · total da fatura <b>R$ ${fmtN(fa.total??0)}</b> ${fa.confere?'<span class="pos">✓ confere</span>':'<span class="warn">⚠ não bate: confira antes de importar</span>'}</p>
           <p class="hint">Entram só “compras e saques” e “internacionais” (e o repasse de IOF, que faz parte do total). Compras parceladas das próximas faturas ficam de fora.</p>`
               :`<p class="hint"><b>${its.length}</b> lançamentos · soma <b>R$ ${fmtN(somaTudo)}</b>. <b>Confira com o total da sua fatura</b> antes de importar. Pagamentos da fatura anterior vêm desmarcados.</p>`)
           +`<p class="hint">Vão para a categoria <b>${esc(CARTAO_CAT)}</b> como <b>previstos</b>; depois você marca o que foi pago.</p>`
@@ -116,11 +118,13 @@ const ImportDialog={
           <span class="imd">${it.dia?String(it.dia).padStart(2,'0')+'/'+String(it.mes).padStart(2,'0'):''}</span><span class="imn">${esc(it.desc)}${this.jaFoi(it,ks[n],ja)?' <i>(já importado)</i>':it.rend&&ja.has(ks[n])?' <i>(atualiza a soma já importada)</i>':this.fora(it)?' <i>(pagamento da fatura)</i>':''}</span>
           <span class="imv ${cls(it.valor)}">${it.valor<0?'-':''}${fmt(it.valor)}</span></label>`).join('')||'<p class="hint">Nada deste mês neste arquivo.</p>'}</div>`:''}
      </div>
-     <div class="df"><button type="button" class="btn dan" data-cclose>Cancelar</button><button type="button" class="btn" data-imgo ${k&&selItens.length?'':'disabled'}>Importar ${selItens.length||''} ${selItens.length===1?'item':'itens'}</button></div></form>`},
+     <div class="df">${this.fonte==='pluggy'&&BankDialog.dados?'<button type="button" class="btn sec" data-imback>← Voltar</button>':'<button type="button" class="btn dan" data-cclose>Cancelar</button>'}<button type="button" class="btn" data-imgo ${k&&selItens.length?'':'disabled'}>Importar ${selItens.length||''} ${selItens.length===1?'item':'itens'}</button></div></form>`},
   go(){const its=this.itens().filter((_,n)=>this.sel.has(n));if(!its.length)return;
     const antes=this.kind==='cartao'?(cellOf(ensureMonthCatPeek(this.kind,this.y,this.m),this.y,this.m)?.items.filter(i=>!i.imp).length||0):0;
-    const r=importStatement(this.kind,its,this.y,this.m);save();dlg3.close();
-    snackbar(`${r.novos} item(ns) importado(s) em “${r.cats.map(c=>c.nome+(this.kind==='conta'?(c.tipo==='receber'?' (Receitas)':' (Despesas)'):'')).join(' e ')}” (${MESES[this.m].toLowerCase()}/${this.y})${r.atualizados?`; rendimentos atualizados`:''}${r.repetidos?`; ${r.repetidos} já existiam`:''}${antes?`. Atenção: já havia ${antes} item(ns) lançado(s) à mão nesta categoria, que continuam somando`:''}.`,null,null,14000)},
+    const r=importStatement(this.kind,its,this.y,this.m);save();
+    const msg=`${r.novos} item(ns) importado(s) em “${r.cats.map(c=>c.nome+(this.kind==='conta'?(c.tipo==='receber'?' (Receitas)':' (Despesas)'):'')).join(' e ')}” (${MESES[this.m].toLowerCase()}/${this.y})${r.atualizados?`; rendimentos atualizados`:''}${r.auto?`; ${r.auto} já foram para a categoria certa pelas suas automações`:''}${r.repetidos?`; ${r.repetidos} já existiam`:''}${antes?`. Atenção: já havia ${antes} item(ns) lançado(s) à mão nesta categoria, que continuam somando`:''}.`;
+    if(this.fonte==='pluggy'&&BankDialog.dados){BankDialog.feitos.push(msg);BankDialog.erro='';BankDialog.mes=this.m;BankDialog.ano=this.y;BankDialog.draw();render();return}   // Buscar do banco: volta para escolher a próxima conta/mês sem recomeçar
+    dlg3.close();snackbar(msg,null,null,14000)},
   /* abre o arquivo escolhido conforme o tipo */
   async arquivo(f,input){const nome=(f.name||'').toLowerCase();
     try{
@@ -145,6 +149,9 @@ dlg3.addEventListener('change',async e=>{const t=e.target,D=ImportDialog;if(!t.c
   else if(t.name==='imk'){D.kind=t.value;if(D.csv)return D.recalcCsv();D.ajustaMes();D.pick();D.draw()}
   else if(['imcd','imcs','imcv'].includes(t.id)){D.csv.map={...D.csv.map,[{imcd:'data',imcs:'desc',imcv:'valor'}[t.id]]:+t.value};D.recalcCsv()}
   else if(t.id==='iminv'){D.csv.inverter=t.checked;D.recalcCsv()}
-  else if(t.dataset.imsel!==undefined){t.checked?D.sel.add(+t.dataset.imsel):D.sel.delete(+t.dataset.imsel);D.draw()}});
-dlg3.addEventListener('click',e=>{if(e.target.closest('[data-imgo]'))ImportDialog.go();else if(e.target.closest('[data-imrep]'))ImportDialog.avisar()});
+  else if(t.dataset.imsel!==undefined){const n=t.dataset.imsel,rolagens=['.db','.imlist'].map(s=>dlg3.querySelector(s)?.scrollTop||0);   // a tela é refeita: guarda a rolagem e o foco
+    t.checked?D.sel.add(+n):D.sel.delete(+n);D.draw();
+    ['.db','.imlist'].forEach((s,i)=>{const b=dlg3.querySelector(s);if(b)b.scrollTop=rolagens[i]});
+    dlg3.querySelector(`[data-imsel="${n}"]`)?.focus({preventScroll:true})}});
+dlg3.addEventListener('click',e=>{if(e.target.closest('[data-imback]'))BankDialog.draw();else if(e.target.closest('[data-imgo]'))ImportDialog.go();else if(e.target.closest('[data-imrep]'))ImportDialog.avisar()});
 dlg3.addEventListener('submit',e=>{if(e.target.id==='imf')e.preventDefault()});

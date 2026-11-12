@@ -9,24 +9,25 @@ function sortCats(l,st){const{col,dir}=catUI,nome=c=>normName(c.nome);
   return l.sort((a,b)=>{
     if(col==='dia'){const x=a.dia||0,z=b.dia||0;if(!x||!z)return !x&&!z?nome(a).localeCompare(nome(b)):!x?1:-1;return(x-z)*dir||nome(a).localeCompare(nome(b))}
     const x=chave[col](a),z=chave[col](b);return(typeof x==='number'?x-z:String(x).localeCompare(String(z)))*dir||nome(a).localeCompare(nome(b))})}
-function catRows(){const st=catStats(),nq=normName(catUI.q);
-  let l=S.cats.filter(c=>(!catUI.tipo||c.tipo===catUI.tipo));
+function catRows(){const st=statsComHistorico(),nq=normName(catUI.q),atuais=catsAtuais();
+  let l=atuais.filter(c=>(!catUI.tipo||c.tipo===catUI.tipo));
   if(nq){const tk=nq.split(' ');l=l.filter(c=>tk.every(x=>normName(c.nome).includes(x)))}
   else if(catUI.filtro==='ativas')l=l.filter(c=>isActive(c,st));
   else if(catUI.filtro==='sem')l=l.filter(c=>!st[c.id]);
   else if(catUI.filtro==='antigas')l=l.filter(c=>st[c.id]&&!isActive(c,st));
   sortCats(l,st);
   const tot=l.length;
-  const html=l.slice(0,catUI.lim).map(c=>{const x=st[c.id];return `<button type="button" class="cr" data-cedit="${c.id}" title="Toque para editar, mesclar ou excluir"><span class="dot ${c.tipo}" title="${c.tipo==='pagar'?'Despesas':'Receitas'}"></span>
-   <span class="cn">${esc(c.nome)}</span><span class="cd">${c.dia??''}</span>
+  const dupl=new Set(atuais.filter(a=>atuais.some(b=>b!==a&&b.tipo!==a.tipo&&normName(b.nome)===normName(a.nome))).map(a=>a.id));
+  const html=l.slice(0,catUI.lim).map(c=>{const x=st[c.id],ant=c.prevId&&catById(c.prevId);return `<button type="button" class="cr" data-cedit="${c.id}" title="Toque para editar, mesclar ou excluir"><span title="${c.tipo==='pagar'?'Despesa':'Receita'}">${catBadge(c)}</span>
+   <span class="cn">${esc(c.nome)}${dupl.has(c.id)?` <span class="sub">· ${c.tipo==='pagar'?'Despesa':'Receita'}</span>`:''}${ant&&ant.nome!==c.nome?` <span class="sub">· antes: “${esc(ant.nome)}”</span>`:''}</span><span class="cd">${c.dia??''}</span>
    <span class="vig ${c.fixa?'fx':''}" title="Onde esta categoria aparece nas telas">${esc(scopeLabel(c))}</span>
    <span class="sub xs">${x?'último uso '+lastLabel(x.last):'sem lançamentos'}</span><span class="sub xs">${x?x.n+' lanç.':''}</span></button>`}).join('')||'<p class="hint" style="padding:14px 4px">Nenhuma categoria com esse filtro.</p>';
   return{html:catHead()+html+(tot>catUI.lim?`<div style="padding:10px 4px"><button class="btn sec sm" data-cmore>Mostrar mais ${Math.min(40,tot-catUI.lim)} (${tot-catUI.lim} restantes)</button></div>`:''),tot}}
-function renderCatList(){const r=catRows(),el=document.getElementById('cl');if(!el)return;el.innerHTML=r.html;document.getElementById('cc').textContent=`${r.tot} de ${S.cats.length}`}
+function renderCatList(){const r=catRows(),el=document.getElementById('cl');if(!el)return;el.innerHTML=r.html;document.getElementById('cc').textContent=`${r.tot} de ${catsAtuais().length}`}
 /* Página Categorias: o lugar de CRIAR, EDITAR, MESCLAR e EXCLUIR categorias */
-function vCat(){return catPanel()}
+function vCat(){return catPanel()+autoPanel()+recPanel()}
 function catPanel(){const r=catRows(),sg=(k,opts)=>`<div class="seg">${opts.map(([v,l])=>`<button data-cf="${k}|${v}" class="${catUI[k]===v?'on':''}">${l}</button>`).join('')}</div>`;
-  return `<div class="panel" ><h2>Categorias <span class="sub" id="cc">${r.tot} de ${S.cats.length}</span></h2><div style="padding:12px 14px">
+  return `<div class="panel" ><h2>Categorias <span class="sub" id="cc">${r.tot} de ${catsAtuais().length}</span></h2><div style="padding:12px 14px">
    <div class="row"><input id="cq" type="search" placeholder="🔍 Buscar categoria…" value="${esc(catUI.q)}" style="flex:1;min-width:200px">
     ${sg('filtro',[['ativas','Ativas'],['antigas','Antigas'],['sem','Sem lançamentos'],['todas','Todas']])}${sg('tipo',[['','Todas'],['receber','Receitas'],['pagar','Despesas']])}</div>
    <div class="row"><button class="btn sm" data-newcat="receber">＋ Nova receita</button><button class="btn sm" data-newcat="pagar">＋ Nova despesa</button></div>
