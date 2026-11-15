@@ -41,3 +41,18 @@ Funcionalidade: Categorias
     Quando excluo a categoria "Academia" e desisto na confirmação
     Então o app perguntou se eu queria mesmo excluir "Academia"
     E a categoria "Academia" continua na lista de categorias
+
+  Cenário: Escolher um dos novos ícones e uma das novas cores na categoria
+    Dado que tenho uma conta nova e vazia
+    Quando crio a categoria de despesa "Dentista" com o ícone "🦷" e a cor "#2dd4bf"
+    Então a categoria "Dentista" aparece na lista com o ícone "🦷"
+    E a categoria "Dentista" aparece na lista com a cor "#2dd4bf"
+    Quando recarrego a página
+    Então a categoria "Dentista" aparece na lista com o ícone "🦷"
+    E a categoria "Dentista" aparece na lista com a cor "#2dd4bf"
+
+  Cenário: Cabeçalho e linhas da lista de categorias ficam alinhados
+    Dado que tenho uma conta nova e vazia
+    E que criei a categoria de despesa "Academia" com o dia 10
+    E que criei a categoria de receita "Freelance"
+    Então os títulos da lista de categorias estão alinhados com os dados das linhas

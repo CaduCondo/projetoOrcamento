@@ -66,8 +66,8 @@ function aplicarAutomacoes(){let n=0;
   return n}
 
 /* ---- ícone e cor da categoria (enfeite: ajuda a achar a linha de relance) ---- */
-const ICONES=['🛒','🍽️','🏠','💡','🚗','⛽','🚌','💊','🩺','🎓','🎮','🎬','✈️','👕','🐶','🎁','📱','🌐','💳','💰','🧾','🏦','📈','🔧','☕','🍺','💇','🏋️','👶','❤️'];
-const CORES=['#f87171','#fb923c','#fbbf24','#a3e635','#34d399','#22d3ee','#60a5fa','#a78bfa','#f472b6','#94a3b8'];
+const ICONES=['🛒','🍽️','🏠','💡','🚗','⛽','🚌','💊','🩺','🎓','🎮','🎬','✈️','👕','🐶','🎁','📱','🌐','💳','💰','🧾','🏦','📈','🔧','☕','🍺','💇','🏋️','👶','❤️','🍎','🥖','🥩','🍕','🍔','🍷','🍰','🧴','🧹','🛋️','🛏️','🚿','🔌','🧰','🛠️','🏍️','🚲','🚕','🚆','🅿️','🛣️','🛞','🦷','👓','💉','🧘','⚽','🎾','🏊','🎵','🎧','🎤','📚','✏️','💻','🖨️','📷','📺','🕹️','🎟️','🏖️','🏨','🧳','🌴','🏕️','🎂','💍','👗','👟','👜','💄','🧸','🐱','🌱','🌳','🔥','💧','📞','✉️','📦','🏛️','⚖️','🏢','👨‍👩‍👧','🙏','🤝','💵','🪙','💸','🏧','📊','🎯','⭐','🛡️','🧮','🗓️'];
+const CORES=['#ef4444','#f87171','#fb923c','#f97316','#fbbf24','#facc15','#a3e635','#84cc16','#34d399','#10b981','#2dd4bf','#22d3ee','#38bdf8','#60a5fa','#3b82f6','#818cf8','#a78bfa','#8b5cf6','#c084fc','#e879f9','#f472b6','#ec4899','#fb7185','#a16207','#78716c','#94a3b8','#64748b','#334155'];
 const ICONE_POR_PALAVRA=[[/mercado|supermerc|feira|padaria|acougue|hortifruti/,'🛒'],[/restaurante|lanche|ifood|delivery|refei/,'🍽️'],[/alug|moradia|condom|casa|financiamento/,'🏠'],[/luz|energia|agua|gas|conta/,'💡'],
   [/carro|veicul|ipva|seguro auto/,'🚗'],[/combust|gasolina|posto/,'⛽'],[/transporte|onibus|metro|uber|taxi|passagem/,'🚌'],[/farmac|remedio|saude|plano de saude|medic|dentista/,'💊'],
   [/escola|curso|faculdade|educa|mensalidade/,'🎓'],[/lazer|cinema|streaming|netflix|spotify|jogo|viagem/,'🎬'],[/internet|vivo|claro|tim\b|celular|telefone/,'🌐'],[/cartao|fatura|itau/,'💳'],

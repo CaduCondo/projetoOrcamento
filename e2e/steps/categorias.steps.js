@@ -63,3 +63,33 @@ Then('no mês de {string} a categoria {string} também mostra o dia {int} na tel
   await expect(linhaDoMes).toHaveCount(1);
   await expect(linhaDoMes.locator('td.dia .dd')).toHaveText(String(dia));     // mudou no lugar: vale também para o mês antigo
 });
+
+When('crio a categoria de despesa {string} com o ícone {string} e a cor {string}', async ({ page }, nome, ico, cor) => {
+  await irPara(page, 'categorias'); await page.click('[data-newcat="pagar"]');
+  await expect(page.locator('#cfn')).toBeFocused();
+  await page.fill('#cfn', nome); await page.click(`[data-pico="${ico}"]`); await page.click(`[data-pcor="${cor}"]`);
+  await page.locator('#cf').getByRole('button', { name: 'Criar' }).click(); await expect(page.locator('#dlg3')).not.toBeVisible();
+});
+Then('a categoria {string} aparece na lista com a cor {string}', async ({ page }, nome, cor) => {
+  await irPara(page, 'categorias');
+  const fundo = await linha(page, nome).locator('.cico').evaluate(e => getComputedStyle(e).backgroundColor);
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(cor.slice(i, i + 2), 16));
+  expect(fundo).toBe(`rgb(${r}, ${g}, ${b})`);
+});
+Then('os títulos da lista de categorias estão alinhados com os dados das linhas', async ({ page }) => {
+  await irPara(page, 'categorias');
+  await expect(linha(page, 'Academia')).toHaveCount(1);
+  const x = async (loc) => { const b = await loc.boundingBox(); return { esq: b.x, dir: b.x + b.width }; };
+  const hd = page.locator('#cl .cr.hd');
+  const linhaAcad = linha(page, 'Academia');
+  // "Nome": título e texto do nome começam na mesma coluna
+  expect(Math.abs((await x(hd.locator('.c1'))).esq - (await x(linhaAcad.locator('.cn'))).esq), 'título Nome × nome').toBeLessThanOrEqual(2);
+  // "Dia": a coluna do título e a do número têm o mesmo centro
+  const [hdDia, dado] = [await x(hd.locator('.c2')), await x(linhaAcad.locator('.cd'))];
+  expect(Math.abs((hdDia.esq + hdDia.dir) / 2 - (dado.esq + dado.dir) / 2), 'título Dia × dia').toBeLessThanOrEqual(2);
+  // "Onde aparece", "Último uso" e "Lanç.": começam na mesma coluna que o dado
+  const dados = linhaAcad.locator(':scope > span');
+  expect(Math.abs((await x(hd.locator('.c3'))).esq - (await x(dados.nth(3))).esq), 'título Onde aparece × dado').toBeLessThanOrEqual(2);
+  expect(Math.abs((await x(hd.locator('.c4'))).esq - (await x(dados.nth(4))).esq), 'título Último uso × dado').toBeLessThanOrEqual(2);
+  expect(Math.abs((await x(hd.locator('.c5'))).esq - (await x(dados.nth(5))).esq), 'título Lanç. × dado').toBeLessThanOrEqual(2);
+});

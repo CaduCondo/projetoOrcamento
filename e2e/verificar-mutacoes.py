@@ -22,6 +22,7 @@ MUTACOES = [
     ('src/js/68-view-ledger.js', 'const TAG_RE=/#[\\p{L}\\d_]+/gu;', 'const TAG_RE=/#NUNCA_CASA/gu;', 'Tags com #'),
     ('src/js/29-model-recorrentes.js', 'if(ms.length<3)return null;', 'if(ms.length<1)return null;', 'assinatura'),
     ('src/js/29-model-recorrentes.js', 'if(max>min*1.3)return null;', 'if(false)return null;', 'assinatura'),
+    ('src/css/theme.css', '.cr,.cr.hd{grid-template-columns:30px minmax(140px,1fr) 56px 210px 120px 80px;', '.cr{grid-template-columns:30px minmax(140px,1fr) 64px 180px 120px 70px 66px 78px 42px;', 'ficam alinhados'),
     ('src/js/21-model-calc.js', 'const lastActive=y=>{', 'const lastActive0=y=>{', 'perguntas rápidas'),
 ]
 
