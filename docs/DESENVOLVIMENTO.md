@@ -14,12 +14,32 @@ Contas de um ambiente não existem no outro (é preciso criar a conta nos dois).
 
 ## Rotina para criar algo novo
 1. Trabalhar no ramo `dev` (`git switch dev`).
-2. Rodar os testes: `npm test`. Para ver o app: `npm run build:dev` e `npm run serve` (abre em http://localhost:8000).
+2. Rodar os testes: `npm test` (e `npm run e2e` para os de ponta a ponta). Para ver o app: `npm run build:dev` e `npm run serve` (abre em http://localhost:8000).
 3. Enviar ao GitHub (`git push`). Os testes rodam sozinhos; se passarem, o site de **teste** é atualizado.
 4. Conferir em `/dev/`. Estando bom, passar para produção: abrir um *Pull Request* de `dev` para `main` e aprovar.
    Os testes rodam de novo e, se passarem, a **produção** é atualizada.
 
 > O site só é publicado se **todos os testes passarem**. Se algo falhar, o site continua como estava.
+
+## Testes (dois grupos; os dois precisam passar para o site ser publicado)
+| | O que é | Como rodar | Onde ficam |
+|---|---|---|---|
+| **Lógica e telas simuladas** | `npm test` (Node + jsdom): regras de dinheiro, importação, telas num navegador simulado. Mais de 150 testes, rápidos | `npm test` | `tests/` |
+| **Regras de segurança do banco** | emulador do Firebase | `npm run test:rules` | `tests/rules/` |
+| **Ponta a ponta (E2E)** | abre o app **de verdade num Chrome** (Playwright), clica e digita como uma pessoa e confere o resultado final. Cenários em **português (Gherkin/BDD)** | `npm run e2e` e depois `npm run e2e:ver` | `e2e/features` (cenários) · `e2e/steps` (passos) · `e2e/support` |
+
+**Como o E2E evita falso positivo (teste que passa sem testar nada):**
+- Cada cenário começa num navegador novo e com a data fixa em 15/out/2026.
+- Os "Então" conferem o **resultado final** (valores, textos, quantidade de linhas, sinal positivo/negativo) e, nos cenários de gravação, **recarregam a página** para provar que ficou guardado.
+- Qualquer erro de JavaScript ou de console durante um cenário **reprova** o cenário.
+- Sem "tentar de novo" (`retries: 0`): teste instável tem que ser consertado, não escondido.
+- `npm run e2e:ver` reprova se algum cenário foi **pulado**, **esquecido** ou deixou de rodar (compara os `.feature` com o resultado).
+- `python e2e/verificar-mutacoes.py` **estraga o app de propósito** (um defeito por vez) e confere que o cenário correspondente reprova. Rodar de vez em quando e sempre que criar cenário novo. Se aparecer "PERIGO", o teste está fraco.
+- A conta de teste é criada uma vez no começo (`e2e/support/global-setup.js`); o cadastro em si é testado nos dois cenários de `01-conta.feature`.
+
+**Se o E2E falhar no GitHub:** nada é publicado. Abrir a execução na aba *Actions* → baixar o artefato **e2e-falha** (relatório + foto + gravação do passo a passo). Entender o motivo antes de qualquer coisa: se for defeito do app, **corrigir o app** (não o teste); se o teste estiver errado, corrigir o teste e provar com `verificar-mutacoes.py` que ele continua pegando o defeito.
+
+**Fora do E2E (limites honestos):** o login na nuvem (Firebase) e o "Buscar do banco" (Pluggy + Cloudflare) não rodam no E2E, porque dependem de serviços externos. Eles continuam cobertos pelos testes simulados e pelo emulador de regras.
 
 ## Como o código está organizado
 ```

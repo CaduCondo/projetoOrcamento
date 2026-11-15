@@ -2,6 +2,8 @@ name: Testes e publicação
 
 # A cada envio ao GitHub: roda os testes. Se for na main ou na dev e os testes passarem,
 # publica o site: PRODUÇÃO na raiz (branch main) e TESTE em /dev/ (branch dev).
+# São dois grupos de testes: os de lógica/tela simulada ("testes") e os de PONTA A PONTA num Chrome de verdade ("e2e").
+# Se qualquer um falhar, NADA é publicado.
 on:
   push:
     branches: [main, dev]
@@ -33,9 +35,51 @@ jobs:
       - name: Regras de segurança do banco (emulador do Firebase)
         run: npm run test:rules
 
+  e2e:
+    name: Testes de ponta a ponta (Chrome)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - name: Versão do Playwright (para o cache do navegador)
+        id: pw
+        run: echo "versao=$(npx playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: cache-navegador
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.versao }}
+      - name: Instalar o Chrome do Playwright
+        if: steps.cache-navegador.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Instalar só as bibliotecas do sistema (navegador já em cache)
+        if: steps.cache-navegador.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - name: Rodar os cenários (app montado, aberto num Chrome de verdade)
+        run: npm run e2e
+      - name: Conferir que nenhum cenário foi pulado ou esquecido
+        run: npm run e2e:ver
+      - name: Guardar relatório e fotos da falha
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-falha
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
   publicar:
     name: Publicar site
-    needs: testes
+    needs: [testes, e2e]
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
     runs-on: ubuntu-latest
     permissions:

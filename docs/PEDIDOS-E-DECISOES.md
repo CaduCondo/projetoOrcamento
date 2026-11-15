@@ -209,6 +209,13 @@ Pedido: aproveitar o que o outro app faz bem (categoria como etiqueta em cada la
 - **Zerar meus dados** (Ajustes, só em dev/local; pede para digitar APAGAR). Não existe em produção.
 - Ainda não feito: **subcategorias** (mudança grande no modelo; combinar antes).
 
+### 5.23 Testes de ponta a ponta (E2E) como trava de publicação (nov/2026)
+Pedido do dono: testes funcionais E2E de cada funcionalidade, **sem falso positivo**, validando o resultado final, rodando no GitHub Actions; se der erro, **o sistema não sobe** e o erro só é "liberado" depois de entendido (defeito do app = corrigir o app).
+- **Playwright + playwright-bdd**, cenários em **português (Gherkin)** em `e2e/features` (27 cenários: conta/login, categorias, tela do mês, importação OFX de conta e fatura, parcelas, lançamentos, automações, tags, carteira, recorrentes, perguntas rápidas, backup/zerar, tabela sem corte em 1280/800/390 px).
+- Trava no GitHub: job `e2e` em `.github/workflows/ci-deploy.yml`; o job `publicar` só roda se `testes` **e** `e2e` passarem. Em falha, o relatório/foto/trace sobem como artefato `e2e-falha`.
+- Anti-falso-positivo: data fixa, navegador novo por cenário, erro de console reprova, sem retry, recarregar a página para provar gravação, `e2e:ver` (nada pulado/esquecido) e `e2e/verificar-mutacoes.py` (estraga o app de propósito e exige que o teste reprove). Na primeira rodada essa verificação achou 3 testes fracos (saldo negativo passava; mudar só o dia passava mesmo com a "versão" antiga escondida pela lista; recorrente só era barrada por uma regra) e eles foram reforçados.
+- Limite: Firebase na nuvem e Pluggy/Cloudflare não entram no E2E (serviço externo). Para o merge ficar **impossível** com E2E vermelho, ativar no GitHub: Settings → Branches → regra para `main` exigindo os checks "Testes" e "Testes de ponta a ponta (Chrome)".
+
 ## 6. Princípios que combinamos
 - **Privacidade primeiro:** planilhas, backups e dados pessoais **nunca** vão para o GitHub (repositório público).
 - **Honestidade com o usuário:** o que a tela promete é o que o sistema faz.
