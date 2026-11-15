@@ -10,6 +10,7 @@ async function carteira(page, tipo, valor, desc) {
   await irPara(page, 'patrimônio');
   await page.click(`[data-cart="${tipo}"]`);
   await expect(page.locator('#cartf')).toBeVisible();
+  await expect(page.locator('#cartv')).toBeFocused();
   await digitarValor(page.locator('#cartv'), valor); await page.fill('#cartd', desc);
   await page.locator('#cartf').getByRole('button', { name: 'Salvar' }).click();
   await expect(page.locator('#dlg3')).not.toBeVisible();

@@ -7,6 +7,7 @@ const { irPara } = require('../support/ui');
 async function criarCategoria(page, tipo, nome, dia) {
   await irPara(page, 'categorias');
   await page.click(`[data-newcat="${tipo}"]`);
+  await expect(page.locator('#cfn')).toBeFocused();
   await page.fill('#cfn', nome);
   if (dia) await page.fill('#cfd', String(dia));
   await page.locator('#cf').getByRole('button', { name: 'Criar' }).click();
@@ -20,6 +21,7 @@ Given('que criei a categoria de receita {string}', async ({ page }, nome) => { a
 When('crio a categoria de despesa {string} com o dia {int}', async ({ page }, nome, dia) => { await criarCategoria(page, 'pagar', nome, dia); });
 When('crio a categoria de despesa {string} com o dia {int} e o ícone {string}', async ({ page }, nome, dia, ico) => {
   await irPara(page, 'categorias'); await page.click('[data-newcat="pagar"]');
+  await expect(page.locator('#cfn')).toBeFocused();
   await page.fill('#cfn', nome); await page.fill('#cfd', String(dia)); await page.click(`[data-pico="${ico}"]`);
   await page.locator('#cf').getByRole('button', { name: 'Criar' }).click(); await expect(page.locator('#dlg3')).not.toBeVisible();
 });

@@ -17,6 +17,7 @@ async function incluirNoMes(page, nome, tipo) {
   if (await linhaMes(page, nome).count()) return;
   for (const t of tipo ? [tipo] : ['pagar', 'receber']) {
     await page.click(`[data-usecat="${t}"]`);
+    await expect(page.locator('#ufq')).toBeFocused();
     await page.fill('#ufq', nome);
     const opcao = page.locator('[data-upick]', { hasText: nome }).first();
     if (await opcao.count()) { await opcao.click(); await expect(linhaMes(page, nome)).toHaveCount(1); return; }
@@ -27,6 +28,7 @@ async function incluirNoMes(page, nome, tipo) {
 async function lancar(page, nome, desc, valor, pago) {
   await linhaMes(page, nome).locator('.val').click();
   await expect(page.locator('#dlg')).toBeVisible();
+  await expect(page.locator('#nv')).toBeFocused();            // espera o app terminar de focar o valor (senão o texto pode cair no campo errado)
   await page.fill('#nd', desc); await digitarValor(page.locator('#nv'), valor);
   await page.locator('#nk').setChecked(pago);
   await page.click('[data-add]');

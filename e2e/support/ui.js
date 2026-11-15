@@ -55,6 +55,7 @@ async function novoLancamento(page, desc, valor, dia, cat, emDinheiro = false) {
   await irPara(page, 'mês'); await alternarVisao(page, 'lanc');
   await page.click('[data-lnew]');
   await expect(page.locator('#lf2')).toBeVisible();
+  await expect(page.locator('#liv')).toBeFocused();            // espera o app terminar de focar o valor (senão o texto pode cair no campo errado)
   await page.fill('#lid', desc); await digitarValor(page.locator('#liv'), valor); await page.fill('#lia', String(dia));
   await escolherCategoria(page, 'lic', cat);
   if (emDinheiro) await ligar(page, '#lcart');
