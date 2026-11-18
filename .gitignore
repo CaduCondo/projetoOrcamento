@@ -8,3 +8,10 @@ orcamento-backup*.json
 dist/
 node_modules/
 pluggy-teste*.json
+
+# testes E2E (gerados a cada execução)
+e2e/.features-gen/
+e2e/resultado.json
+test-results/
+playwright-report/
+e2e/.estado/

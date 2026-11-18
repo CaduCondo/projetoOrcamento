@@ -1,0 +1,15 @@
+import { chromium } from '@playwright/test';
+import http from 'node:http'; import fs from 'node:fs';
+const srv = http.createServer((q,r)=>{r.setHeader('content-type','text/html');r.end(fs.readFileSync('dist/e2e/index.html'))}).listen(4199);
+const b = await chromium.launch(); const p = await b.newPage({viewport:{width:1280,height:900}});
+p.on('console',m=>console.log('CONSOLE',m.type(),m.text().slice(0,150))); p.on('pageerror',e=>console.log('PAGEERR',e.message));
+await p.addInitScript(()=>{window.__noTour=true});
+await p.goto('http://localhost:4199/');
+console.log(await p.locator('body').innerText().then(t=>t.slice(0,300)));
+await p.click('[data-lm="up"]'); await p.fill('#lem','a@b.com'); await p.fill('#lpw','Segredo#123'); await p.fill('#lpw2','Segredo#123');
+await p.screenshot({path:'e2e/_a.png'});
+await p.click('#lf button[type=submit], #lf .btn');
+await p.waitForTimeout(1500);
+console.log(await p.locator('body').innerText().then(t=>t.slice(0,500)));
+await p.screenshot({path:'e2e/_b.png'});
+await b.close(); srv.close();
