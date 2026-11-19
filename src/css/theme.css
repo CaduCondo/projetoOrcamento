@@ -275,6 +275,8 @@ body.touring{overflow:hidden}
 .immap{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;border:1px solid var(--line2);border-radius:14px;padding:10px 12px;margin:8px 0}
 .immap .f{margin:0;min-width:120px;flex:1}.imk{gap:14px}
 .vig:empty{display:none}
+.cr .vig:empty{display:block;visibility:hidden}   /* na lista de categorias a coluna vazia mantém o lugar, senão as colunas seguintes deslizam para baixo do título errado */
+@media(max-width:760px){.cr .vig:empty{display:none}}
 /* registro de erros (administrador) */
 .errlist{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 .erow{border:1px solid var(--line2);border-radius:14px;padding:10px 12px;background:var(--glass)}

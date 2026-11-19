@@ -78,18 +78,17 @@ Then('a categoria {string} aparece na lista com a cor {string}', async ({ page }
 });
 Then('os títulos da lista de categorias estão alinhados com os dados das linhas', async ({ page }) => {
   await irPara(page, 'categorias');
-  await expect(linha(page, 'Academia')).toHaveCount(1);
   const x = async (loc) => { const b = await loc.boundingBox(); return { esq: b.x, dir: b.x + b.width }; };
   const hd = page.locator('#cl .cr.hd');
-  const linhaAcad = linha(page, 'Academia');
-  // "Nome": título e texto do nome começam na mesma coluna
-  expect(Math.abs((await x(hd.locator('.c1'))).esq - (await x(linhaAcad.locator('.cn'))).esq), 'título Nome × nome').toBeLessThanOrEqual(2);
-  // "Dia": a coluna do título e a do número têm o mesmo centro
-  const [hdDia, dado] = [await x(hd.locator('.c2')), await x(linhaAcad.locator('.cd'))];
-  expect(Math.abs((hdDia.esq + hdDia.dir) / 2 - (dado.esq + dado.dir) / 2), 'título Dia × dia').toBeLessThanOrEqual(2);
-  // "Onde aparece", "Último uso" e "Lanç.": começam na mesma coluna que o dado
-  const dados = linhaAcad.locator(':scope > span');
-  expect(Math.abs((await x(hd.locator('.c3'))).esq - (await x(dados.nth(3))).esq), 'título Onde aparece × dado').toBeLessThanOrEqual(2);
-  expect(Math.abs((await x(hd.locator('.c4'))).esq - (await x(dados.nth(4))).esq), 'título Último uso × dado').toBeLessThanOrEqual(2);
-  expect(Math.abs((await x(hd.locator('.c5'))).esq - (await x(dados.nth(5))).esq), 'título Lanç. × dado').toBeLessThanOrEqual(2);
+  // "Academia" tem texto em "Onde aparece"; "Mercado" (categoria básica) NÃO tem: nas duas as colunas têm que ficar sob o mesmo título
+  for (const nome of ['Academia', 'Mercado']) {
+    const lin = linha(page, nome); await expect(lin).toHaveCount(1);
+    const dados = lin.locator(':scope > span');
+    expect(Math.abs((await x(hd.locator('.c1'))).esq - (await x(lin.locator('.cn'))).esq), `título Nome × nome (${nome})`).toBeLessThanOrEqual(2);
+    const [hdDia, dia] = [await x(hd.locator('.c2')), await x(lin.locator('.cd'))];
+    expect(Math.abs((hdDia.esq + hdDia.dir) / 2 - (dia.esq + dia.dir) / 2), `título Dia × dia (${nome})`).toBeLessThanOrEqual(2);
+    for (const i of [3, 4, 5]) {
+      expect(Math.abs((await x(hd.locator('.c' + i))).esq - (await x(dados.nth(i))).esq), `título da coluna ${i} × dado (${nome})`).toBeLessThanOrEqual(2);
+    }
+  }
 });
