@@ -22,7 +22,7 @@ When('crio a categoria de despesa {string} com o dia {int}', async ({ page }, no
 When('crio a categoria de despesa {string} com o dia {int} e o ícone {string}', async ({ page }, nome, dia, ico) => {
   await irPara(page, 'categorias'); await page.click('[data-newcat="pagar"]');
   await expect(page.locator('#cfn')).toBeFocused();
-  await page.fill('#cfn', nome); await page.fill('#cfd', String(dia)); await page.click(`[data-pico="${ico}"]`);
+  await page.fill('#cfn', nome); await page.fill('#cfd', String(dia)); await page.locator('#cf .cfvd > summary').click(); await page.click(`[data-pico="${ico}"]`);
   await page.locator('#cf').getByRole('button', { name: 'Criar' }).click(); await expect(page.locator('#dlg3')).not.toBeVisible();
 });
 When('mudo o dia da categoria {string} para {int}', async ({ page }, nome, dia) => {
@@ -67,7 +67,7 @@ Then('no mês de {string} a categoria {string} também mostra o dia {int} na tel
 When('crio a categoria de despesa {string} com o ícone {string} e a cor {string}', async ({ page }, nome, ico, cor) => {
   await irPara(page, 'categorias'); await page.click('[data-newcat="pagar"]');
   await expect(page.locator('#cfn')).toBeFocused();
-  await page.fill('#cfn', nome); await page.click(`[data-pico="${ico}"]`); await page.click(`[data-pcor="${cor}"]`);
+  await page.fill('#cfn', nome); await page.locator('#cf .cfvd > summary').click(); await page.click(`[data-pico="${ico}"]`); await page.click(`[data-pcor="${cor}"]`);
   await page.locator('#cf').getByRole('button', { name: 'Criar' }).click(); await expect(page.locator('#dlg3')).not.toBeVisible();
 });
 Then('a categoria {string} aparece na lista com a cor {string}', async ({ page }, nome, cor) => {
@@ -90,5 +90,29 @@ Then('os títulos da lista de categorias estão alinhados com os dados das linha
     for (const i of [3, 4, 5]) {
       expect(Math.abs((await x(hd.locator('.c' + i))).esq - (await x(dados.nth(i))).esq), `título da coluna ${i} × dado (${nome})`).toBeLessThanOrEqual(2);
     }
+  }
+});
+
+When('viro a categoria {string} em lançamento da categoria {string}', async ({ page }, origem, destino) => {
+  await irPara(page, 'categorias'); await linha(page, origem).click();
+  await expect(page.locator('#cf')).toBeVisible();
+  await page.locator('#cf [data-cturn]').click();
+  await expect(page.locator('#dlg2')).toBeVisible();
+  await expect(page.locator('#mgin')).toBeFocused();
+  await page.fill('#mgin', destino);
+  await page.locator('#dlg2 [data-pick]', { hasText: destino }).first().click();
+  await expect(page.locator('#mgsum')).toContainText(destino);          // a janela mostra o que vai acontecer antes de confirmar
+  await page.click('#mgok');
+  await expect(page.locator('#dlg2')).not.toBeVisible();
+});
+
+When('abro a janela da categoria {string}', async ({ page }, nome) => { await irPara(page, 'categorias'); await linha(page, nome).click(); await expect(page.locator('#cf')).toBeVisible(); });
+Then('os botões Mesclar, Virar lançamento e Excluir estão à vista sem precisar rolar a janela', async ({ page }) => {
+  const area = await page.locator('#cf .db').boundingBox();
+  for (const seletor of ['[data-cmerge]', '[data-cturn]', '[data-cdel]']) {
+    const b = await page.locator('#cf ' + seletor).boundingBox();
+    expect(b, `botão ${seletor} precisa existir`).not.toBeNull();
+    expect(b.y, `${seletor} começa dentro da área visível`).toBeGreaterThanOrEqual(area.y - 1);
+    expect(b.y + b.height, `${seletor} termina dentro da área visível (sem rolar)`).toBeLessThanOrEqual(area.y + area.height + 1);
   }
 });

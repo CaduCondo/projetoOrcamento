@@ -23,6 +23,9 @@ MUTACOES = [
     ('src/js/29-model-recorrentes.js', 'if(ms.length<3)return null;', 'if(ms.length<1)return null;', 'assinatura'),
     ('src/js/29-model-recorrentes.js', 'if(max>min*1.3)return null;', 'if(false)return null;', 'assinatura'),
     ('src/css/theme.css', '.cr,.cr.hd{grid-template-columns:30px minmax(140px,1fr) 56px 210px 120px 80px;', '.cr{grid-template-columns:30px minmax(140px,1fr) 64px 180px 120px 70px 66px 78px 42px;', 'ficam alinhados'),
+    ('src/js/22-model-categories.js', 'if(novos.length){ens(dstId,y,m)', 'if(novos.length){ens(dstId,y,0)', 'Virar lançamento'),
+    ('src/js/22-model-categories.js', 'S.cats=S.cats.filter(c=>!vs.some(v=>v.id===c.id));', '', 'Virar lançamento'),
+    ('src/js/63-ui-category-dialog.js', '<details class="f cfvd">', '<details class="f cfvd" open>', 'à vista'),
     ('src/js/21-model-calc.js', 'const lastActive=y=>{', 'const lastActive0=y=>{', 'perguntas rápidas'),
 ]
 

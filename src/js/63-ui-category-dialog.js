@@ -17,10 +17,10 @@ const CategoryDialog={
       <label class="f">Nome *<input id="cfn" maxlength="60" autocomplete="off" value="${esc(v.nome)}" placeholder="${pagar?'ex.: Aluguel':'ex.: Salário'}"></label>
       <label class="f"><span>Dia do mês (opcional) <span class="info" title="${dica}">ⓘ</span></span><input id="cfd" type="number" min="1" max="31" inputmode="numeric" value="${v.dia}" placeholder="1 a 31"></label>
       <label class="switch"><input type="checkbox" id="cff" ${v.fixa?'checked':''}><span class="sw"></span><span><b>Fixa — aparece todo mês</b><br><span class="sub">Ex.: aluguel, salário. Desligada: aparece só quando você inclui no mês ou quando tem lançamento.</span></span></label>
-      <div class="f"><span>Ícone e cor <span class="sub">(só enfeite, para achar a categoria de relance)</span></span><div id="cfvis">${this.visual()}</div></div>
+      <details class="f cfvd"><summary><span id="cfsb">${catBadge({tipo:this.tipo,ico:this.ico,cor:this.cor,nome:v.nome})}</span> Ícone e cor <span class="sub">(só enfeite) — toque para escolher</span></summary><div id="cfvis">${this.visual()}</div></details>
       ${novo?'':`<div class="note" id="cfnote">✏️ O <b>dia</b> vale para todos os meses. Se mudar o <b>nome</b>, ele vale de <b>${MESES[m].toLowerCase()}/${y}</b> em diante e os meses anteriores continuam com o nome antigo.</div>`}
       <div class="err" id="cferr" role="alert"></div>
-      ${novo?'':`<div class="row cfx"><button type="button" class="btn sec sm" data-cmerge="${c.id}" title="Juntar os lançamentos desta categoria com outra">🔀 Mesclar com outra…</button><button type="button" class="btn dan sm" data-cdel="${c.id}">🗑 Excluir</button></div>`}
+      ${novo?'':`<div class="row cfx"><button type="button" class="btn sec sm" data-cmerge="${c.id}" title="Juntar os lançamentos desta categoria com outra">🔀 Mesclar com outra…</button><button type="button" class="btn sec sm" data-cturn="${c.id}" title="A categoria some e cada valor dela vira um lançamento de outra categoria, no mesmo mês">↪ Virar lançamento de outra categoria…</button><button type="button" class="btn dan sm" data-cdel="${c.id}">🗑 Excluir</button></div>`}
      </div>
      <div class="df"><button type="button" class="btn dan" data-cclose>Cancelar</button><button class="btn">${novo?'Criar':'Salvar'}</button></div></form>`},
   /* escolha de ícone e cor: botões pequenos; clicar de novo no que está marcado desmarca (volta ao automático) */
@@ -28,7 +28,7 @@ const CategoryDialog={
     return `<div class="picker">${ICONES.map(x=>`<button type="button" class="pk ${x===i?'on':''}" data-pico="${x}" aria-label="ícone ${x}">${x}</button>`).join('')}</div>
      <div class="picker">${CORES.map(x=>`<button type="button" class="pk cor ${x===c?'on':''}" data-pcor="${x}" style="background:${x}" aria-label="cor ${x}"></button>`).join('')}</div>
      <div class="sub">${i||c?`Escolhido: ${catBadge({tipo:this.tipo,ico:i,cor:c,nome:el('cfn')?.value||''})}`:`Automático${sug?`: ${sug} pelo nome`:''}`}</div>`},
-  pick(k,v){this[k]=this[k]===v?'':v;el("cfvis").innerHTML=this.visual()},
+  pick(k,v){this[k]=this[k]===v?'':v;el("cfvis").innerHTML=this.visual();el("cfsb").innerHTML=catBadge({tipo:this.tipo,ico:this.ico,cor:this.cor,nome:el('cfn')?.value||''})},
   submit(){const err=t=>{el('cferr').textContent=t},input={nome:el('cfn').value,dia:el('cfd').value},fixa=el('cff').checked,[y,m]=hojeYM();
     let msg='';
     try{
@@ -48,6 +48,7 @@ dlg3.addEventListener('click',e=>{const t=e.target;let b;
   else if(b=t.closest('[data-pcor]'))CategoryDialog.pick('cor',b.dataset.pcor);
   else if(t.closest('[data-cclose]')||t===dlg3)dlg3.close();
   else if(b=t.closest('#cf [data-cmerge]')){const id=b.dataset.cmerge;dlg3.close();MergeDialog.open(id)}
+  else if(b=t.closest('#cf [data-cturn]')){const id=b.dataset.cturn;dlg3.close();MergeDialog.open(id,'virar')}
   else if(b=t.closest('#cf [data-cdel]')){const id=b.dataset.cdel;dlg3.close();confirmDeleteCat(id)}});
 dlg3.addEventListener('submit',e=>{if(e.target.id!=='cf')return;e.preventDefault();CategoryDialog.submit()});
 dlg3.addEventListener('close',()=>render());
