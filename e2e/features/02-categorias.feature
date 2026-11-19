@@ -56,3 +56,23 @@ Funcionalidade: Categorias
     E que criei a categoria de despesa "Academia" com o dia 10
     E que criei a categoria de receita "Freelance"
     Então os títulos da lista de categorias estão alinhados com os dados das linhas
+
+  Cenário: Virar lançamento de outra categoria leva cada valor para o mesmo mês da categoria escolhida
+    Dado que tenho uma conta nova e vazia
+    E que criei a categoria de despesa "Documentos carro"
+    E que criei a categoria de despesa "IPVA"
+    E que lancei "Parcela 1" de "200,00" na categoria "IPVA" no mês de "Setembro"
+    Quando viro a categoria "IPVA" em lançamento da categoria "Documentos carro"
+    Então a categoria "IPVA" não está mais na lista de categorias
+    E no mês de "Setembro" a categoria "Documentos carro" mostra o valor "200,00"
+    Quando abro a categoria "Documentos carro" do mês de "Setembro"
+    Então o item "IPVA - Parcela 1" continua na janela da categoria
+    Quando recarrego a página
+    E abro a categoria "Documentos carro" do mês de "Setembro"
+    Então o item "IPVA - Parcela 1" continua na janela da categoria
+
+  Cenário: Na janela da categoria os botões de ação ficam à vista, sem rolar
+    Dado que tenho uma conta nova e vazia
+    E que criei a categoria de despesa "IPVA"
+    Quando abro a janela da categoria "IPVA"
+    Então os botões Mesclar, Virar lançamento e Excluir estão à vista sem precisar rolar a janela

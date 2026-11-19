@@ -169,3 +169,69 @@ test('recorrentes: despesa que repete em 3+ meses com valor parecido; ignora par
   assert.deepEqual(plain(r.map(x => x.txt)), ['netflix']);
   assert.equal(r[0].v, 39.9); assert.equal(r[0].noMes, true); assert.ok(r[0].n >= 4);
 });
+
+/* ---- Virar lançamento: a categoria vira lançamentos de outra, no mesmo mês ---- */
+function docs() {
+  fresh();
+  const dst = m.addCat('pagar', 'Documentos carro'), ipva = m.addCat('pagar', 'IPVA'), lic = m.addCat('pagar', 'Licenciamento');
+  m.ens(ipva.id, 2017, 3).items.push({ v: 200, d: '', ok: true });
+  m.ens(ipva.id, 2018, 3).items.push({ v: 200, d: 'parcela 1', ok: true }, { v: 50, d: 'IPVA multa', ok: false });
+  m.ens(lic.id, 2017, 9).items.push({ v: 150, d: 'Licenciamento', ok: true });
+  m.ens(dst.id, 2018, 3).items.push({ v: 100, d: 'Seguro', ok: true });
+  return { dst, ipva, lic };
+}
+
+test('virar lançamento: cada valor vai para o MESMO mês da outra categoria e a antiga some', () => {
+  const { dst, ipva } = docs();
+  const n = m.virarLancamento(ipva.id, dst.id);
+  assert.equal(n, 3);
+  assert.equal(m.catById(ipva.id), undefined, 'a categoria antiga deixa de existir');
+  assert.deepEqual(plain(m.cellOf(dst.id, 2017, 3).items), [{ v: 200, d: 'IPVA', ok: true }]);          // sem descrição: vira o nome da categoria
+  assert.deepEqual(plain(m.cellOf(dst.id, 2018, 3).items).map(i => [i.v, i.d, i.ok]),
+    [[100, 'Seguro', true], [200, 'IPVA - parcela 1', true], [50, 'IPVA multa', false]]);               // mantém o que já estava e o "previsto"
+  assert.equal(Object.keys(m.S.data).some(k => k.startsWith(ipva.id + '|')), false, 'nada fica para trás');
+});
+
+test('virar lançamento: o total do mês da categoria escolhida soma o que veio, e o dos outros meses não muda', () => {
+  const { dst, ipva, lic } = docs();
+  const antes = m.MT('pagar', 2017, 9, 'prev'), total2018 = m.MT('pagar', 2018, 3, 'prev');
+  m.virarLancamento(ipva.id, dst.id);
+  assert.equal(m.V(dst.id, 2017, 3, 'real'), 200);
+  assert.equal(m.MT('pagar', 2018, 3, 'prev'), total2018, 'o total geral do mês não muda: só trocou de categoria');
+  assert.equal(m.MT('pagar', 2017, 9, 'prev'), antes, 'outro mês e outra categoria: intactos');
+  assert.ok(m.catById(lic.id));
+});
+
+test('virar lançamento: exemplos mostrados antes de confirmar, em ordem de data', () => {
+  const { ipva } = docs();
+  const l = plain(m.lancamentosParaVirar(ipva.id));
+  assert.deepEqual(l.map(i => [i.y, i.m, i.v, i.d]), [[2017, 3, 200, 'IPVA'], [2018, 3, 200, 'IPVA - parcela 1'], [2018, 3, 50, 'IPVA multa']]);
+  assert.ok(m.catById(ipva.id), 'só mostrar não muda nada');
+});
+
+test('virar lançamento: recusa tipo diferente, a mesma categoria e a própria versão antiga', () => {
+  const { dst, ipva } = docs();
+  const rec = m.addCat('receber', 'Salário X');
+  assert.throws(() => m.virarLancamento(ipva.id, rec.id), /mesmo tipo/);
+  assert.throws(() => m.virarLancamento(ipva.id, ipva.id), /outra categoria/);
+  const v2 = m.addCat('pagar', 'IPVA novo'); v2.prevId = ipva.id;
+  assert.throws(() => m.virarLancamento(v2.id, ipva.id), /outra categoria/, 'a versão antiga faz parte da mesma categoria');
+  assert.ok(m.catById(ipva.id) && m.catById(dst.id));
+});
+
+test('virar lançamento: leva junto o histórico de nomes antigos, cada mês com o nome que tinha', () => {
+  const { dst } = docs();
+  const velha = m.addCat('pagar', 'DPVAT'); m.ens(velha.id, 2017, 3).items.push({ v: 400, d: '', ok: true });
+  const atual = m.addCat('pagar', 'Seguro obrigatório'); atual.prevId = velha.id; m.ens(atual.id, 2019, 3).items.push({ v: 420, d: '', ok: true });
+  m.virarLancamento(atual.id, dst.id);
+  assert.deepEqual(plain(m.cellOf(dst.id, 2017, 3).items).map(i => i.d), ['DPVAT']);
+  assert.deepEqual(plain(m.cellOf(dst.id, 2019, 3).items).map(i => i.d), ['Seguro obrigatório']);
+  assert.equal(m.catById(velha.id), undefined); assert.equal(m.catById(atual.id), undefined);
+});
+
+test('virar lançamento: regras de importação que levavam para a categoria antiga passam a levar para a nova', () => {
+  const { dst, ipva } = docs();
+  m.addAuto('detran ipva', 'pagar', 'IPVA');
+  m.virarLancamento(ipva.id, dst.id);
+  assert.equal(m.autoFor('DETRAN IPVA 03/10', 'pagar').nome, 'Documentos carro');
+});

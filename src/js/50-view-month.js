@@ -2,7 +2,7 @@
    Cada bloco tem o botão "＋ Categoria", que INCLUI neste mês uma categoria que já existe (criar, editar e excluir ficam na página Categorias). */
 function sumBadge(c,y,m){const its=cellOf(c.id,y,m)?.items||[];if(!its.length)return'';const w=its.some(i=>/sem detalhe/.test(i.d));
   const cc=its.some(i=>i.info)?' <span title="Tem valor já incluso na fatura do cartão (não soma)">💳</span>':'';
-  return `${its.length>1?'':`<span class="sub">${esc(its[0].d)}</span>`}${cc}${w?' <span class="warn" title="A anotação antiga não batia com o total — revise">⚠</span>':''}`}
+  return `${its.length>1||normName(its[0].d||'')===normName(c.nome)?'':`<span class="sub">${esc(its[0].d)}</span>`}${cc}${w?' <span class="warn" title="A anotação antiga não batia com o total — revise">⚠</span>':''}`}
 /* ordem das linhas: clique no título da coluna (1º clique crescente, 2º decrescente, 3º volta à ordem manual; ao abrir a tela já vem por Dia). Cada bloco tem a sua. */
 const mesSort={receber:{col:'dia',dir:1},pagar:{col:'dia',dir:1}};      // ao abrir: pela coluna Dia
 /* m = null: tela Ano (o valor é o total do ano) */

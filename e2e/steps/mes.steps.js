@@ -63,3 +63,6 @@ Then('a categoria {string} mostra o previsto {string} na tabela do mês', async 
 Then('o item {string} continua na janela da categoria', async ({ page }, desc) => { await expect(page.locator(`#dlg input[data-id][value="${desc}"]`)).toHaveCount(1); });
 Then('a janela da categoria não tem mais itens', async ({ page }) => { await expect(page.locator('#dlg .item input[data-id]')).toHaveCount(0); await expect(page.locator('#dlg')).toContainText('Nenhum item ainda'); await page.click('#dlg [data-close]'); });
 Then('o resumo do mês mostra {string} com {string}', async ({ page }, rotulo, valor) => { await irParaMes(page); await expect(page.locator('.resumo .rb', { hasText: rotulo })).toContainText(valor); });
+
+When('abro a categoria {string} do mês de {string}', async ({ page }, nome, mes) => { await irParaMes(page, mes); await linhaMes(page, nome).locator('.val').click(); await expect(page.locator('#dlg')).toBeVisible(); });
+Then('no mês de {string} a categoria {string} mostra o valor {string}', async ({ page }, mes, nome, valor) => { await irParaMes(page, mes); await expect(linhaMes(page, nome).locator('td.n .val')).toContainText(valor); });
