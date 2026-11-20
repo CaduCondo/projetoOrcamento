@@ -1,0 +1,96 @@
+# Meu Orçamento — como trabalhamos (leia antes de mexer em qualquer coisa)
+
+App de orçamento pessoal em **um único HTML**, montado por `build.py` a partir de `src/`.
+Repositório (público): https://github.com/CaduCondo/projetoOrcamento · pasta local: `C:\Users\debor\Documents\automacao\projetoOrcamento`.
+
+## Quem é o dono e como falar com ele
+- **Cadu não é de TI.** Responder sempre em **português simples**, sem jargão, **um passo pequeno de cada vez**, com links clicáveis quando ele precisar fazer algo (GitHub, Firebase, Cloudflare...).
+- **Usabilidade acima de tudo:** o app tem que ficar cada vez mais fácil de usar. Antes de criar tela ou botão, pensar: "uma pessoa sem treino entende isso sozinha?".
+- **Custo do app: R$ 0** (GitHub Pages + Firebase gratuito). Nada que gere cobrança sem ele aprovar.
+- **Dados pessoais nunca vão para o repositório** (ele é público): planilhas (`*.xlsx`, `*.xls`), backups, `tools/planilha/saida/`, `orcamento-carga/` ficam no `.gitignore`. Exemplos e testes usam **dados inventados**.
+- **Nunca apagar dados dele por ele.** Para zerar dados de teste existe o botão "🧹 Zerar meus dados" (só dev/local): deixar para ele clicar.
+- Ser honesto no relato: se um teste falhou ou um passo foi pulado, dizer. Quando está pronto e verificado, dizer sem rodeio.
+
+## O processo, do pedido até a produção
+
+### 1. Toda ideia, melhoria ou bug vira uma issue no quadro (Kanban) do GitHub
+Antes de escrever código, **registrar** o pedido: https://github.com/CaduCondo/projetoOrcamento/issues (regras completas em `docs/KANBAN.md`).
+
+| Tipo | Etiquetas |
+|---|---|
+| Ideia / melhoria / feature | `enhancement` |
+| Defeito | `bug` (com passos para reproduzir, o que era esperado e o que aconteceu) |
+| Grupo de tarefas | `epic` (lista `- [ ] #N`) |
+| Área | `categorias`, `mobile`, `perfil`, `armazenamento`, `admin`, `privacidade`, `qualidade`, `documentation` |
+| Prioridade | `P0` urgente (para tudo) · `P1` alta · `P2` média · `P3` baixa |
+| **Coluna do quadro** | `backlog` (registrado) → `wip` (em andamento) → `done` (pronto, issue fechada) |
+
+Comandos (o `gh` já está logado como CaduCondo):
+```bash
+gh issue create --title "..." --label enhancement --label backlog --label P2 --body "Pedido do dono... Pronto quando: - [ ] ..."
+gh issue edit N --remove-label backlog --add-label wip        # ao começar
+gh issue edit N --remove-label wip --add-label done && gh issue close N   # ao terminar (testes verdes e conferido no dev)
+gh issue list --label wip   # ver o quadro por coluna
+```
+- Escrever o pedido **com as palavras do Cadu** e uma lista "Pronto quando" (critérios de aceite). Modelos em `.github/ISSUE_TEMPLATE/`.
+- Mencionar `#N` nas mensagens de commit.
+- Bug achado pelos testes ou pelo dono: abrir a issue **antes** de corrigir.
+- **Quadro de colunas (GitHub Projects):** ainda não ligado. Exige uma vez o Cadu rodar `gh auth refresh -s project -h github.com` (abre o navegador). Até lá, as etiquetas `backlog/wip/done` fazem o papel das colunas.
+- Manter o quadro limpo: issue pronta = `done` + fechada. (Há issues antigas ainda marcadas `wip` que já foram entregues: conferir e fechar quando for mexer nelas.)
+
+### 2. Desenvolver sempre na branch `dev`
+- Nunca commitar direto na `main`. Branch: `dev`. Mensagens de commit em português, curtas, dizendo o que mudou para o usuário.
+- Fluxo de uma tarefa: issue → `wip` → código → **testes** → push em `dev` → CI → conferir em `/dev/` → PR → produção → `done`.
+
+### 3. Testes: três camadas, todas obrigatórias
+| Camada | Comando | Para quê |
+|---|---|---|
+| Lógica (Node + jsdom) | `npm test` (hoje ~167) | regras de dinheiro, categorias, importação; toda regra nova ganha teste em `tests/` |
+| Regras do banco | `npm run test:rules` | emulador do Firebase |
+| Ponta a ponta (Chrome de verdade) | `python build.py --env local --out dist/e2e/index.html`, depois `npm run e2e` e `npm run e2e:ver` | cenários em **português (Gherkin)** em `e2e/features`, passos em `e2e/steps` |
+| Prova de que o teste presta | `python e2e/verificar-mutacoes.py [filtro]` | estraga o app de propósito; se aparecer **PERIGO**, o teste está fraco e precisa ser reforçado |
+
+Regras dos testes E2E (as do dono):
+- **Sem falso positivo:** conferir o resultado final (valor, sinal, texto) e **recarregar a página** nos cenários que gravam. Sem `retries`. Erro de console reprova.
+- Toda feature/bug novo: **cenário E2E novo** + entrada nova em `verificar-mutacoes.py` (uma por comportamento importante). Rodar a mutação e ver "OK: o teste reprovou".
+- Esperar o autofoco do app (`await expect(...).toBeFocused()`) antes de digitar em diálogos.
+- Conta nova já vem com 9 categorias padrão (Salário, Mercado...): não criar categoria com esses nomes nos testes.
+- Teste que falha no CI: **entender a causa** antes de qualquer coisa. Defeito do app → corrigir o app. Teste errado → corrigir o teste e provar por mutação. Nunca "tentar de novo" para esconder.
+
+### 4. Ambientes
+| | PRODUÇÃO | TESTE / DEV |
+|---|---|---|
+| Endereço | https://caducondo.github.io/projetoOrcamento/ | https://caducondo.github.io/projetoOrcamento/dev/ |
+| Branch | `main` | `dev` |
+| Firebase | `gerenciarorcamento` | `gerenciarorcamento-dev` (banco separado) |
+
+CI (`.github/workflows/ci-deploy.yml`): jobs `testes` + `e2e` → só então `publicar` (GitHub Pages). Push em `dev` publica o `/dev/`; merge em `main` publica a produção. Se algo falha, o site continua como estava.
+
+### 5. Passar para produção (PR dev → main)
+1. `git push` em `dev`, esperar o CI ficar verde (`gh pr checks N --watch`).
+2. Abrir o PR: `gh pr create --base main --head dev --title "..." --body "..."` (descrever em português o que muda para o usuário; terminar o corpo com a linha de atribuição do Claude Code).
+3. **O merge é feito pelo Cadu** (botão "Merge pull request" → "Confirm merge"). A `main` está protegida: exige os checks "Testes" e "Testes de ponta a ponta (Chrome)", vale para admin, sem force push/exclusão. O bloqueio automático já negou um merge feito por mim: não contornar, pedir para ele clicar.
+4. Depois do merge: esperar o "Publicar site" terminar e conferir que a produção abre (HTTP 200).
+5. Se o dono carregar dados em produção: pedir um backup depois e rodar `python -I tools/planilha/comparar-backup.py <original> <atual>` para provar que os totais não mudaram.
+
+## Mapa do código
+- `src/js/NN-*.js` (a ordem dos números é a ordem de montagem): `2x` regras/modelo (sem tela), `4x–7x` telas e eventos. `src/css/styles.css` + `theme.css` (visual "Neo"). `build.py` junta tudo em `dist/`.
+- Modelo: `S={anos,saldoIni,saldos,dividas,bens,autos,data,cats}`; `data["catId|ano|mês"]={items:[{v,d,ok,info,...}]}`. `ok` = confirmado, sem `ok` = **previsto**, `info` = informativo (💳, nunca soma). Categorias têm versões (`prevId`) quando o nome muda "daqui em diante".
+- Categorias: `src/js/22-model-categories.js` (mesclar, **virar lançamento**, renomear), `24-model-schedule.js` (vigência, criar/revisar categoria), `61-ui-category-merge.js`, `63-ui-category-dialog.js`, `52-dialog-cell.js` (janela dos lançamentos do mês).
+- Testes do modelo carregam os arquivos pelo helper `tests/helpers/model.js`: **função nova do modelo precisa ser exportada ali**.
+- Carga de planilha Excel → app: `tools/planilha/` (ver `LEIA-ME.md`; `converter.py`, `verificar-no-app.js`, `comparar-backup.py`).
+- Documentos: `docs/PEDIDOS-E-DECISOES.md` (cada pedido do dono e a decisão tomada: acrescentar uma seção a cada feature), `docs/KANBAN.md`, `docs/DESENVOLVIMENTO.md`, `docs/SEGURANCA.md`.
+
+## Armadilhas já encontradas (não repetir)
+- **Janela `dlg4` (`askChoice`/`askText`):** abrir uma segunda pergunta logo depois da primeira cancelava a segunda (o evento `close` da primeira chegava depois). Já corrigido em `46-ui-dialogs.js`; qualquer janela encadeada tem que ter cenário E2E que **continua** depois da primeira pergunta.
+- **`snackbar` fica atrás de qualquer `<dialog>` modal aberto:** em janela modal, mostrar o resultado dentro da própria janela (ou fechar antes de avisar).
+- Tabela de Categorias: coluna "Onde aparece" vazia mudava o alinhamento (`.vig:empty`); o teste mede a posição de várias colunas.
+- Janela de categoria alta demais escondia os botões: ícone/cor ficam num `<details>` recolhido.
+- Windows/PowerShell: o diretório do shell volta ao inicial a cada comando (usar caminhos absolutos); Python no Windows não lê caminhos `/c/...` (usar caminho relativo ou `C:\...`); `sleep` longo é bloqueado (usar `gh pr checks --watch`).
+- O servidor local do E2E (`python -m http.server 4173 --directory dist/e2e`) precisa estar de pé para `tools/planilha/verificar-no-app.js`.
+- `verificar-mutacoes.py` **altera arquivos de `src/` temporariamente**: não editar o código enquanto ele roda, e conferir `git status` depois.
+
+## Pendências combinadas
+- Subcategorias: **adiadas** pelo dono ("não faz sentido por enquanto"; o nome padronizado já é digitado no lançamento).
+- Segurança (tarefas do dono, ver `docs/SEGURANCA.md`): publicar `firestore.rules` no Firebase de produção, girar o segredo Pluggy vazado, restringir a chave de API.
+- Ligar o quadro de colunas do GitHub Projects (precisa do `gh auth refresh -s project`).

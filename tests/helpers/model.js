@@ -19,7 +19,7 @@ function loadModel() {
   mig, blank, makeCat, initSelection,
   key, cellOf, ens, itemsOf, V, cats, MT, SAL, iniY, acum, hasData, lastActive, prevMonths,
   catById, addCat, catStats, catsAtuais, statsComHistorico, isActive, lastLabel, visCats, yearHas, yearEmpty,
-  mergeCat, virarLancamento, lancamentosParaVirar, versoesDe, reorderCats, deleteCat, importClashYears, applyImport,
+  mergeCat, renomearCategoria, virarLancamento, lancamentosParaVirar, versoesDe, reorderCats, deleteCat, importClashYears, applyImport,
   pluggyItens, faturasOrdenadas, rotuloFatura, itensDaFatura, contaCartao, nomeConta, detectStatement, detectBank, parseValor, parseData, parseOFX, csvGuess, parseBankCsv, parseGenerico, pagamentoDeFatura, parseCsv, parseFatura, parseExtrato, extratoMeses, extratoDoMes, extratoParaImportar, rendDiferente, agruparRendimentos, pareceFatura, importStatement, cardItemToCategory, cardItemToExisting, unlinkCardItem, cardLinks, contaItemMove, chavesImportadas, impKeys, ensureMonthCat, useCatInMonth, removeCatFromMonth, pickableCats, applyScope, applyOrder, setFixa, temPassado, serializeState, deserializeState, PASSWORD_RULES, passwordChecks, passwordOk, passwordProblem,
   stateToCsv, csvFileText, csvToState, parseCsv,
   recorrentes, carteiraItem, carteiraSaldo, carteiraMov, parcelaDe, comprasParceladas, parcelasPorMes, addAuto, delAuto, autoFor, autoTxt, autos, lancamentos, semCategoria, categoriaDe, moveLancamento, aplicarAutomacoes, catIco, catBadge, descLimpa,

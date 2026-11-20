@@ -227,3 +227,8 @@ Pedido do dono: testes funcionais E2E de cada funcionalidade, **sem falso positi
 - **Testar antes de publicar:** tudo vai primeiro para `dev`; só vai para produção com aprovação do dono.
 - **Usabilidade acima de tudo:** o app tem muita informação; cada novidade deve ficar simples (poucos botões, escolhas padrão boas, nada obrigatório).
 - **Linguagem simples** com o dono (não é da área de TI): passos clicáveis, um por vez.
+
+### 5.25 Editar o nome da categoria na janela dos lançamentos (issue #44)
+**Pedido:** ao abrir os lançamentos de uma categoria (página Mês), poder editar o nome dela ali mesmo.
+**Decisão:** botão "✏️ Editar nome" ao lado do título da janela. Pergunta o novo nome (recusa vazio ou nome já usado por outra categoria do mesmo tipo). Se a categoria já existia em meses anteriores, pergunta: **"Em todos os meses"** (corrige o nome em todas as versões, os valores não mudam) ou **"Só de mês/ano em diante"** (mesma regra do cadastro: o passado guarda o nome antigo). Categoria nova, sem passado, muda direto.
+**Defeito achado no caminho:** duas perguntas seguidas (`askChoice`) se cancelavam pelo evento `close`; corrigido em `46-ui-dialogs.js`.

@@ -39,3 +39,57 @@ Funcionalidade: Tela do mês
     Quando anoto um saldo guardado de "Poupança" com "1.000.000,00" no Patrimônio
     E vou para a aba "mês"
     Então o resumo do mês mostra "Pode gastar por dia" com "R$ 123,53"
+
+  Cenário: Editar o nome da categoria na janela dos lançamentos do mês
+    Dado que tenho uma conta nova e vazia
+    E que criei a categoria de despesa "Debitos carro"
+    E que lancei "Licenciamento" de "150,00" na categoria "Debitos carro" no mês de "Setembro"
+    Quando abro a categoria "Debitos carro" do mês de "Setembro"
+    E troco o nome da categoria para "Carro" na janela
+    Então o título da janela da categoria mostra "Carro"
+    Quando fecho a janela da categoria
+    Então no mês de "Setembro" a categoria "Carro" mostra o valor "150,00"
+    Quando recarrego a página
+    Então no mês de "Setembro" a categoria "Carro" mostra o valor "150,00"
+
+  Cenário: Nome novo vale para todos os meses quando a categoria já tinha lançamentos em meses anteriores
+    Dado que tenho uma conta nova e vazia
+    E que criei a categoria de despesa "Debitos carro"
+    E que lancei "Licenciamento" de "150,00" na categoria "Debitos carro" no mês de "Agosto"
+    E que lancei "IPVA" de "200,00" na categoria "Debitos carro" no mês de "Setembro"
+    Quando abro a categoria "Debitos carro" do mês de "Setembro"
+    E troco o nome da categoria para "Carro" na janela
+    E escolho "Em todos os meses" para o novo nome
+    Então o título da janela da categoria mostra "Carro"
+    Quando fecho a janela da categoria
+    Então no mês de "Agosto" a categoria "Carro" mostra o valor "150,00"
+    E no mês de "Setembro" a categoria "Carro" mostra o valor "200,00"
+
+  Cenário: Não deixa dar à categoria um nome que outra categoria já usa
+    Dado que tenho uma conta nova e vazia
+    E que criei a categoria de despesa "Aluguel"
+    E que criei a categoria de despesa "Condomínio"
+    E que lancei "Parcela" de "100,00" na categoria "Aluguel" no mês de "Setembro"
+    Quando abro a categoria "Aluguel" do mês de "Setembro"
+    E troco o nome da categoria para "Condomínio" na janela
+    Então vejo o aviso "Já existe uma categoria com esse nome" ao editar o nome
+    Quando corrijo o nome para "Casa própria" e confirmo
+    Então o título da janela da categoria mostra "Casa própria"
+
+  Cenário: Depois de mudar o nome só daqui em diante, dá para valer em todos os meses
+    Dado que tenho uma conta nova e vazia
+    E que criei a categoria de despesa "Debitos carro"
+    E que lancei "Licenciamento" de "150,00" na categoria "Debitos carro" no mês de "Agosto"
+    E que lancei "IPVA" de "200,00" na categoria "Debitos carro" no mês de "Setembro"
+    Quando abro a categoria "Debitos carro" do mês de "Setembro"
+    E troco o nome da categoria para "Carro" na janela
+    E escolho "Só de setembro/2026 em diante" para o novo nome
+    E fecho a janela da categoria
+    Então no mês de "Agosto" a categoria "Debitos carro" mostra o valor "150,00"
+    E no mês de "Setembro" a categoria "Carro" mostra o valor "200,00"
+    Quando abro a categoria "Carro" do mês de "Setembro"
+    E troco o nome da categoria para "Documentos carro" na janela
+    E escolho "Em todos os meses" para o novo nome
+    E fecho a janela da categoria
+    Então no mês de "Agosto" a categoria "Documentos carro" mostra o valor "150,00"
+    E no mês de "Setembro" a categoria "Documentos carro" mostra o valor "200,00"

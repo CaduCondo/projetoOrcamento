@@ -6,7 +6,7 @@ function totals(){dlg.querySelector('#dr').textContent=fmtC(V(cur.cid,cur.y,cur.
 const fmtC=n=>moneyFor(catById(cur.cid).tipo,n);
 function prevCellRef(){let y=cur.y,m=cur.m-1;if(m<0){m=11;y--}return[y,m]}
 function drawDlg(){const c=catById(cur.cid),x=ens(cur.cid,cur.y,cur.m),[py,pm]=prevCellRef(),hasPrev=(cellOf(cur.cid,py,pm)?.items||[]).length;
-  dlg.innerHTML=`<div class="dh"><div><h3>${esc(c.nome)} · ${MESES[cur.m]} de ${cur.y}</h3><div class="sub">${c.tipo==='pagar'?'Despesas':'Receitas'} — marque o que já foi ${c.tipo==='pagar'?'pago':'recebido'}; só isso entra no total</div></div><button class="btn sec" data-close>Fechar</button></div>
+  dlg.innerHTML=`<div class="dh"><div><h3>${esc(c.nome)} · ${MESES[cur.m]} de ${cur.y}${readOnly?'':` <button type="button" class="btn sec sm" data-rencat title="Mudar o nome desta categoria" aria-label="Editar o nome da categoria">✏️ Editar nome</button>`}</h3><div class="sub">${c.tipo==='pagar'?'Despesas':'Receitas'} — marque o que já foi ${c.tipo==='pagar'?'pago':'recebido'}; só isso entra no total</div></div><button class="btn sec" data-close>Fechar</button></div>
   <div class="db">${x.items.length?x.items.map((i,k)=>`<div class="item ${i.info?'info':i.ok?'':'prev'}"><input type="checkbox" class="ok" data-ik="${k}" ${i.ok&&!i.info?'checked':''} ${i.info?'disabled':''} title="${c.tipo==='pagar'?'Pago':'Recebido'}"><input class="money" data-iv="${k}" value="${fmtN(i.v)}" inputmode="decimal" aria-label="valor" ${i.lock?'readonly title="Valor vindo do cartão: não se altera aqui"':''}><input data-id="${k}" value="${esc(i.d)}" placeholder="descrição" aria-label="descrição"><button data-info="${k}" class="cc ${i.info?'on':''}" ${i.lock?'disabled title="Este valor veio da fatura do cartão: o 💳 fica fixo (senão contaria duas vezes)"':'title="Marcar como já incluso na fatura do cartão (informativo, não soma)"'}>💳</button><button data-del="${k}" title="Remover">✕</button></div>${itemActions(c,i,k)}`).join(''):'<p class="hint">Nenhum item ainda. Adicione abaixo.</p>'}
    <div class="item" style="margin-top:10px"><input type="checkbox" class="ok" id="nk" checked title="Já ${c.tipo==='pagar'?'pago':'recebido'}"><input id="nv" class="money" placeholder="0,00" inputmode="decimal"><input id="nd" placeholder="descrição (Enter para adicionar)"><span></span><button class="btn" style="padding:4px" data-add title="Adicionar">＋</button></div></div>
    <details class="hist"><summary>📈 Últimos 6 meses desta categoria</summary><div class="histb">${tipCat(cur.cid,cur.y,cur.m)}</div></details>
@@ -28,6 +28,7 @@ dlg.addEventListener('click',e=>{const t=e.target,x=cur&&ens(cur.cid,cur.y,cur.m
   else if(t.closest('[data-allok]')){x.items.forEach(i=>{if(!i.info)i.ok=true});save();drawDlg()}
   else if(t.closest('[data-copyprev]')){const[py,pm]=prevCellRef();ens(cur.cid,cur.y,cur.m).items=structuredClone(cellOf(cur.cid,py,pm).items.filter(i=>!/sem detalhe/.test(i.d))).map(i=>({...i,ok:false}));save();drawDlg()}
   else if(t.closest('[data-rmmonth]'))removeFromMonthUi();
+  else if(t.closest('[data-rencat]'))renameCatUi();
   else if(t===dlg)dlg.close()});
 dlg.addEventListener('input',e=>{const t=e.target,x=ens(cur.cid,cur.y,cur.m);
   if(t.dataset.iv!==undefined){x.items[+t.dataset.iv].v=parseV(t.value);save();totals()}
@@ -43,6 +44,18 @@ async function removeFromMonthUi(){if(readOnly||!cur)return;const{cid,y,m}=cur,c
   try{removeCatFromMonth(cid,y,m)}catch(e){return alert(e.message)}
   save();dlg.close();
   snackbar(`“${c.nome}” saiu de ${MESES[m].toLowerCase()}/${y}.`,'Desfazer',()=>{const i=S.cats.findIndex(x=>x.id===cid);if(i>=0){S.cats[i]=JSON.parse(antes);save();render()}})}
+
+/* editar o nome da categoria sem sair da janela: pergunta o nome e, se a categoria já existia antes deste mês, se vale para todos os meses ou daqui em diante */
+async function renameCatUi(){if(readOnly||!cur)return;const{cid,y,m}=cur,c=catById(cid);let aviso='',nome=c.nome;
+  for(;;){
+    nome=await askText('Editar nome da categoria','Nome',nome,{aviso});if(!nome)return;
+    if(normName(nome)===normName(c.nome)&&nome===c.nome)return;
+    const err=validateCat({nome,dia:c.dia??''},c.tipo,y,m,cid);if(err){aviso=err;continue}break}
+  const antes=versoesDe(cid).length>1||Object.keys(S.data).some(k=>k.startsWith(cid+'|')&&ym(parseKey(k).y,parseKey(k).m)<ym(y,m));
+  let escopo='todos';
+  if(antes){escopo=await askChoice({titulo:'Em quais meses vale o novo nome?',texto:`<p class="hint">“${esc(c.nome)}” → “${esc(nome)}”</p>`,opcoes:[{id:'todos',label:'Em todos os meses',cls:''},{id:'adiante',label:`Só de ${MESES[m].toLowerCase()}/${y} em diante`,cls:'sec'},{id:'',label:'Cancelar',cls:'dan'}]});if(!escopo)return}
+  try{cur.cid=renomearCategoria(cid,nome,escopo,y,m).id}catch(e){return alert(e.message)}
+  save();drawDlg()}                                         // o título da janela já mostra o nome novo (o aviso flutuante ficaria escondido atrás desta janela)
 
 /* ---- itens que vieram da importação (fatura do cartão / extrato da conta) ---- */
 const nomeDe=key=>catById(parseKey(key).c)?.nome||'?';
