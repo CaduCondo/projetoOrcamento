@@ -94,9 +94,10 @@ jobs:
       contents: read
       pages: write
       id-token: write
+      actions: read                                 # para conferir que o pacote do site já apareceu na lista da execução
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: ${{ steps.deploy.outputs.page_url || steps.deploy2.outputs.page_url }}
     concurrency:
       group: pages
       cancel-in-progress: false
@@ -127,7 +128,25 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+      - name: Esperar o pacote do site aparecer na lista da execução
+        # O GitHub às vezes demora a listar o pacote recém-enviado e o deploy falha com "No artifacts named github-pages" (visto nas execuções 80 e 81).
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for i in $(seq 1 24); do
+            n=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" --jq '[.artifacts[]|select(.name=="github-pages")]|length')
+            [ "$n" = "1" ] && { echo "pacote do site listado"; sleep 10; exit 0; }
+            echo "ainda não listado ($n)..."; sleep 5
+          done
+          echo "o pacote não apareceu na lista; vou tentar publicar mesmo assim"
       - id: deploy
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - name: Esperar e tentar publicar de novo (só se a primeira tentativa falhou)
+        if: steps.deploy.outcome == 'failure'
+        run: sleep 45
+      - id: deploy2
+        if: steps.deploy.outcome == 'failure'
         uses: actions/deploy-pages@v4
 
   avisar:
