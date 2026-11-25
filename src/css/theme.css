@@ -192,7 +192,7 @@ dialog[open]{animation:pop .22s ease-out}
   .panel{border-radius:20px}
   table.mes thead th{padding:8px 6px;font-size:10px}
   table.mes thead th:first-child,table.mes td.grip{display:none}
-  table.mes{table-layout:auto}
+  table.mes{table-layout:fixed}
   table.mes td{padding:11px 8px}
   table.mes th.dia,table.mes td.dia{width:44px}
   table.mes th.n,table.mes td.n{width:44%;white-space:normal}
