@@ -238,3 +238,13 @@ Pedido do dono: testes funcionais E2E de cada funcionalidade, **sem falso positi
 - Ajustados no visual: botões do topo (＋ ano, ?, Sair, e-mail), meses e "＋ Lançar" da tela Mês passaram de 32–36 px para 40 px.
 - Provado por mutação (`verificar-mutacoes.py`): estragando o CSS de propósito, os dois cenários reprovam.
 - Falta: conferir num celular de verdade (por isso a issue #11 continua aberta).
+
+### 5.24 CI que avisa sozinho: relatório, bugs e e-mail (issues #15 e #16)
+Pedido do dono: o processo tem que ser **automático**, sem depender de alguém abrir o relatório, e os testes têm que ter **certeza** de testar de verdade (sem falso positivo).
+- **E-mail com o resultado:** ao fim de cada execução (push em `main`/`dev`), o CI comenta na issue fixa **"📬 Resultados do CI"** mencionando o dono; o GitHub manda o e-mail (resumo por etapa, quantos cenários passaram, links). O título do aviso diz a verdade: ✅ tudo passou · ⚠️ testes passaram mas a publicação falhou · ❌ algo reprovou. Para receber: no GitHub, Settings → Notifications, deixar e-mail ligado para "Participating, @mentions".
+- **Relatório abrível:** quando tudo passa, o relatório do Playwright (passo a passo e foto de cada cenário) fica em `https://caducondo.github.io/projetoOrcamento/relatorio/dev/` (e `/relatorio/main/`). Fica só o último de cada ambiente. Quando algo reprova, o site não é publicado; o relatório, as fotos e o trace vão num `.zip` (link no aviso, vale 14 dias).
+- **Bug automático:** cada cenário reprovado vira uma issue `bug` + `backlog` + `P1` + `ci-automatico` (título `[CI/dev] nome do cenário`), com erro, evidência e como reproduzir. Não duplica; **fecha sozinha** (`done`) quando o cenário volta a passar. Falha dos testes de lógica ou da publicação também vira issue.
+- **Provado de verdade (25/11/2026):** estragamos a tabela do mês de propósito no `dev`; o E2E reprovou, o site não foi publicado, a issue #46 abriu sozinha com o erro e fechou sozinha quando desfizemos o defeito.
+- **Correções no caminho:** o aviso dizia "tudo passou" mesmo com a publicação falhando (agora testado); a publicação falhava às vezes com "No artifacts named github-pages" (o GitHub demora a listar o pacote novo): agora o CI espera o pacote aparecer e tenta de novo uma vez.
+- Código: `tools/ci/relatar.js` (regras testadas em `tests/ci-relatar.test.js`) e `.github/workflows/ci-deploy.yml`.
+

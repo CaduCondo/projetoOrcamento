@@ -90,6 +90,11 @@ CI (`.github/workflows/ci-deploy.yml`): jobs `testes` + `e2e` → só então `pu
 - O servidor local do E2E (`python -m http.server 4173 --directory dist/e2e`) precisa estar de pé para `tools/planilha/verificar-no-app.js`.
 - `verificar-mutacoes.py` **altera arquivos de `src/` temporariamente**: não editar o código enquanto ele roda, e conferir `git status` depois.
 
+- **CI avisa sozinho** (`tools/ci/relatar.js`): bug automático por cenário reprovado (fecha sozinho), resultado na issue "📬 Resultados do CI" (vira e-mail) e relatório em `/relatorio/<branch>/`. Não abrir issue de bug à mão para falha de CI: ela já existe (`ci-automatico`). Detalhes em `docs/PEDIDOS-E-DECISOES.md` §5.24.
+- Publicação: o `deploy-pages` às vezes não enxerga o pacote recém-enviado ("No artifacts named github-pages"); o workflow já espera e tenta de novo. Se aparecer de novo, ler o log antes de rodar de novo.
+- Neste ambiente (sessão na nuvem) o `gh` só fala REST: `gh issue list/view` (GraphQL) é bloqueado; usar `gh api repos/...` ou as ferramentas do GitHub. Para rodar o E2E aqui sem baixar navegador: apontar `PLAYWRIGHT_BROWSERS_PATH` para uma pasta com links para o Chromium já instalado.
+- `verificar-mutacoes.py` troca **todas** as ocorrências do trecho: ao estragar o app à mão para provar um teste, estragar do mesmo jeito (trocar só uma pode não ser pego).
+
 ## Pendências combinadas
 - Subcategorias: **adiadas** pelo dono ("não faz sentido por enquanto"; o nome padronizado já é digitado no lançamento).
 - Segurança (tarefas do dono, ver `docs/SEGURANCA.md`): publicar `firestore.rules` no Firebase de produção, girar o segredo Pluggy vazado, restringir a chave de API.
