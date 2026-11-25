@@ -32,11 +32,19 @@ async function importJsonFile(file,input){
 
 /* ---- menu e cabeçalho ---- */
 document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){tab=b.dataset.tab;render()}});
+/* menu da foto/nome: abre e fecha; fecha também ao tocar fora, com Esc e ao escolher uma opção */
+function fecharMenuUsuario(devolverFoco){const l=document.querySelector('.umenu-list'),b=document.querySelector('[data-umenu]');
+  if(!l||l.hidden)return;l.hidden=true;if(b){b.setAttribute('aria-expanded','false');if(devolverFoco)b.focus()}}
 document.getElementById('hr').addEventListener('click',e=>{
+  const um=e.target.closest('[data-umenu]');
+  if(um){const l=document.querySelector('.umenu-list'),abrir=l.hidden;l.hidden=!abrir;um.setAttribute('aria-expanded',String(abrir));if(abrir)l.querySelector('button')?.focus();return}
+  const item=e.target.closest('.umenu-list button');if(item)fecharMenuUsuario(false);
   const tb=e.target.closest('[data-tab]');if(tb){tab=tb.dataset.tab;render();return}
   if(e.target.closest('[data-help]')){Tour.end();Tour.start(tab)}
   else if(e.target.closest('[data-logout]'))logout();
   else if(e.target.closest('[data-addyear]'))addYear()});
+document.addEventListener('click',e=>{if(!e.target.closest('.umenu'))fecharMenuUsuario(false)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')fecharMenuUsuario(true)});
 document.getElementById('hr').addEventListener('change',e=>{if(e.target.id==='ysel'){selY=+e.target.value;render()}});
 
 /* ---- busca de categorias (Ajustes) e escolha no combobox ---- */

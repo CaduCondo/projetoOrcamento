@@ -22,7 +22,7 @@ const lancar = (app, digitos, desc) => {
 async function cenario() {
   const db = createDb();
   const ana = abrir(db); await criarConta(ana, 'ana@exemplo.com');
-  ana.click('.userchip'); ana.type('#pfn', 'Ana Souza'); ana.type('#pfb', '1990-05-01'); ana.type('#pfp', 'Contadora'); ana.click('[data-pf="salvar"]');
+  ana.click('[data-tab="perfil"]'); ana.type('#pfn', 'Ana Souza'); ana.type('#pfb', '1990-05-01'); ana.type('#pfp', 'Contadora'); ana.click('[data-pf="salvar"]');
   await ana.waitFor(() => db.docs['profiles/uid1'].nome === 'Ana Souza', 3000, 'perfil da Ana');
   lancar(ana, '12345', 'segredo-da-ana'); await ana.ev('backend.flush()');
   assert.ok(JSON.stringify(db.docs).includes('segredo-da-ana'));

@@ -29,7 +29,7 @@ test('cadastro: aviso para completar, validações e salvar; o aviso some quando
   const db = createDb(); const app = abrir(db); await criarConta(app);
   assert.match(app.$('#notice').textContent, /Complete seu cadastro/);
   assert.match(app.$('#notice').textContent, /escolher onde guardar/);
-  app.click('.userchip');                                         // o e-mail/foto no topo abre o cadastro
+  app.click('[data-tab="perfil"]');                                         // o e-mail/foto no topo abre o cadastro
   assert.equal(app.ev('tab'), 'perfil');
   assert.equal(app.$('#pfe').value, EMAIL); assert.equal(app.$('#pfe').readOnly, true);
   app.type('#pfn', 'Carlos Eduardo Silva'); app.type('#pfb', '2999-01-01'); app.type('#pfp', 'Analista');
@@ -73,7 +73,7 @@ test('lembrete do cadastro: aparece nos 3 primeiros acessos e depois para de ins
 
 test('foto de perfil: aparece no topo e é salva no cadastro; dá para remover', async () => {
   const db = createDb(); const app = abrir(db); await criarConta(app);
-  app.click('.userchip');
+  app.click('[data-tab="perfil"]');
   assert.ok(app.$('.userchip span.avatar'), 'sem foto: mostra a inicial');
   app.ev("Photo.fromFile=async()=>'data:image/jpeg;base64,/9j/AAAA'");
   app.chooseFile('#pff', '', 'eu.jpg');
@@ -88,7 +88,7 @@ test('foto de perfil: aparece no topo e é salva no cadastro; dá para remover',
 
 test('trocar senha: validações, erro da senha atual e sucesso (a nova passa a valer)', async () => {
   const db = createDb(); const app = abrir(db); await criarConta(app);
-  app.click('.userchip');
+  app.click('[data-tab="perfil"]');
   const tentar = async (a, n, c) => { app.type('#pwa', a); app.type('#pwn', n); app.type('#pwc', c); app.click('[data-pw="trocar"]'); await app.sleep(40); return app.$('#pwerr').textContent + '|' + app.$('#pwok').textContent; };
   assert.match(await tentar('', 'Nova#Senha12', 'Nova#Senha12'), /senha atual/);
   await tentar(SENHA, '123', '123');
@@ -109,7 +109,7 @@ test('PRIVACIDADE — escolher "só neste aparelho": cria a cópia, apaga a nuve
   lancar(app, '12345', 'antes');
   await app.ev('backend.flush()');
   assert.ok(db.docs['users/uid1/meta/main'] && Object.keys(db.docs).some(k => k.includes('/years/')), 'antes: dados na nuvem');
-  app.click('.userchip');
+  app.click('[data-tab="perfil"]');
   app.pickStorage('local');
   await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'janela de escolha');
   assert.match(app.$('#dlg4').textContent, /deixam de ser enviados para a nuvem/);
@@ -133,7 +133,7 @@ test('PRIVACIDADE — escolher "só neste aparelho": cria a cópia, apaga a nuve
 test('PRIVACIDADE — entrar em OUTRO aparelho nunca puxa dados da nuvem; mostra o aviso com o passo a passo', async () => {
   const db = createDb(); const a = abrir(db); await criarConta(a);
   lancar(a, '7700', 'segredo'); await a.ev('backend.flush()');
-  a.click('.userchip'); a.pickStorage('local');
+  a.click('[data-tab="perfil"]'); a.pickStorage('local');
   await a.waitFor(() => a.$('#dlg4').hasAttribute('open'), 2000, 'janela'); a.choose('manter');   // mantém a cópia antiga na nuvem
   await a.waitFor(() => db.docs['profiles/uid1'].storage === 'local', 3000, 'escolha salva');
   assert.ok(db.docs['users/uid1/meta/main'], 'a cópia antiga foi mantida na nuvem (por escolha)');
@@ -163,12 +163,12 @@ test('PRIVACIDADE — entrar em OUTRO aparelho nunca puxa dados da nuvem; mostra
 
 test('voltar para a nuvem: envia os dados, avisa e atualiza o cadastro', async () => {
   const db = createDb(); const app = abrir(db); await criarConta(app);
-  app.click('.userchip'); app.pickStorage('local');
+  app.click('[data-tab="perfil"]'); app.pickStorage('local');
   await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'janela'); app.choose('apagar');
   await app.waitFor(() => db.docs['profiles/uid1'].storage === 'local', 3000, 'local');
   lancar(app, '1000', 'volta'); await app.ev('backend.flush()');
   assert.ok(!Object.keys(db.docs).some(k => k.startsWith('users/')));
-  app.click('.userchip'); app.pickStorage('cloud');
+  app.click('[data-tab="perfil"]'); app.pickStorage('cloud');
   await app.waitFor(() => app.$('#dlg4').hasAttribute('open'), 2000, 'janela'); assert.match(app.$('#dlg4').textContent, /administrador/); app.choose('enviar');
   await app.waitFor(() => db.docs['profiles/uid1'].storage === 'cloud' && Object.keys(db.docs).some(k => k.includes('/years/')), 3000, 'enviado');
   assert.ok(JSON.stringify(db.docs).includes('volta'), 'os lançamentos chegaram à nuvem');
@@ -178,7 +178,7 @@ test('voltar para a nuvem: envia os dados, avisa e atualiza o cadastro', async (
 test('arquivo no computador: grava a cada mudança e NÃO sobrescreve o arquivo antes de lê-lo', async () => {
   const db = createDb(), h = fakeHandle();
   const a = openApp({ html, setup: w => { install(w, db); w.showSaveFilePicker = async () => h; } }); await criarConta(a);
-  a.click('.userchip'); a.pickStorage('local');
+  a.click('[data-tab="perfil"]'); a.pickStorage('local');
   await a.waitFor(() => a.$('#dlg4').hasAttribute('open'), 2000, 'janela'); a.choose('apagar');
   await a.waitFor(() => h.writes > 0, 3000, 'arquivo gravado');
   assert.ok(h.content.startsWith('﻿Meu Orçamento;'), 'o arquivo é o CSV');
@@ -239,5 +239,34 @@ test('regras do banco desatualizadas: o app abre mesmo assim e explica o que faz
   assert.ok(app.$('[data-usecat]'), 'a tela principal abriu');
   lancar(app, '2500', 'funciona'); await app.ev('backend.flush()');
   assert.ok(JSON.stringify(db.docs).includes('funciona'), 'os lançamentos continuam sendo salvos');
+  app.close();
+});
+
+test('menu da foto/nome: abre, mostra Meu cadastro, Ajuda e Sair (sem Usuários para quem não é administrador) e fecha ao escolher, tocar fora ou Esc', async () => {
+  const db = createDb(); const app = abrir(db); await criarConta(app);
+  const lista = () => app.$('.umenu-list'), botao = () => app.$('[data-umenu]');
+  assert.equal(lista().hidden, true, 'começa fechado');
+  assert.equal(botao().getAttribute('aria-expanded'), 'false');
+  app.click('.userchip');
+  assert.equal(lista().hidden, false, 'tocar na foto/nome abre');
+  assert.equal(botao().getAttribute('aria-expanded'), 'true');
+  const itens = app.$$('.umenu-list button').map(b => b.textContent.replace(/\s+/g, ' ').trim());
+  assert.equal(itens.length, 3, 'cadastro, ajuda, sair: ' + itens.join(' | '));
+  assert.match(itens[0], /Meu cadastro/); assert.match(itens[1], /Ajuda/); assert.match(itens[2], /Sair/);
+  assert.equal(app.$('.umenu-list [data-adm="abrir"]'), null, 'usuário comum não vê Usuários');
+  assert.match(app.$('.umenu-list [data-tab="perfil"]').textContent, new RegExp(EMAIL.split('@')[0]), 'o primeiro item mostra o nome (ou o e-mail)');
+  app.click('.userchip');
+  assert.equal(lista().hidden, true, 'tocar de novo fecha');
+  app.click('.userchip');
+  app.w.document.body.dispatchEvent(new app.w.MouseEvent('click', { bubbles: true }));
+  assert.equal(lista().hidden, true, 'tocar fora fecha');
+  app.click('.userchip');
+  app.w.document.dispatchEvent(new app.w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  assert.equal(lista().hidden, true, 'Esc fecha');
+  app.click('.userchip'); app.click('.umenu-list [data-tab="perfil"]');
+  assert.equal(app.ev('tab'), 'perfil', 'Meu cadastro abre o cadastro');
+  assert.equal(lista().hidden, true, 'e o menu fecha ao escolher');
+  app.click('.userchip'); app.click('.umenu-list [data-logout]');
+  await app.waitFor(() => app.$('#lf') && app.ev('user') === null, 3000, 'saiu pelo menu');
   app.close();
 });

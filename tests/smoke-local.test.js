@@ -305,7 +305,7 @@ test('cadastro no modo local: salvo no navegador, sem escolha de nuvem, e troca 
   await entrar(app);
   assert.match(app.$('#notice').textContent, /Complete seu cadastro/);
   assert.doesNotMatch(app.$('#notice').textContent, /escolher onde guardar/, 'sem nuvem não há o que escolher');
-  app.click('.userchip');
+  app.click('[data-tab="perfil"]');
   assert.equal(app.ev('tab'), 'perfil');
   assert.equal(app.$('input[name=stg]'), null, 'sem a escolha nuvem x aparelho');
   app.type('#pfn', 'Ana Paula Souza'); app.type('#pfb', '1990-05-01'); app.type('#pfp', 'Contadora'); app.click('[data-pf="salvar"]');
@@ -361,7 +361,7 @@ test('Meu Cadastro: a troca de senha tem a mesma lista e o botão só libera com
   app.click('[data-lm="up"]');
   app.type('#lem', EMAIL); app.type('#lpw', SENHA); app.type('#lpw2', SENHA); app.submit('#lf');
   await app.waitFor(() => app.ev('user') === EMAIL, 4000, 'conta criada');
-  app.click('.userchip');
+  app.click('[data-tab="perfil"]');
   assert.equal(app.$$('#pwr-perfil li').length, 6);
   assert.equal(app.$('[data-pw="trocar"]').disabled, true);
   app.type('#pwn', 'Nova#Senha12'); app.type('#pwc', 'Nova#Senha12');

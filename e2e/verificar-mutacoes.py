@@ -33,6 +33,12 @@ MUTACOES = [
     ('src/js/21-model-calc.js', 'const lastActive=y=>{', 'const lastActive0=y=>{', 'perguntas rápidas'),
     ('src/css/theme.css', '.right .btn.sm{min-height:40px;', '.right .btn.sm{min-height:30px;', 'botões são fáceis de tocar'),
     ('src/css/theme.css', '  table.mes{table-layout:fixed}\n', '  table.mes{table-layout:fixed}\n  main{min-width:600px}\n', 'cabe na largura de um celular'),
+    ('src/js/70-events.js', 'l.hidden=!abrir;', 'l.hidden=false;', 'O menu fecha com Esc'),
+    ('src/js/70-events.js', "if(e.key==='Escape')fecharMenuUsuario(true)", 'if(false)fecharMenuUsuario(true)', 'O menu fecha com Esc'),
+    ('src/js/70-events.js', "if(!e.target.closest('.umenu'))fecharMenuUsuario(false)", 'if(false)fecharMenuUsuario(false)', 'O menu fecha com Esc'),
+    ('src/js/70-events.js', 'if(item)fecharMenuUsuario(false);', '', 'Escolher Ajuda desta tela'),
+    ('src/css/styles.css', 'width:100%;min-height:44px;padding:8px 12px', 'width:100%;min-height:0;padding:0 12px', 'opções fáceis de tocar'),
+    ('src/css/theme.css', '.userchip .uname{max-width:88px}', '.userchip .uname{max-width:600px}', 'topo cabe numa linha'),
 ]
 
 def rodar(cmd):

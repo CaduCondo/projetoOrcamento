@@ -248,3 +248,11 @@ Pedido do dono: o processo tem que ser **automático**, sem depender de alguém 
 - **Correções no caminho:** o aviso dizia "tudo passou" mesmo com a publicação falhando (agora testado); a publicação falhava às vezes com "No artifacts named github-pages" (o GitHub demora a listar o pacote novo): agora o CI espera o pacote aparecer e tenta de novo uma vez.
 - Código: `tools/ci/relatar.js` (regras testadas em `tests/ci-relatar.test.js`) e `.github/workflows/ci-deploy.yml`.
 
+### 5.25 Menu da foto e do nome no topo (issue #49)
+Pedido do dono (olhando o celular): "?" e "Sair" ficavam perdidos numa linha de baixo. A foto com o nome virou um **menu que abre para baixo**, no celular e no computador:
+- **Meu cadastro** (mostra o seu nome; leva ao cadastro), **Usuários** (só para o administrador), **Ajuda desta tela** (mostra de novo a explicação guiada) e **Sair**.
+- Abre ao tocar na foto/nome; fecha ao tocar de novo, tocar fora, apertar **Esc** ou escolher uma opção. Opções com pelo menos 44 px de altura.
+- Topo no celular: ano, "＋ ano" e foto+nome numa linha só. Em telas médias (701–1240 px) o nome some e fica só foto e seta, por falta de espaço.
+- O passo "Ajuda" do tour agora aponta para a foto/nome (o botão "?" não existe mais solto).
+- Testes: `tests/smoke-profile.test.js` (abre/fecha, itens, administrador x usuário comum) e `e2e/features/11-menu-usuario.feature` (Chrome de verdade, 1280/800/375 px); 6 mutações em `verificar-mutacoes.py`, todas detectadas.
+

@@ -11,7 +11,7 @@ const TOURS={
     {sel:'#app table.mes .val',t:'Lançar um valor',x:'Toque no valor (ou em “＋ Lançar”) para abrir os itens da categoria: adicionar, marcar como pago ✓ ou como “já está no cartão” 💳.'},
     {sel:'#app table.mes th[data-sort$="|dia"]',t:'Ordenar',x:'Toque nos títulos (Categoria, Dia, Valor) para ordenar. A tela abre por dia, para você acompanhar os vencimentos.'},
     {sel:'#app [data-usecat="pagar"]',t:'Incluir uma categoria no mês',x:'Digite parte do nome e escolha uma categoria que já existe. Criar, mudar e excluir categorias fica na aba Categorias.'},
-    {sel:'[data-help]',t:'Ajuda',x:'Ficou alguma dúvida? Toque aqui em qualquer tela para ver a explicação dela de novo.'},
+    {sel:'.userchip',t:'Seu menu',x:'Toque na sua foto ou nome para abrir o menu: Meu cadastro, Ajuda (mostra de novo a explicação da tela) e Sair.'},
   ],
   ano:[
     {sel:'#app .grid',t:'O ano inteiro',x:'Cada linha é uma categoria e cada coluna um mês. Toque num valor para ver e editar os itens.'},
