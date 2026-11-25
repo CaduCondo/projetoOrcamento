@@ -42,9 +42,10 @@ function planejar({ branch, falhas, abertas, podeFechar }) {
 function resumo({ branch, jobs, cenarios, falhas, runUrl, artefatoUrl, paginaUrl, sha }) {
   const ico = r => ({ success: '✅', failure: '❌', cancelled: '⚪', skipped: '⏭️' }[r] || '❔');
   const total = cenarios.length, reprov = cenarios.filter(c => !c.ok).length;
-  const tudoOk = jobs.testes === 'success' && jobs.e2e === 'success';
+  const testesOk = jobs.testes === 'success' && jobs.e2e === 'success';
+  const titulo = !testesOk ? '❌ Algo reprovou' : jobs.publicar === 'failure' ? '⚠️ Os testes passaram, mas a publicação do site falhou' : '✅ Tudo passou';
   const linhas = [
-    `${tudoOk ? '✅ Tudo passou' : '❌ Algo reprovou'} em \`${branch}\` (${String(sha || '').slice(0, 7)})`,
+    `${titulo} em \`${branch}\` (${String(sha || '').slice(0, 7)})`,
     '',
     `| Etapa | Resultado |`, `|---|---|`,
     `| Testes de lógica e regras do banco | ${ico(jobs.testes)} ${jobs.testes} |`,
@@ -99,8 +100,9 @@ function principal() {
   if (jobs.e2e === 'failure' && !falhouCenario)
     falhas.push({ chave: 'Testes de ponta a ponta não executaram ou não conferem', funcionalidade: 'Testes de ponta a ponta', nome: 'npm run e2e / npm run e2e:ver', erro: 'Nenhum cenário reprovado individualmente: veja o log (instalação, montagem do app ou conferência da quantidade de cenários).' });
 
+  if (jobs.publicar === 'failure') falhas.push({ chave: 'Publicação do site falhou', funcionalidade: 'Publicação', nome: 'Publicar site (GitHub Pages)', erro: 'Os testes passaram, mas o site não foi publicado. Veja o log da etapa "Publicar site" (pode ser instabilidade do GitHub: tente rodar de novo).' });
   const abertas = JSON.parse(gh(['issue', 'list', '--repo', repo, '--label', 'ci-automatico', '--state', 'open', '--limit', '200', '--json', 'number,title']) || '[]');
-  const GENERICAS = { 'Testes de lógica ou regras do banco reprovaram': () => jobs.testes === 'success', 'Testes de ponta a ponta não executaram ou não conferem': () => jobs.e2e === 'success' };
+  const GENERICAS = { 'Testes de lógica ou regras do banco reprovaram': () => jobs.testes === 'success', 'Testes de ponta a ponta não executaram ou não conferem': () => jobs.e2e === 'success', 'Publicação do site falhou': () => jobs.publicar === 'success' };
   const podeFechar = titulo => {
     const chave = titulo.replace(/^\[CI\/[^\]]+\] /, '');
     if (GENERICAS[chave]) return GENERICAS[chave]();

@@ -53,3 +53,9 @@ test('o corpo do bug traz cenário, erro, evidência e como reproduzir', () => {
   const b = corpoBug({ falha, branch: 'dev', sha: 'abcdef123', runUrl: 'https://x/run', artefatoUrl: 'https://x/zip' });
   for (const t of ['A tela ano cabe', 'Uso no celular', 'https://x/run', 'https://x/zip', 'npx playwright test -g "A tela ano cabe"']) assert.ok(b.includes(t), t);
 });
+
+test('testes passaram mas a publicação falhou: o aviso NÃO diz que tudo passou', () => {
+  const r = resumo({ branch: 'dev', jobs: { testes: 'success', e2e: 'success', publicar: 'failure' }, cenarios: [], falhas: [], runUrl: 'u', sha: 'a' });
+  assert.match(r, /^⚠️ Os testes passaram, mas a publicação do site falhou/);
+  assert.doesNotMatch(r, /Tudo passou/);
+});
