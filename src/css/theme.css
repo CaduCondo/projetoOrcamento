@@ -156,8 +156,8 @@ dialog[open]{animation:pop .22s ease-out}
   .right .row{margin:0}
   .right label.row{font-size:0}                                 /* "Ano" vira só o seletor */
   .right label.row select{font-size:14px;padding:6px 10px;border-radius:999px}
-  .right .btn.sm{min-height:34px;padding:6px 10px;font-size:13px}
-  .userchip{padding:2px;max-width:none;border:0;background:none}
+  .right .btn.sm{min-height:40px;padding:6px 12px;font-size:13px}   /* alvo de toque mínimo de 40 px (issue #11) */
+  .userchip{padding:2px;max-width:none;min-height:40px;border:0;background:none}
   .userchip .uname{display:none}
   .avatar{width:34px;height:34px;box-shadow:0 0 0 2px rgba(139,108,255,.6)}
   /* menu: pílula de vidro flutuando */
@@ -174,9 +174,9 @@ dialog[open]{animation:pop .22s ease-out}
   /* meses: rolam de lado, sem quebrar linha */
   .chips{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x proximity;margin:0 -14px 12px;padding:2px 14px 6px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .chips::-webkit-scrollbar{display:none}
-  .chips .chip{scroll-snap-align:center;flex:none;min-height:36px;padding:7px 14px}
+  .chips .chip{scroll-snap-align:center;flex:none;min-height:40px;padding:7px 14px}
   .chips>.sub{display:none}
-  .chips [data-import]{flex:none;margin-left:6px!important;min-height:36px}
+  .chips [data-import]{flex:none;margin-left:6px!important;min-height:40px}
   /* cartões: o saldo em destaque ocupando a linha toda */
   .cards{grid-template-columns:1fr 1fr;gap:10px}
   .card{padding:13px 14px}
@@ -204,6 +204,7 @@ dialog[open]{animation:pop .22s ease-out}
   table.mes td.dia{width:40px;padding:0 4px}
   table.mes tfoot td:first-child{display:none}
   .val{font-size:15px;padding:6px 8px}
+  table.mes .val{min-height:40px}
   .pfoot .btn{width:100%;min-height:42px}
   /* filtros em pílulas: rolam de lado em vez de quebrar */
   .seg{max-width:100%;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}

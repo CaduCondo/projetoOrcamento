@@ -2,7 +2,7 @@
 correspondente REPROVA. Se algum cenário continuar passando com o app estragado, o teste está fraco e precisa ser corrigido.
 Uso (na pasta do projeto, depois de `npm run e2e` ter passado):  python e2e/verificar-mutacoes.py
 Não faz parte do GitHub Actions (demora); rode de vez em quando e quando criar cenários novos. O arquivo estragado é sempre restaurado."""
-import subprocess, sys, pathlib
+import subprocess, sys, pathlib, shlex
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 SHELL = sys.platform == 'win32'
@@ -31,11 +31,12 @@ MUTACOES = [
     ('src/js/52-dialog-cell.js', 'cur.cid=renomearCategoria(cid,nome,escopo,y,m).id', 'cur.cid=cid', 'dos lançamentos do mês'),
     ('src/js/46-ui-dialogs.js', "if(dlg4.open)return;", "", 'outra categoria já usa'),
     ('src/js/21-model-calc.js', 'const lastActive=y=>{', 'const lastActive0=y=>{', 'perguntas rápidas'),
+    ('src/css/theme.css', '.right .btn.sm{min-height:40px;', '.right .btn.sm{min-height:30px;', 'botões são fáceis de tocar'),
+    ('src/css/theme.css', '  table.mes{table-layout:fixed}\n', '  table.mes{table-layout:fixed}\n  main{min-width:600px}\n', 'cabe na largura de um celular'),
 ]
 
-
 def rodar(cmd):
-    return subprocess.run(cmd, cwd=RAIZ, shell=SHELL, capture_output=True, text=True, encoding='utf-8', errors='replace')
+    return subprocess.run(cmd if SHELL else shlex.split(cmd), cwd=RAIZ, shell=SHELL, capture_output=True, text=True, encoding='utf-8', errors='replace')
 
 
 def main():

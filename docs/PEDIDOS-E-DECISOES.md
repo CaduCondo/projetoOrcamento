@@ -54,7 +54,7 @@ Legenda: ✅ feito e em produção · 🧪 feito no ambiente de teste (`dev`) ·
 | 5.2 Nuvem × arquivo local + CSV | 🧪 no ambiente de teste |
 | 5.3 Administrador (somente leitura) | 🧪 no teste — precisa das regras novas publicadas e do documento `admins` (PASSO-A-PASSO §10) |
 | 5.4 Categorias pela tela Mês | 🧪 no ambiente de teste |
-| 5.5 Celular responsivo | 🧪 menu fixo embaixo, topo enxuto, botões maiores; PWA e app de loja 📋 |
+| 5.5 Celular responsivo | ✅ menu fixo embaixo, topo enxuto, botões ≥ 40 px, testes automáticos em largura de celular; PWA ✅; falta só conferir num celular de verdade (#11); app de loja 📋 |
 | 5.6 Kanban e testes | ✅ kanban por etiquetas · 📋 Cypress/BDD com relatório |
 | 5.7 Extrato do banco / app nas lojas | respondido; 📋 importar OFX/CSV |
 
@@ -232,3 +232,9 @@ Pedido do dono: testes funcionais E2E de cada funcionalidade, **sem falso positi
 **Pedido:** ao abrir os lançamentos de uma categoria (página Mês), poder editar o nome dela ali mesmo.
 **Decisão:** botão "✏️ Editar nome" ao lado do título da janela. Pergunta o novo nome (recusa vazio ou nome já usado por outra categoria do mesmo tipo). Se a categoria já existia em meses anteriores, pergunta: **"Em todos os meses"** (corrige o nome em todas as versões, os valores não mudam) ou **"Só de mês/ano em diante"** (mesma regra do cadastro: o passado guarda o nome antigo). Categoria nova, sem passado, muda direto.
 **Defeito achado no caminho:** duas perguntas seguidas (`askChoice`) se cancelavam pelo evento `close`; corrigido em `46-ui-dialogs.js`.
+
+### 5.23 Celular: testes automáticos de largura e de toque (issue #11)
+- Novo `e2e/features/10-celular.feature`: com 375 px de largura, **nenhuma das 6 telas** passa da largura do celular (sem rolagem para o lado) e **todo botão** visível tem pelo menos **40 px de altura**. Ficam fora da regra só os cabeçalhos que ordenam tabelas/listas e as células da planilha da tela Ano (dezenas de valores lado a lado).
+- Ajustados no visual: botões do topo (＋ ano, ?, Sair, e-mail), meses e "＋ Lançar" da tela Mês passaram de 32–36 px para 40 px.
+- Provado por mutação (`verificar-mutacoes.py`): estragando o CSS de propósito, os dois cenários reprovam.
+- Falta: conferir num celular de verdade (por isso a issue #11 continua aberta).
