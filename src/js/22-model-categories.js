@@ -81,3 +81,16 @@ function applyImport(o){
   for(const[k,v]of Object.entries(o.data)){const{c,y,m}=parseKey(k);S.data[key(map[c],y,m)]=v}
   o.anos.forEach(y=>{if(!S.anos.includes(y))S.anos.push(y)});S.anos.sort((a,b)=>a-b);
   Object.entries(o.saldoIni||{}).forEach(([y,v])=>S.saldoIni[y]=v)}
+
+/* renomear a categoria pela janela dos lançamentos do mês.
+   escopo 'todos'  = corrige o nome em todos os meses (todas as versões da categoria), sem criar versão nova;
+   escopo 'adiante' = vale do mês (y,m) em diante, os meses anteriores guardam o nome antigo (mesma regra do cadastro da categoria).
+   Devolve a categoria que passa a valer em (y,m) (no 'adiante' pode ser uma versão nova: o id muda). */
+function renomearCategoria(id,nome,escopo,y,m){
+  const c=catById(id);if(!c)throw new Error('Categoria não encontrada.');
+  const err=validateCat({nome,dia:c.dia??''},c.tipo,y,m,id);if(err)throw new Error(err);
+  const limpo=cleanInput({nome,dia:c.dia??''});
+  if(limpo.nome===c.nome)return c;
+  if(escopo==='adiante')return reviseCat(id,{nome:limpo.nome,dia:c.dia??''},'manter',y,m);
+  for(const v of versoesDe(id))v.nome=limpo.nome;
+  return c}

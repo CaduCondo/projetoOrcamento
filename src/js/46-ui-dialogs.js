@@ -18,4 +18,5 @@ const confirmAsync=(texto,sim='Sim',nao='Cancelar')=>askChoice({titulo:'Confirma
 dlg4.addEventListener('click',e=>{const b=e.target.closest('[data-ch]');if(!b)return;const id=b.dataset.ch||null;
   if(b.dataset.chk&&choiceCheck){const msg=choiceCheck();if(msg){const er=el('chErr');if(er)er.textContent=msg;return}}
   const r=choiceResolve;choiceResolve=null;dlg4.close();r&&r(id)});
-dlg4.addEventListener('close',()=>{const r=choiceResolve;choiceResolve=null;r&&r(null)});
+dlg4.addEventListener('close',()=>{if(dlg4.open)return;                /* o evento 'close' chega depois: se já abriu outra pergunta em seguida, ela não pode ser cancelada por ele */
+  const r=choiceResolve;choiceResolve=null;r&&r(null)});

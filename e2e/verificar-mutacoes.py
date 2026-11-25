@@ -26,6 +26,10 @@ MUTACOES = [
     ('src/js/22-model-categories.js', 'if(novos.length){ens(dstId,y,m)', 'if(novos.length){ens(dstId,y,0)', 'Virar lançamento'),
     ('src/js/22-model-categories.js', 'S.cats=S.cats.filter(c=>!vs.some(v=>v.id===c.id));', '', 'Virar lançamento'),
     ('src/js/63-ui-category-dialog.js', '<details class="f cfvd">', '<details class="f cfvd" open>', 'à vista'),
+    ('src/js/22-model-categories.js', 'for(const v of versoesDe(id))v.nome=limpo.nome;', 'c.nome=limpo.nome;', 'valer em todos os meses'),
+    ('src/js/52-dialog-cell.js', "if(antes){escopo=await askChoice(", "if(false){escopo=await askChoice(", 'todos os meses'),
+    ('src/js/52-dialog-cell.js', 'cur.cid=renomearCategoria(cid,nome,escopo,y,m).id', 'cur.cid=cid', 'dos lançamentos do mês'),
+    ('src/js/46-ui-dialogs.js', "if(dlg4.open)return;", "", 'outra categoria já usa'),
     ('src/js/21-model-calc.js', 'const lastActive=y=>{', 'const lastActive0=y=>{', 'perguntas rápidas'),
 ]
 
