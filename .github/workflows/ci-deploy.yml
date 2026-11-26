@@ -117,12 +117,24 @@ jobs:
         with:
           name: e2e-relatorio
           path: relatorio-baixado
+      - name: Trazer o último relatório do outro ambiente (para os dois relatórios ficarem sempre abertos)
+        continue-on-error: true                     # se não houver (ou expirou), o outro relatório fica de fora desta vez
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          outro=$([ "$GITHUB_REF_NAME" = main ] && echo dev || echo main)
+          id=$(gh run list --repo "${{ github.repository }}" --branch "$outro" --event push --status success --limit 5 --json databaseId --jq '.[].databaseId' | while read r; do
+                 gh api "repos/${{ github.repository }}/actions/runs/$r/artifacts" --jq '.artifacts[]|select(.name=="e2e-relatorio" and .expired==false)|.id' | grep -q . && echo "$r" && break
+               done)
+          if [ -n "$id" ]; then gh run download "$id" --repo "${{ github.repository }}" -n e2e-relatorio -D relatorio-outro && echo "relatório de $outro trazido da execução $id"; else echo "sem relatório recente de $outro"; fi
       - name: Montar o site (produção na raiz, teste em /dev/, relatório em /relatorio/<branch>/)
         run: |
           mkdir -p _site/dev _site/relatorio
           (cd main && python build.py --env prod --out ../_site/index.html)
           (cd dev  && python build.py --env dev  --out ../_site/dev/index.html)
           if [ -d relatorio-baixado/playwright-report ]; then cp -r relatorio-baixado/playwright-report "_site/relatorio/${GITHUB_REF_NAME}"; fi
+          outro=$([ "$GITHUB_REF_NAME" = main ] && echo dev || echo main)
+          if [ -d relatorio-outro/playwright-report ]; then cp -r relatorio-outro/playwright-report "_site/relatorio/$outro"; fi
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
