@@ -4,6 +4,9 @@ name: Testes e publicação
 # publica o site: PRODUÇÃO na raiz (branch main) e TESTE em /dev/ (branch dev).
 # São dois grupos de testes: os de lógica/tela simulada ("testes") e os de PONTA A PONTA num Chrome de verdade ("e2e").
 # Se qualquer um falhar, NADA é publicado.
+# Ao terminar (push em main/dev): o relatório dos testes é publicado em /relatorio/<branch>/ (só quando tudo passa),
+# cada cenário reprovado vira uma issue `bug` (fecha sozinha quando passa de novo) e o resultado é comentado na issue
+# "📬 Resultados do CI" mencionando o dono: o GitHub manda o e-mail com o resumo e os links (tools/ci/relatar.js).
 on:
   push:
     branches: [main, dev]
@@ -39,6 +42,8 @@ jobs:
     name: Testes de ponta a ponta (Chrome)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      artefato-url: ${{ steps.relatorio.outputs.artifact-url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -67,15 +72,18 @@ jobs:
         run: npm run e2e
       - name: Conferir que nenhum cenário foi pulado ou esquecido
         run: npm run e2e:ver
-      - name: Guardar relatório e fotos da falha
-        if: failure()
+      - name: Guardar relatório, fotos e resultado (sempre, passando ou não)
+        id: relatorio
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-falha
+          name: e2e-relatorio
           path: |
             playwright-report/
             test-results/
-          retention-days: 7
+            e2e/resultado.json
+          if-no-files-found: ignore
+          retention-days: 14
 
   publicar:
     name: Publicar site
@@ -86,9 +94,10 @@ jobs:
       contents: read
       pages: write
       id-token: write
+      actions: read                                 # para conferir que o pacote do site já apareceu na lista da execução
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: ${{ steps.deploy.outputs.page_url || steps.deploy2.outputs.page_url }}
     concurrency:
       group: pages
       cancel-in-progress: false
@@ -104,15 +113,68 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Montar o site (produção na raiz, teste em /dev/)
+      - uses: actions/download-artifact@v4          # relatório dos testes desta execução
+        with:
+          name: e2e-relatorio
+          path: relatorio-baixado
+      - name: Montar o site (produção na raiz, teste em /dev/, relatório em /relatorio/<branch>/)
         run: |
-          mkdir -p _site/dev
+          mkdir -p _site/dev _site/relatorio
           (cd main && python build.py --env prod --out ../_site/index.html)
           (cd dev  && python build.py --env dev  --out ../_site/dev/index.html)
+          if [ -d relatorio-baixado/playwright-report ]; then cp -r relatorio-baixado/playwright-report "_site/relatorio/${GITHUB_REF_NAME}"; fi
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+      - name: Esperar o pacote do site aparecer na lista da execução
+        # O GitHub às vezes demora a listar o pacote recém-enviado e o deploy falha com "No artifacts named github-pages" (visto nas execuções 80 e 81).
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for i in $(seq 1 24); do
+            n=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" --jq '[.artifacts[]|select(.name=="github-pages")]|length')
+            [ "$n" = "1" ] && { echo "pacote do site listado"; sleep 10; exit 0; }
+            echo "ainda não listado ($n)..."; sleep 5
+          done
+          echo "o pacote não apareceu na lista; vou tentar publicar mesmo assim"
       - id: deploy
         uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - name: Esperar e tentar publicar de novo (só se a primeira tentativa falhou)
+        if: steps.deploy.outcome == 'failure'
+        run: sleep 45
+      - id: deploy2
+        if: steps.deploy.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+
+  avisar:
+    name: Avisar o resultado (issues e e-mail)
+    needs: [testes, e2e, publicar]
+    if: always() && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        continue-on-error: true                     # se os testes nem chegaram a rodar, não há relatório
+        with:
+          name: e2e-relatorio
+          path: relatorio-baixado
+      - name: Abrir/fechar issues de bug e comentar o resultado
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ARTEFATO_URL: ${{ needs.e2e.outputs.artefato-url }}
+          PAGINA_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/relatorio/${{ github.ref_name }}/
+          R_TESTES: ${{ needs.testes.result }}
+          R_E2E: ${{ needs.e2e.result }}
+          R_PUBLICAR: ${{ needs.publicar.result }}
+          RESULTADO_JSON: relatorio-baixado/e2e/resultado.json
+        run: node tools/ci/relatar.js

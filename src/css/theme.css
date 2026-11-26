@@ -118,6 +118,7 @@ dialog[open]{animation:pop .22s ease-out}
 
 /* ---------- usuário ---------- */
 .userchip{border-color:var(--line2);background:var(--glass)}
+.umenu-list{background:rgba(14,20,35,.97);border-color:var(--line2);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 18px 44px rgba(0,0,0,.6)}
 .avatar{background:var(--grad)}
 
 /* ---------- computador: tudo numa linha só (sem espaços vazios) ---------- */
@@ -135,7 +136,7 @@ dialog[open]{animation:pop .22s ease-out}
   .chips [data-import]{margin-left:auto!important;flex:none}
 }
 @media(min-width:701px) and (max-width:1240px){
-  .userchip{padding:2px;border:0;background:none}.userchip .uname{display:none}
+  .userchip .uname{display:none}
   nav button{padding:7px 9px}
   h1{font-size:16px}
 }
@@ -156,9 +157,10 @@ dialog[open]{animation:pop .22s ease-out}
   .right .row{margin:0}
   .right label.row{font-size:0}                                 /* "Ano" vira só o seletor */
   .right label.row select{font-size:14px;padding:6px 10px;border-radius:999px}
-  .right .btn.sm{min-height:34px;padding:6px 10px;font-size:13px}
-  .userchip{padding:2px;max-width:none;border:0;background:none}
-  .userchip .uname{display:none}
+  .right .btn.sm{min-height:40px;padding:6px 12px;font-size:13px}   /* alvo de toque mínimo de 40 px (issue #11) */
+  .userchip{padding:3px 12px 3px 3px;max-width:none;min-height:40px}
+  .userchip .uname{max-width:88px}
+  .umenu-list{min-width:min(280px,calc(100vw - 28px))}
   .avatar{width:34px;height:34px;box-shadow:0 0 0 2px rgba(139,108,255,.6)}
   /* menu: pílula de vidro flutuando */
   nav{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));border:1px solid var(--line2);border-radius:24px;
@@ -174,9 +176,9 @@ dialog[open]{animation:pop .22s ease-out}
   /* meses: rolam de lado, sem quebrar linha */
   .chips{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x proximity;margin:0 -14px 12px;padding:2px 14px 6px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .chips::-webkit-scrollbar{display:none}
-  .chips .chip{scroll-snap-align:center;flex:none;min-height:36px;padding:7px 14px}
+  .chips .chip{scroll-snap-align:center;flex:none;min-height:40px;padding:7px 14px}
   .chips>.sub{display:none}
-  .chips [data-import]{flex:none;margin-left:6px!important;min-height:36px}
+  .chips [data-import]{flex:none;margin-left:6px!important;min-height:40px}
   /* cartões: o saldo em destaque ocupando a linha toda */
   .cards{grid-template-columns:1fr 1fr;gap:10px}
   .card{padding:13px 14px}
@@ -204,6 +206,7 @@ dialog[open]{animation:pop .22s ease-out}
   table.mes td.dia{width:40px;padding:0 4px}
   table.mes tfoot td:first-child{display:none}
   .val{font-size:15px;padding:6px 8px}
+  table.mes .val{min-height:40px}
   .pfoot .btn{width:100%;min-height:42px}
   /* filtros em pílulas: rolam de lado em vez de quebrar */
   .seg{max-width:100%;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}

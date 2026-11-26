@@ -66,3 +66,15 @@ Then('o resumo do mês mostra {string} com {string}', async ({ page }, rotulo, v
 
 When('abro a categoria {string} do mês de {string}', async ({ page }, nome, mes) => { await irParaMes(page, mes); await linhaMes(page, nome).locator('.val').click(); await expect(page.locator('#dlg')).toBeVisible(); });
 Then('no mês de {string} a categoria {string} mostra o valor {string}', async ({ page }, mes, nome, valor) => { await irParaMes(page, mes); await expect(linhaMes(page, nome).locator('td.n .val')).toContainText(valor); });
+
+When('troco o nome da categoria para {string} na janela', async ({ page }, nome) => {
+  await page.click('#dlg [data-rencat]');
+  await expect(page.locator('#atx')).toBeVisible();
+  await page.fill('#atx', nome);
+  await page.click('#dlg4 [data-ch="ok"]');
+});
+When('escolho {string} para o novo nome', async ({ page }, texto) => { await page.locator('#dlg4 button', { hasText: texto }).click(); await expect(page.locator('#dlg4')).not.toBeVisible(); });
+When('fecho a janela da categoria', async ({ page }) => { await page.click('#dlg [data-close]'); await expect(page.locator('#dlg')).not.toBeVisible(); });
+Then('o título da janela da categoria mostra {string}', async ({ page }, nome) => { await expect(page.locator('#dlg h3')).toContainText(nome); });
+Then('vejo o aviso {string} ao editar o nome', async ({ page }, texto) => { await expect(page.locator('#dlg4 .err')).toContainText(texto); });
+When('corrijo o nome para {string} e confirmo', async ({ page }, nome) => { await expect(page.locator('#atx')).toBeVisible(); await page.fill('#atx', nome); await page.click('#dlg4 [data-ch="ok"]'); await expect(page.locator('#dlg4')).not.toBeVisible(); });

@@ -81,3 +81,25 @@ Then('o valor {string} da categoria {string} aparece inteiro dentro do painel de
   expect(c.x + c.width, 'valor não pode passar da borda direita do painel').toBeLessThanOrEqual(p.x + p.width + 1);
   expect(await painel.evaluate(el => el.scrollWidth <= el.clientWidth + 1), 'o painel não pode ter conteúdo escondido na lateral').toBe(true);
 });
+
+/* ---- celular: nenhuma tela com rolagem para o lado e botões fáceis de tocar (issue #11) ---- */
+const LARGURA_CELULAR = 375;
+When('abro o app com a largura de um celular', async ({ page }) => { await page.setViewportSize({ width: LARGURA_CELULAR, height: 740 }); });
+Then('a tela {string} não tem rolagem para o lado', async ({ page }, aba) => {
+  await irPara(page, aba);
+  await page.waitForTimeout(300);
+  const sobra = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth - window.innerWidth, corpo: document.body.scrollWidth - window.innerWidth }));
+  expect(sobra.doc, `a tela "${aba}" passa da largura do celular`).toBeLessThanOrEqual(1);
+  expect(sobra.corpo, `o corpo da tela "${aba}" passa da largura do celular`).toBeLessThanOrEqual(1);
+});
+Then('na tela {string} os botões visíveis têm pelo menos {int} pixels de altura', async ({ page }, aba, minimo) => {
+  await irPara(page, aba);
+  await page.waitForTimeout(300);
+  /* fora da regra: cabeçalhos de tabela e de lista (só ordenam) e as células da planilha da tela Ano (dezenas de valores lado a lado) */
+  const pequenos = await page.evaluate(min => [...document.querySelectorAll('button, [role=button], a[href], .tab, #nav [data-tab]')]
+    .filter(e => !e.closest('th, .hd') && !e.closest('.grid td'))
+    .filter(e => { const r = e.getBoundingClientRect(); const s = getComputedStyle(e); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.pointerEvents !== 'none' && !e.disabled; })
+    .map(e => ({ nome: (e.getAttribute('aria-label') || e.textContent || e.className).trim().slice(0, 30), h: Math.round(e.getBoundingClientRect().height) }))
+    .filter(x => x.h < min), minimo);
+  expect(pequenos, `botões menores que ${minimo}px na tela "${aba}"`).toEqual([]);
+});

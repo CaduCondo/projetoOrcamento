@@ -13,7 +13,7 @@ const myProfile=()=>readOnly&&Viewer.real?Viewer.real.profile:profile;       // 
 
 /* desabilita tudo que altera dados; só deixa navegar, olhar e fechar */
 function lockUi(root){if(!readOnly||!root)return;
-  const livre='[data-tab],[data-m],[data-modo],#per,#ysel,#csin,[data-open],[data-close],[data-na],[data-adm],[data-logout],[data-ro-ok]';
+  const livre='[data-tab],[data-m],[data-modo],#per,#ysel,#csin,[data-open],[data-close],[data-na],[data-adm],[data-logout],[data-umenu],[data-help],[data-ro-ok]';
   root.querySelectorAll('input,select,textarea,button').forEach(e=>{if(!e.matches(livre)&&!e.closest('[data-tipcell]'))e.disabled=true});
   root.querySelectorAll('[draggable]').forEach(e=>{e.draggable=false});
   root.querySelectorAll('label.btn').forEach(l=>l.classList.add('off'))}

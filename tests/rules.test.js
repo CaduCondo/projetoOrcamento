@@ -235,3 +235,40 @@ test('virar lançamento: regras de importação que levavam para a categoria ant
   m.virarLancamento(ipva.id, dst.id);
   assert.equal(m.autoFor('DETRAN IPVA 03/10', 'pagar').nome, 'Documentos carro');
 });
+
+/* ---- renomear a categoria pela janela dos lançamentos ---- */
+test('renomear em todos os meses: corrige o nome (inclusive nas versões antigas) e os valores não mudam', () => {
+  fresh();
+  const a = m.addCat('pagar', 'Debitos carro');
+  m.ens(a.id, 2018, 3).items.push({ v: 150, d: 'Licenciamento', ok: true });
+  m.ens(a.id, 2019, 5).items.push({ v: 90, d: 'x', ok: false });
+  const nova = m.reviseCat(a.id, { nome: 'Carro', dia: '' }, 'manter', 2019, 0);          // cria uma versão nova a partir de 2019
+  assert.notEqual(nova.id, a.id);
+  const total = m.MT('pagar', 2018, 3, 'prev') + m.MT('pagar', 2019, 5, 'prev');
+  const r = m.renomearCategoria(nova.id, 'Documentos carro', 'todos', 2019, 5);
+  assert.equal(r.id, nova.id, 'o id não muda quando vale para todos');
+  assert.equal(m.catById(a.id).nome, 'Documentos carro', 'a versão antiga também ganha o nome novo');
+  assert.equal(m.catById(nova.id).nome, 'Documentos carro');
+  assert.equal(m.MT('pagar', 2018, 3, 'prev') + m.MT('pagar', 2019, 5, 'prev'), total);
+});
+
+test('renomear daqui em diante: o passado guarda o nome antigo e os lançamentos acompanham a versão nova', () => {
+  fresh();
+  const a = m.addCat('pagar', 'Debitos carro');
+  m.ens(a.id, 2018, 3).items.push({ v: 150, d: 'Licenciamento', ok: true });
+  m.ens(a.id, 2019, 5).items.push({ v: 90, d: 'x', ok: true });
+  const n = m.renomearCategoria(a.id, 'Carro', 'adiante', 2019, 0);
+  assert.notEqual(n.id, a.id); assert.equal(n.nome, 'Carro'); assert.equal(m.catById(a.id).nome, 'Debitos carro');
+  assert.equal(m.V(a.id, 2018, 3, 'real'), 150); assert.equal(m.V(n.id, 2019, 5, 'real'), 90);
+  assert.equal(m.V(a.id, 2019, 5, 'real'), 0);
+});
+
+test('renomear: recusa nome vazio ou já usado por outra categoria do mesmo tipo (mas aceita só mudar maiúsculas)', () => {
+  fresh();
+  const a = m.addCat('pagar', 'Aluguel'), b = m.addCat('pagar', 'Condomínio'), r = m.addCat('receber', 'Extra');
+  assert.throws(() => m.renomearCategoria(a.id, '   ', 'todos', 2026, 9), /nome/i);
+  assert.throws(() => m.renomearCategoria(a.id, 'condominio', 'todos', 2026, 9), /Já existe/);
+  assert.equal(m.renomearCategoria(a.id, 'Extra', 'todos', 2026, 9).nome, 'Extra', 'o mesmo nome em outro tipo (receita) é permitido');
+  assert.equal(m.renomearCategoria(a.id, 'EXTRA', 'todos', 2026, 9).nome, 'EXTRA');
+  assert.equal(b.nome, 'Condomínio'); assert.ok(r);
+});

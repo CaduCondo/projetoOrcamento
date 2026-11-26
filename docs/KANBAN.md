@@ -25,3 +25,7 @@ Cada coisa a fazer é uma **issue** do GitHub. O estado é a etiqueta:
 
 ## Épicos
 Os épicos (`epic`) trazem a lista de tarefas com caixas de seleção ligadas às issues (`- [ ] #N`); o GitHub marca sozinho quando a issue fecha.
+
+
+## Bugs do CI entram sozinhos
+Cenário reprovado no GitHub vira issue `bug` + `backlog` + `P1` + `ci-automatico` ("[CI/dev] nome do cenário") e fecha sozinha (`done`) quando passa de novo. O resultado de cada execução é comentado na issue "📬 Resultados do CI" (o dono recebe por e-mail). Ver `docs/PEDIDOS-E-DECISOES.md` §5.24.

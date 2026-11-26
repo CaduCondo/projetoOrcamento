@@ -151,6 +151,20 @@ fieldset.scope.off{opacity:.45}
 /* cadastro, avisos e escolha de armazenamento */
 .userchip{display:inline-flex;align-items:center;gap:8px;background:none;border:1px solid var(--line);border-radius:999px;padding:3px 12px 3px 3px;color:var(--ink);font:inherit;cursor:pointer;max-width:200px}
 .userchip:hover{border-color:var(--acc);background:var(--acc2)}
+.userchip .caret{font-size:11px;opacity:.75;transition:transform .15s}
+.userchip[aria-expanded=true] .caret{transform:rotate(180deg)}
+/* menu que abre embaixo da foto/nome */
+.umenu{position:relative;display:inline-block}
+.umenu-list{position:absolute;right:0;top:calc(100% + 8px);min-width:240px;max-width:calc(100vw - 24px);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px;box-shadow:0 16px 40px rgba(0,0,0,.35);z-index:60;display:flex;flex-direction:column;gap:2px}
+.umenu-list[hidden]{display:none}
+.umenu-list button{display:flex;align-items:center;gap:12px;width:100%;min-height:44px;padding:8px 12px;background:none;border:0;border-radius:12px;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.umenu-list button:hover,.umenu-list button:focus-visible{background:var(--acc2);outline:none}
+.umenu-list .mi{font-size:18px;flex:none;width:24px;text-align:center}
+.umenu-list .mt{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.umenu-list .mt b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.umenu-list .mt small{color:var(--mut);font-size:12px}
+.umenu-list .sair{color:var(--neg)}
+.umenu-list hr{border:0;border-top:1px solid var(--line);margin:4px 8px}
 .userchip .uname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
 .avatar{width:30px;height:30px;border-radius:50%;object-fit:cover;background:var(--acc);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none}
 .avatar.lg{width:76px;height:76px;font-size:30px}
@@ -196,7 +210,7 @@ nav .ti{display:none}
   .top{gap:8px;padding:10px 16px}
   h1{font-size:17px}
   .right{width:100%;margin-left:0;justify-content:space-between;gap:8px}
-  .userchip{max-width:44%}
+  .userchip{max-width:100%}
   /* menu fixo embaixo, como nos aplicativos */
   nav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);gap:0;padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
   nav button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;font-size:11px;border-radius:10px;min-width:0}

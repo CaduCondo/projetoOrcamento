@@ -2,7 +2,7 @@
 correspondente REPROVA. Se algum cenário continuar passando com o app estragado, o teste está fraco e precisa ser corrigido.
 Uso (na pasta do projeto, depois de `npm run e2e` ter passado):  python e2e/verificar-mutacoes.py
 Não faz parte do GitHub Actions (demora); rode de vez em quando e quando criar cenários novos. O arquivo estragado é sempre restaurado."""
-import subprocess, sys, pathlib
+import subprocess, sys, pathlib, shlex
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 SHELL = sys.platform == 'win32'
@@ -26,12 +26,23 @@ MUTACOES = [
     ('src/js/22-model-categories.js', 'if(novos.length){ens(dstId,y,m)', 'if(novos.length){ens(dstId,y,0)', 'Virar lançamento'),
     ('src/js/22-model-categories.js', 'S.cats=S.cats.filter(c=>!vs.some(v=>v.id===c.id));', '', 'Virar lançamento'),
     ('src/js/63-ui-category-dialog.js', '<details class="f cfvd">', '<details class="f cfvd" open>', 'à vista'),
+    ('src/js/22-model-categories.js', 'for(const v of versoesDe(id))v.nome=limpo.nome;', 'c.nome=limpo.nome;', 'valer em todos os meses'),
+    ('src/js/52-dialog-cell.js', "if(antes){escopo=await askChoice(", "if(false){escopo=await askChoice(", 'todos os meses'),
+    ('src/js/52-dialog-cell.js', 'cur.cid=renomearCategoria(cid,nome,escopo,y,m).id', 'cur.cid=cid', 'dos lançamentos do mês'),
+    ('src/js/46-ui-dialogs.js', "if(dlg4.open)return;", "", 'outra categoria já usa'),
     ('src/js/21-model-calc.js', 'const lastActive=y=>{', 'const lastActive0=y=>{', 'perguntas rápidas'),
+    ('src/css/theme.css', '.right .btn.sm{min-height:40px;', '.right .btn.sm{min-height:30px;', 'botões são fáceis de tocar'),
+    ('src/css/theme.css', '  table.mes{table-layout:fixed}\n', '  table.mes{table-layout:fixed}\n  main{min-width:600px}\n', 'cabe na largura de um celular'),
+    ('src/js/70-events.js', 'l.hidden=!abrir;', 'l.hidden=false;', 'O menu fecha com Esc'),
+    ('src/js/70-events.js', "if(e.key==='Escape')fecharMenuUsuario(true)", 'if(false)fecharMenuUsuario(true)', 'O menu fecha com Esc'),
+    ('src/js/70-events.js', "if(!e.target.closest('.umenu'))fecharMenuUsuario(false)", 'if(false)fecharMenuUsuario(false)', 'O menu fecha com Esc'),
+    ('src/js/70-events.js', 'if(item)fecharMenuUsuario(false);', '', 'Escolher Ajuda desta tela'),
+    ('src/css/styles.css', 'width:100%;min-height:44px;padding:8px 12px', 'width:100%;min-height:0;padding:0 12px', 'opções fáceis de tocar'),
+    ('src/css/theme.css', '.userchip .uname{max-width:88px}', '.userchip .uname{max-width:600px}', 'topo cabe numa linha'),
 ]
 
-
 def rodar(cmd):
-    return subprocess.run(cmd, cwd=RAIZ, shell=SHELL, capture_output=True, text=True, encoding='utf-8', errors='replace')
+    return subprocess.run(cmd if SHELL else shlex.split(cmd), cwd=RAIZ, shell=SHELL, capture_output=True, text=True, encoding='utf-8', errors='replace')
 
 
 def main():

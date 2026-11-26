@@ -9,7 +9,7 @@ Given('que criei a conta {string}', async ({ page }, email) => { await criarCont
 Given('que estou na aba {string}', async ({ page }, aba) => { await irPara(page, aba); });
 When('vou para a aba {string}', async ({ page }, aba) => { await irPara(page, aba); });
 When('recarrego a página', async ({ page }) => { await page.reload(); });
-When('saio do app', async ({ page }) => { await page.getByRole('button', { name: 'Sair' }).click(); await expect(page.locator('#lf')).toBeVisible(); });
+When('saio do app', async ({ page }) => { await page.locator('[data-umenu]').click(); await page.locator('.umenu-list').getByRole('menuitem', { name: /Sair/ }).click(); await expect(page.locator('#lf')).toBeVisible(); });
 When('tento entrar com {string} e a senha {string}', async ({ page }, email, senha) => {
   await page.fill('#lem', email); await page.fill('#lpw', senha); await page.click('#lf button');
 });
