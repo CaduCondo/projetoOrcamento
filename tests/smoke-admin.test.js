@@ -297,3 +297,15 @@ test('administrador em modo leitura: os botões que só mudam a visão (Por cate
   adm.close();
 });
 
+test('porteiro respondeu 429 (muitos pedidos): o app mostra a mensagem do porteiro, com os segundos de espera, e não quebra', async () => {
+  const { adm } = await cenario();
+  adm.w.fetch = async () => ({ ok: false, status: 429, json: async () => ({ ok: false, erro: 'Muitos pedidos. Espere 42 segundos e tente de novo.' }) });
+  adm.click('[data-tab="aj"]'); adm.click('[data-bank]');
+  adm.type('#bkurl', PORTEIRO); adm.change('#bkurl', PORTEIRO);
+  adm.click('[data-bkload]');
+  await adm.waitFor(() => /Muitos pedidos. Espere 42 segundos/.test(adm.$('#bkerr').textContent), 3000, 'mensagem do porteiro');
+  assert.equal(adm.$$('input[name=bkc]').length, 0, 'nenhuma conta listada');
+  assert.deepEqual(adm.dom.errors || [], [], 'o app não quebrou');
+  adm.close();
+});
+

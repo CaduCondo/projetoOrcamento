@@ -55,7 +55,7 @@ Regras de trabalho do dia a dia (comandos, armadilhas, ambientes) ficam no [CLAU
 | Tentativas de login em massa | limite automático do Firebase Auth (`too-many-requests`) | 🟡 falta App Check + reCAPTCHA (issue) |
 | Descobrir quais e-mails existem | "Proteção contra enumeração de e-mails" no Firebase (SEGURANCA.md, etapa 4) | 🟡 ação do dono; conferir se está ligada |
 | Rota de API (porteiro) usada por estranho | token do Firebase conferido (assinatura do Google, validade, projeto, **e-mail do dono**), origem permitida, período máximo, campos mínimos | ✅ testado (`tests/pluggy-worker.test.js`) |
-| Porteiro sob ataque de volume | limite de pedidos por origem/IP | 📋 issue |
+| Porteiro sob ataque de volume | limite de pedidos por endereço (antes de conferir o login) e por conta (só buscas válidas); 429 com `Retry-After`; testado em `tests/pluggy-worker.test.js` e sob carga em `tools/carga/porteiro.js` | ✅ (o dono precisa colar o `worker.js` novo no Cloudflare: BANCO-DIRETO.md) |
 | Chave secreta do banco (Pluggy) | só nos "Segredos" do Cloudflare; nunca no site nem no repositório | 🟡 **girar o segredo que vazou** (ação do dono) |
 | Script malicioso na página (XSS) | `esc()` nos textos; foto só base64; ícone/cor/ids/tipo validados na entrada (`saneIds`, `icoOk`, `corOk`, `fotoSegura`); regra do banco para a foto; **testes** em `tests/smoke-xss.test.js` e `e2e/features/12-seguranca.feature` | ✅ (falta a política de conteúdo/CSP: issue; a regra da foto precisa ser publicada pelo dono) |
 | Dependências com falha conhecida | workflow **Segurança** (`.github/workflows/seguranca.yml`): `npm audit` (o que vai para o site reprova por qualquer falha; ferramentas de teste reprovam só por falha crítica), CodeQL e Dependabot semanal | ✅ (alertas do CodeQL: aba Security do GitHub) |
@@ -87,7 +87,7 @@ Pirâmide: muitos testes rápidos embaixo, poucos e abrangentes em cima. **Tudo 
 | Segurança estática (SAST), dependências e segredos | CodeQL, `npm audit`, gitleaks, Dependabot | workflow Segurança (push, PR e toda segunda) | ✅ |
 | Intrusão (pentest) automatizado | OWASP ZAP (varredura baseline) contra o `/dev/` | CI semanal | 📋 |
 | Intrusão manual | checklist OWASP ASVS, ver §6 | a cada versão grande | 📋 |
-| Carga e estresse | **k6** só no **porteiro** (nosso único servidor) | manual, contra ambiente de teste | 📋 |
+| Carga e estresse | script em Node (`npm run carga:porteiro`) só no **porteiro** (nosso único servidor), com Google e Pluggy simulados: uso normal, abuso com login falso e verdadeiro, estresse com rampa | `tools/carga/porteiro.js`, roda no CI | ✅ |
 
 Observações honestas:
 - **Carga/estresse não faz sentido em Firestore, Auth e GitHub Pages:** são serviços do Google e do GitHub, com limites próprios, e os termos deles proíbem teste de carga. Testamos carga apenas no que é **nosso** (o porteiro).

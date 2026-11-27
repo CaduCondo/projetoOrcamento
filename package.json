@@ -15,7 +15,8 @@
     "e2e:ver": "node e2e/conferir.js",
     "e2e:nuvem": "python build.py --env emu --out dist/e2e-nuvem/index.html && bddgen -c playwright.nuvem.config.js && playwright test -c playwright.nuvem.config.js",
     "e2e:nuvem:emu": "firebase emulators:exec --only auth,firestore --project demo-orcamento \"npm run e2e:nuvem\"",
-    "e2e:nuvem:ver": "node e2e/conferir.js nuvem/features resultado-nuvem.json 8"
+    "e2e:nuvem:ver": "node e2e/conferir.js nuvem/features resultado-nuvem.json 8",
+    "carga:porteiro": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON tools/carga/porteiro.js"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",

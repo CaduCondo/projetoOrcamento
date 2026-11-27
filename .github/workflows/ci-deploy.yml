@@ -37,6 +37,8 @@ jobs:
       - run: npm test
       - name: Regras de segurança do banco (emulador do Firebase)
         run: npm run test:rules
+      - name: Carga e estresse do porteiro (limite de pedidos, sem 5xx, sem passar do limite da Pluggy)
+        run: npm run carga:porteiro
 
   e2e:
     name: Testes de ponta a ponta (Chrome)

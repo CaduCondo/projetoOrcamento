@@ -13,6 +13,8 @@ const ENV = { PLUGGY_CLIENT_ID: 'id', PLUGGY_CLIENT_SECRET: 'segredo', PLUGGY_IT
 const ORIGEM = 'https://caducondo.github.io';
 
 let par, jwk;
+/* o limite de pedidos guarda contagem na memória do módulo: cada teste começa do zero */
+test.beforeEach(async () => { (await import(WORKER)).zerarLimites(); });
 test.before(async () => {
   par = await subtle.generateKey({ name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['sign', 'verify']);
   jwk = { ...(await subtle.exportKey('jwk', par.publicKey)), kid: 'k1', alg: 'RS256', use: 'sig' };
@@ -43,9 +45,10 @@ function fakeFetch(chamadas = []) {
     return res({}, false, 404);
   };
 }
-async function chama({ metodo = 'POST', origem = ORIGEM, tk, corpo = { de: '2026-07-01', ate: '2026-10-27' }, env = ENV, chamadas } = {}) {
+async function chama({ metodo = 'POST', origem = ORIGEM, tk, corpo = { de: '2026-07-01', ate: '2026-10-27' }, env = ENV, chamadas, ip } = {}) {
   const mod = await import(WORKER);
   const h = { Origin: origem, 'Content-Type': 'application/json' };
+  if (ip) h['CF-Connecting-IP'] = ip;
   if (tk !== null) h.Authorization = 'Bearer ' + (tk ?? await token());
   const r = await mod.default.fetch(new Request('https://porteiro.exemplo.workers.dev', { method: metodo, headers: h, body: metodo === 'POST' ? JSON.stringify(corpo) : undefined }), env, {}, fakeFetch(chamadas));
   return { status: r.status, headers: r.headers, body: r.status === 204 ? null : await r.json() };
@@ -88,3 +91,71 @@ test('dono logado: devolve contas, lançamentos (seguindo a paginação) e fatur
   assert.deepEqual(r.body.faturas.cartao1, [{ id: 'b1', dueDate: '2026-10-09', totalAmount: 100, closingDate: '2026-10-02' }]);
   assert.ok(calls.some(u => u.includes('dateFrom=2026-07-01') && u.includes('dateTo=2026-10-27')), 'usa os nomes de filtro da Pluggy');
 });
+
+/* ---------- limite de pedidos (#54) ---------- */
+test('limitador: deixa passar até o máximo, recusa o excedente com o tempo de espera, libera depois da janela e conta cada chave à parte', async () => {
+  const { limitador } = await import(WORKER);
+  const t0 = 1_000_000;
+  for (let i = 0; i < 3; i++) assert.equal(limitador('a', 3, 60_000, t0 + i).ok, true, `pedido ${i + 1}`);
+  const r = limitador('a', 3, 60_000, t0 + 10);
+  assert.equal(r.ok, false); assert.ok(r.esperaSeg >= 59 && r.esperaSeg <= 60, 'espera até o pedido mais antigo sair da janela: ' + r.esperaSeg);
+  assert.equal(limitador('b', 3, 60_000, t0 + 10).ok, true, 'outra chave não é afetada');
+  assert.equal(limitador('a', 3, 60_000, t0 + 60_001).ok, true, 'passada a janela, volta a liberar');
+});
+
+test('limitador: pedido recusado não prolonga o castigo (a janela é deslizante e só conta o que passou)', async () => {
+  const { limitador } = await import(WORKER);
+  const t0 = 5_000_000;
+  limitador('x', 2, 10_000, t0); limitador('x', 2, 10_000, t0 + 1);
+  for (let i = 0; i < 50; i++) assert.equal(limitador('x', 2, 10_000, t0 + 100 + i).ok, false);   // insistir não adianta
+  assert.equal(limitador('x', 2, 10_000, t0 + 10_002).ok, true, '10 segundos depois do primeiro pedido que passou, libera de novo');
+});
+
+test('inundação do mesmo endereço (IP): depois do limite vem 429 com Retry-After, a Pluggy e a conferência do login nem são chamadas', async () => {
+  const calls = [];
+  const env = { ...ENV, LIMITE_IP_POR_MIN: '5' };
+  for (let i = 0; i < 5; i++) assert.equal((await chama({ tk: null, ip: '203.0.113.9', env, chamadas: calls })).status, 401, `pedido ${i + 1} ainda é atendido (e recusado por falta de login)`);
+  const r = await chama({ tk: null, ip: '203.0.113.9', env, chamadas: calls });
+  assert.equal(r.status, 429); assert.equal(r.body.ok, false);
+  assert.match(r.body.erro, /Muitos pedidos.*segundos/); assert.ok(Number(r.headers.get('Retry-After')) >= 1, 'diz quantos segundos esperar');
+  assert.equal(r.headers.get('Access-Control-Allow-Origin'), ORIGEM, 'o app consegue ler a mensagem (CORS)');
+  assert.equal(calls.length, 0, 'nada foi chamado (nem a lista de chaves do Google, nem a Pluggy)');
+  assert.equal((await chama({ tk: null, ip: '203.0.113.77', env })).status, 401, 'outro endereço continua sendo atendido');
+});
+
+test('o dono usando normalmente (poucas buscas) nunca é barrado; abusar da busca estoura o limite e a Pluggy deixa de ser chamada', async () => {
+  const calls = [];
+  const env = { ...ENV, LIMITE_BUSCAS: '3', JANELA_BUSCAS_SEG: '300' };
+  for (let i = 0; i < 3; i++) assert.equal((await chama({ env, ip: '198.51.100.1', chamadas: calls })).status, 200, `busca ${i + 1}`);
+  const pluggyAntes = calls.filter(u => u.includes('pluggy.ai')).length;
+  const r = await chama({ env, ip: '198.51.100.1', chamadas: calls });
+  assert.equal(r.status, 429); assert.match(r.body.erro, /Muitos pedidos/); assert.ok(Number(r.headers.get('Retry-After')) > 0);
+  assert.equal(calls.filter(u => u.includes('pluggy.ai')).length, pluggyAntes, 'a Pluggy não foi chamada no pedido barrado');
+  // o limite é por CONTA (uid do login), não por endereço: trocar de IP não adianta
+  assert.equal((await chama({ env, ip: '198.51.100.2', chamadas: calls })).status, 429, 'outro IP, mesma conta: continua barrado');
+});
+
+test('pedido inválido (período errado) não gasta o limite de buscas da conta', async () => {
+  const env = { ...ENV, LIMITE_BUSCAS: '2' };
+  for (let i = 0; i < 5; i++) assert.equal((await chama({ env, corpo: { de: 'ontem', ate: 'hoje' } })).status, 400);
+  assert.equal((await chama({ env })).status, 200); assert.equal((await chama({ env })).status, 200);
+  assert.equal((await chama({ env })).status, 429);
+});
+
+test('limitador do Cloudflare (Rate Limiting binding), quando configurado, também é respeitado', async () => {
+  const chaves = [];
+  const env = { ...ENV, LIMITADOR: { limit: async ({ key }) => { chaves.push(key); return { success: chaves.length <= 2 }; } } };
+  assert.equal((await chama({ tk: null, ip: '192.0.2.1', env })).status, 401);
+  assert.equal((await chama({ tk: null, ip: '192.0.2.1', env })).status, 401);
+  assert.equal((await chama({ tk: null, ip: '192.0.2.1', env })).status, 429, 'o binding disse não');
+  assert.deepEqual([...new Set(chaves)], ['ip:192.0.2.1']);
+});
+
+test('valores de limite inválidos na configuração caem nos padrões (nunca desligam o limite)', async () => {
+  const env = { ...ENV, LIMITE_IP_POR_MIN: 'abc', LIMITE_BUSCAS: '-5', JANELA_BUSCAS_SEG: '0' };
+  assert.equal((await chama({ env })).status, 200, 'padrão permite o uso normal');
+  const { configLimites } = await import(WORKER);
+  assert.deepEqual(configLimites(env), { ipPorMin: 60, buscas: 10, janelaBuscaSeg: 300 });
+  assert.deepEqual(configLimites({ LIMITE_IP_POR_MIN: '5', LIMITE_BUSCAS: '2', JANELA_BUSCAS_SEG: '60' }), { ipPorMin: 5, buscas: 2, janelaBuscaSeg: 60 });
+});
+
