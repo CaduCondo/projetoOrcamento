@@ -58,8 +58,9 @@ Regras de trabalho do dia a dia (comandos, armadilhas, ambientes) ficam no [CLAU
 | Porteiro sob ataque de volume | limite de pedidos por origem/IP | 📋 issue |
 | Chave secreta do banco (Pluggy) | só nos "Segredos" do Cloudflare; nunca no site nem no repositório | 🟡 **girar o segredo que vazou** (ação do dono) |
 | Script malicioso na página (XSS) | o código usa `esc()` nos textos de usuário que entram no HTML (conferido por amostragem, não em cada ponto) | 🟡 sem teste automático dedicado de XSS e sem CSP (issue) |
-| Dependências com falha conhecida | auditoria e atualização automática | 📋 issue (Dependabot + CodeQL + `npm audit`) |
-| Segredo ou dado pessoal no repositório público | `.gitignore` + teste de higiene (`tests/repo.test.js`) | ✅; 📋 varredura automática de segredos |
+| Dependências com falha conhecida | workflow **Segurança** (`.github/workflows/seguranca.yml`): `npm audit` (o que vai para o site reprova por qualquer falha; ferramentas de teste reprovam só por falha crítica), CodeQL e Dependabot semanal | ✅ (alertas do CodeQL: aba Security do GitHub) |
+| Scripts de fora (Firebase SDK) alterados | versão fixa; falta atualizar para a série atual e usar SRI (`integrity=`) | 📋 issue |
+| Segredo ou dado pessoal no repositório público | `.gitignore` + teste de higiene (`tests/repo.test.js`) + varredura de segredos no histórico inteiro (gitleaks, workflow Segurança) | ✅ |
 | Conta do dono invadida | verificação em 2 etapas Google e GitHub, chave de API presa ao site | 🟡 ações do dono (SEGURANCA.md) |
 | Dados em trânsito | HTTPS em tudo | ✅ |
 | Dados em repouso | criptografia do Google (infraestrutura) | ✅; **sem criptografia de ponta a ponta** (dito aos usuários) |
@@ -82,7 +83,7 @@ Pirâmide: muitos testes rápidos embaixo, poucos e abrangentes em cima. **Tudo 
 | Regressão | os testes acima, a cada push; bug do CI vira issue e teste | CI | ✅ |
 | Qualidade dos testes (mutação) | `e2e/verificar-mutacoes.py` estraga o app de propósito | local | ✅ (manual) |
 | Celular | E2E em 375 px (sem rolagem lateral, toque ≥ 40 px) | `e2e/features/10-*` | ✅ |
-| Segurança estática (SAST) e dependências | CodeQL, Dependabot, `npm audit` | CI | 📋 |
+| Segurança estática (SAST), dependências e segredos | CodeQL, `npm audit`, gitleaks, Dependabot | workflow Segurança (push, PR e toda segunda) | ✅ |
 | Intrusão (pentest) automatizado | OWASP ZAP (varredura baseline) contra o `/dev/` | CI semanal | 📋 |
 | Intrusão manual | checklist OWASP ASVS, ver §6 | a cada versão grande | 📋 |
 | Carga e estresse | **k6** só no **porteiro** (nosso único servidor) | manual, contra ambiente de teste | 📋 |
@@ -149,4 +150,6 @@ Baseado no OWASP ASVS, adaptado ao nosso tamanho.
 ---
 
 ## 8. O que falta (backlog de engenharia)
-Cada item é uma issue no quadro: varredura de segurança no CI (CodeQL, Dependabot, `npm audit`, segredos) · teste de intrusão automatizado (ZAP) · limite de pedidos e teste de carga do porteiro (k6) · App Check (reCAPTCHA) · política de conteúdo (CSP) e testes de XSS · Page Objects por tela · redução do estado global · backup automático. Ver as issues com a etiqueta `qualidade`.
+Cada item é uma issue no quadro: atualizar o Firebase SDK e usar SRI · XSS e CSP · teste de intrusão automatizado (ZAP) · limite de pedidos e teste de carga do porteiro (k6) · App Check (reCAPTCHA) · Page Objects por tela · redução do estado global · backup automático. Ver as issues com a etiqueta `qualidade`.
+
+> **Nota sobre as 14 falhas "altas" do `npm audit` (27/11/2026):** estão nas ferramentas de teste (`firebase`, `firebase-tools`, `@grpc/grpc-js`, etc.), que **não vão para o site**. Entram no resumo semanal e o Dependabot propõe as atualizações; só falha **crítica** ou qualquer falha em dependência de produção reprova o workflow.
