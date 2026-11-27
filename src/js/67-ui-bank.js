@@ -2,8 +2,23 @@
    Só o dono do app usa (o porteiro confere o login). Os dados caem na MESMA tela de conferência da importação de arquivo. */
 const BankSync={
   urlKey:'orc-bank-url',
+  /* O endereço do porteiro NÃO é segredo (a proteção está no porteiro: confere o login, o e-mail do dono e o site de origem).
+     Fica no aparelho (para abrir rápido, mesmo sem internet) e também na nuvem da própria pessoa, em users/{uid}/config/banco
+     (as regras do banco já permitem; não precisa publicar regra nova), para aparecer sozinho em qualquer aparelho.
+     Quem escolheu guardar só no aparelho nunca grava nada na nuvem. */
   url(){try{return localStorage.getItem(this.urlKey)||''}catch{return''}},
-  setUrl(u){try{localStorage.setItem(this.urlKey,u.trim())}catch{}},
+  valido:u=>typeof u==='string'&&u.length<=300&&/^https:\/\/[^\s]+$/.test(u),
+  nuvemDoc(){return backend.store instanceof FirestoreStore&&backend.db&&backend.uid?backend.db.collection('users').doc(backend.uid).collection('config').doc('banco'):null},
+  setUrl(u){u=u.trim();try{localStorage.setItem(this.urlKey,u)}catch{}
+    if(this.valido(u))this.guardarNaNuvem(u)},
+  async guardarNaNuvem(u){const d=this.nuvemDoc();if(!d)return;try{await d.set({json:JSON.stringify({url:u})})}catch(e){console.warn('porteiro: não consegui guardar na nuvem',e&&e.code)}},
+  /* ao abrir a janela: aparelho vazio busca na nuvem; aparelho com endereço que a nuvem ainda não tem, envia. Devolve true se trouxe um endereço novo. */
+  async sincronizar(){const d=this.nuvemDoc();if(!d)return false;
+    try{const snap=await d.get(),nuvem=snap.exists?JSON.parse(snap.data().json||'{}').url:'',local=this.url();
+      if(!local&&this.valido(nuvem)){try{localStorage.setItem(this.urlKey,nuvem)}catch{}return true}
+      if(this.valido(local)&&local!==nuvem)await this.guardarNaNuvem(local)}
+    catch(e){console.warn('porteiro: não consegui sincronizar',e&&e.code)}
+    return false},
   /* pede ao porteiro os lançamentos do período (aaaa-mm-dd) */
   async buscar(de,ate){
     const url=this.url();if(!/^https:\/\//.test(url))throw new Error('Cole o endereço do porteiro (começa com https://).');
@@ -18,7 +33,8 @@ const isoDia=d=>d.toISOString().slice(0,10);
 
 const BankDialog={
   dados:null,conta:null,mes:0,ano:0,erro:'',carregando:false,meses:6,feitos:[],
-  open(){this.dados=null;this.conta=null;this.erro='';this.feitos=[];this.mes=selM;this.ano=selY;this.draw();dlg3.showModal()},
+  open(){this.dados=null;this.conta=null;this.erro='';this.feitos=[];this.mes=selM;this.ano=selY;this.draw();dlg3.showModal();
+    BankSync.sincronizar().then(trouxe=>{if(trouxe&&dlg3.open&&el('bkurl')&&!el('bkurl').value)el('bkurl').value=BankSync.url()})},     /* outro aparelho: o endereço aparece sozinho */
   async carregar(){this.erro='';this.carregando=true;this.draw();
     try{const ate=new Date(),de=new Date(Date.now()-this.meses*30.5*864e5);this.dados=await BankSync.buscar(isoDia(de),isoDia(ate));
       const cs=this.dados.contas||[];this.conta=(cs.find(c=>!contaCartao(c))||cs[0]||{}).id||null;

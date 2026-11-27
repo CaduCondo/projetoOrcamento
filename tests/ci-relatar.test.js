@@ -1,7 +1,7 @@
 /* Regras do relato automático do CI (tools/ci/relatar.js): sem rede, com resultado.json inventado. */
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { lerCenarios, planejar, resumo, corpoBug, tituloBug } = require('../tools/ci/relatar');
+const { lerCenarios, planejar, resumo, corpoBug, tituloBug, issuesParaProducao } = require('../tools/ci/relatar');
 
 const resultado = { suites: [{ title: '10-celular.feature.spec.js', suites: [{ title: 'Uso no celular', specs: [
   { title: 'A tela mês cabe', ok: true, tests: [{ status: 'expected', results: [{ status: 'passed' }] }] },
@@ -58,4 +58,26 @@ test('testes passaram mas a publicação falhou: o aviso NÃO diz que tudo passo
   const r = resumo({ branch: 'dev', jobs: { testes: 'success', e2e: 'success', publicar: 'failure' }, cenarios: [], falhas: [], runUrl: 'u', sha: 'a' });
   assert.match(r, /^⚠️ Os testes passaram, mas a publicação do site falhou/);
   assert.doesNotMatch(r, /Tudo passou/);
+});
+
+test('quadro: só o que está done e aberto sobe para produção (épico, PR e outros estados ficam)', () => {
+  const abertas = [
+    { number: 1, labels: [{ name: 'done' }] },
+    { number: 2, labels: [{ name: 'wtt' }] },
+    { number: 3, labels: [{ name: 'done' }, { name: 'epic' }] },
+    { number: 4, labels: [{ name: 'done' }], pull_request: {} },
+    { number: 5, labels: [{ name: 'done' }, { name: 'bug' }] },
+    { number: 6, labels: [] },
+  ];
+  assert.deepEqual(issuesParaProducao(abertas), [1, 5]);
+});
+
+test('bug do CI que passou de novo e já está done não é comentado de novo a cada execução', () => {
+  const abertas = [{ number: 7, title: tituloBug('dev', 'X'), labels: [{ name: 'bug' }, { name: 'done' }] }, { number: 8, title: tituloBug('dev', 'Y'), labels: [{ name: 'bug' }] }];
+  assert.deepEqual(planejar({ branch: 'dev', falhas: [], abertas, podeFechar: () => true }).fechar, [8]);
+});
+
+test('o aviso lista as issues que foram para produção', () => {
+  const r = resumo({ branch: 'main', jobs: { testes: 'success', e2e: 'success', publicar: 'success' }, cenarios: [], falhas: [], runUrl: 'u', sha: 'a', promovidas: [49, 11] });
+  assert.match(r, /No ar na produção.*#49, #11/);
 });

@@ -35,11 +35,17 @@ function planejar({ branch, falhas, abertas, podeFechar }) {
   const titulos = new Map(falhas.map(f => [tituloBug(branch, f.chave), f]));
   const abertasDaBranch = abertas.filter(i => i.title.startsWith(`${MARCA}${branch}]`));
   const criar = [...titulos].filter(([t]) => !abertasDaBranch.some(i => i.title === t)).map(([titulo, f]) => ({ titulo, falha: f }));
-  const fechar = abertasDaBranch.filter(i => !titulos.has(i.title) && podeFechar(i.title)).map(i => i.number);
+  const fechar = abertasDaBranch.filter(i => !titulos.has(i.title) && podeFechar(i.title) && !(i.labels || []).some(l => (l.name || l) === 'done')).map(i => i.number);
   return { criar, fechar };
 }
 
-function resumo({ branch, jobs, cenarios, falhas, runUrl, artefatoUrl, paginaUrl, sha }) {
+/* Quadro: backlog → todo → wip → wtt → done → em-producao.
+   `done` = testes verdes no dev; quando a main é publicada, tudo que está `done` (e aberto) vira `em-producao` e fecha. */
+function issuesParaProducao(abertas) {
+  return abertas.filter(i => !i.pull_request && (i.labels || []).some(l => (l.name || l) === 'done') && !(i.labels || []).some(l => ['epic'].includes(l.name || l))).map(i => i.number);
+}
+
+function resumo({ branch, jobs, cenarios, falhas, runUrl, artefatoUrl, paginaUrl, sha, promovidas = [] }) {
   const ico = r => ({ success: '✅', failure: '❌', cancelled: '⚪', skipped: '⏭️' }[r] || '❔');
   const total = cenarios.length, reprov = cenarios.filter(c => !c.ok).length;
   const testesOk = jobs.testes === 'success' && jobs.e2e === 'success';
@@ -58,6 +64,7 @@ function resumo({ branch, jobs, cenarios, falhas, runUrl, artefatoUrl, paginaUrl
     for (const f of falhas) linhas.push(`- ${f.chave}`);
     linhas.push('', 'Cada um virou uma issue `bug` (ou já existia uma aberta).', '');
   }
+  if (promovidas.length) linhas.push(`🚀 **No ar na produção** (issues fechadas): ${promovidas.map(n => '#' + n).join(', ')}`, '');
   linhas.push(`- [Ver esta execução](${runUrl})`);
   if (paginaUrl && jobs.publicar === 'success') linhas.push(`- [Relatório dos testes (passo a passo e fotos)](${paginaUrl})`);
   if (artefatoUrl) linhas.push(`- [Baixar relatório e fotos das falhas (.zip)](${artefatoUrl})`);
@@ -101,7 +108,7 @@ function principal() {
     falhas.push({ chave: 'Testes de ponta a ponta não executaram ou não conferem', funcionalidade: 'Testes de ponta a ponta', nome: 'npm run e2e / npm run e2e:ver', erro: 'Nenhum cenário reprovado individualmente: veja o log (instalação, montagem do app ou conferência da quantidade de cenários).' });
 
   if (jobs.publicar === 'failure') falhas.push({ chave: 'Publicação do site falhou', funcionalidade: 'Publicação', nome: 'Publicar site (GitHub Pages)', erro: 'Os testes passaram, mas o site não foi publicado. Veja o log da etapa "Publicar site" (pode ser instabilidade do GitHub: tente rodar de novo).' });
-  const abertas = JSON.parse(gh(['issue', 'list', '--repo', repo, '--label', 'ci-automatico', '--state', 'open', '--limit', '200', '--json', 'number,title']) || '[]');
+  const abertas = JSON.parse(gh(['issue', 'list', '--repo', repo, '--label', 'ci-automatico', '--state', 'open', '--limit', '200', '--json', 'number,title,labels']) || '[]');
   const GENERICAS = { 'Testes de lógica ou regras do banco reprovaram': () => jobs.testes === 'success', 'Testes de ponta a ponta não executaram ou não conferem': () => jobs.e2e === 'success', 'Publicação do site falhou': () => jobs.publicar === 'success' };
   const podeFechar = titulo => {
     const chave = titulo.replace(/^\[CI\/[^\]]+\] /, '');
@@ -115,23 +122,34 @@ function principal() {
     gh(['issue', 'create', '--repo', repo, '--title', titulo, '--label', 'bug', '--label', 'backlog', '--label', 'P1', '--label', 'ci-automatico', '--body-file', '-'], corpoBug({ falha, branch, sha, runUrl, artefatoUrl: env.ARTEFATO_URL, repo }));
   }
   for (const n of fechar) {
-    gh(['issue', 'comment', String(n), '--repo', repo, '--body-file', '-'], `✅ O cenário voltou a passar em \`${branch}\` (commit ${String(sha || '').slice(0, 7)}). [Execução](${runUrl}). Fechada automaticamente.\n\n---\n_Gerado automaticamente pelo CI._`);
-    gh(['issue', 'edit', String(n), '--repo', repo, '--remove-label', 'backlog', '--remove-label', 'wip', '--add-label', 'done']);
-    gh(['issue', 'close', String(n), '--repo', repo, '--reason', 'completed']);
+    gh(['issue', 'comment', String(n), '--repo', repo, '--body-file', '-'], `✅ O cenário voltou a passar em \`${branch}\` (commit ${String(sha || '').slice(0, 7)}). [Execução](${runUrl}). Marcada como \`done\`; quando a main for publicada ela vira \`em-producao\` e fecha sozinha.\n\n---\n_Gerado automaticamente pelo CI._`);
+    gh(['issue', 'edit', String(n), '--repo', repo, '--remove-label', 'backlog', '--remove-label', 'todo', '--remove-label', 'wip', '--remove-label', 'wtt', '--add-label', 'done']);
+  }
+
+  /* produção publicada: o que estava `done` vira `em-producao` e fecha */
+  let promovidas = [];
+  if (branch === 'main' && jobs.publicar === 'success') {
+    const prontas = JSON.parse(gh(['issue', 'list', '--repo', repo, '--label', 'done', '--state', 'open', '--limit', '100', '--json', 'number,labels']) || '[]');
+    promovidas = issuesParaProducao(prontas);
+    for (const n of promovidas) {
+      gh(['issue', 'comment', String(n), '--repo', repo, '--body-file', '-'], `🚀 No ar na produção (commit ${String(sha || '').slice(0, 7)}, [execução](${runUrl})). Estado: \`em-producao\`. Fechada automaticamente.\n\n---\n_Gerado automaticamente pelo CI._`);
+      gh(['issue', 'edit', String(n), '--repo', repo, '--remove-label', 'done', '--add-label', 'em-producao']);
+      gh(['issue', 'close', String(n), '--repo', repo, '--reason', 'completed']);
+    }
   }
 
   /* issue fixa que dispara o e-mail */
   const fixa = JSON.parse(gh(['issue', 'list', '--repo', repo, '--search', 'Resultados do CI in:title', '--state', 'all', '--limit', '20', '--json', 'number,title,state']) || '[]').find(i => i.title === '📬 Resultados do CI');
   let numero = fixa && fixa.number;
-  const corpo = resumo({ branch, jobs, cenarios, falhas, runUrl, artefatoUrl: env.ARTEFATO_URL, paginaUrl: env.PAGINA_URL, sha });
+  const corpo = resumo({ branch, jobs, cenarios, falhas, runUrl, artefatoUrl: env.ARTEFATO_URL, paginaUrl: env.PAGINA_URL, sha, promovidas });
   if (!numero) {
     const url = gh(['issue', 'create', '--repo', repo, '--title', '📬 Resultados do CI', '--label', 'qualidade', '--body-file', '-'],
       'Cada execução dos testes no GitHub comenta aqui o resultado (o GitHub manda por e-mail para quem está mencionado). Não fechar.').trim();
     numero = url.split('/').pop();
   } else if (fixa.state === 'CLOSED') gh(['issue', 'reopen', String(numero), '--repo', repo]);
   gh(['issue', 'comment', String(numero), '--repo', repo, '--body-file', '-'], corpo);
-  console.log(`Resultado comunicado (issue #${numero}); bugs novos: ${criar.length}; fechados: ${fechar.length}.`);
+  console.log(`Resultado comunicado (issue #${numero}); bugs novos: ${criar.length}; marcados done: ${fechar.length}; promovidos a em-producao: ${promovidas.length}.`);
 }
 
-module.exports = { lerCenarios, planejar, resumo, corpoBug, tituloBug, limpar };
+module.exports = { lerCenarios, planejar, resumo, corpoBug, tituloBug, limpar, issuesParaProducao };
 if (require.main === module) principal();
