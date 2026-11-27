@@ -1,0 +1,9 @@
+{
+  "version": "12.19.0",
+  "sri": {
+    "app": "sha384-aUtWR1iCiOCHS8pn1nKNXMZm3I/eDrV63IXWXgE+mHHqJfYTWYV+jGk0sCXz57+U",
+    "auth": "sha384-ZRqyA8Xkw0A6FmVya9A0Werzt9yjKKAp2TCzqVJjHK1O3oyb0z9jMxpkWPVoFtUm",
+    "firestore": "sha384-jxdN9nS+cvQavyzo/bNcMoHfxvk0kWtPAfPDRq3EQ/wvbCVLNheaVIphKWMD4/g0",
+    "app-check": "sha384-B/AP4FGRp30uqxiGDJ1XO7TvHcPxaZEPR798W+ASc3xztnppTUQe2E0ThTTM2+FH"
+  }
+}
