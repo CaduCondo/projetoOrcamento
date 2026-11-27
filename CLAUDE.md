@@ -53,6 +53,7 @@ gh issue list --label wip   # ver o quadro por coluna
 | Lógica (Node + jsdom) | `npm test` (hoje ~167) | regras de dinheiro, categorias, importação; toda regra nova ganha teste em `tests/` |
 | Regras do banco | `npm run test:rules` | emulador do Firebase |
 | Ponta a ponta (Chrome de verdade) | `python build.py --env local --out dist/e2e/index.html`, depois `npm run e2e` e `npm run e2e:ver` | cenários em **português (Gherkin)** em `e2e/features`, passos em `e2e/steps` |
+| E2E da **nuvem** (Chrome + emuladores de login e banco, regras reais) | `npm run e2e:nuvem:emu` e `npm run e2e:nuvem:ver` (precisa de Java) | cenários em `e2e/nuvem/features`; mexeu em login, banco, regras, perfil, administrador ou SDK: rodar |
 | Prova de que o teste presta | `python e2e/verificar-mutacoes.py [filtro]` | estraga o app de propósito; se aparecer **PERIGO**, o teste está fraco e precisa ser reforçado |
 
 Regras dos testes E2E (as do dono):
@@ -105,6 +106,7 @@ CI (`.github/workflows/ci-deploy.yml`): jobs `testes` + `e2e` → só então `pu
 - **CI avisa sozinho** (`tools/ci/relatar.js`): bug automático por cenário reprovado (fecha sozinho), resultado na issue "📬 Resultados do CI" (vira e-mail) e relatório em `/relatorio/<branch>/`. Não abrir issue de bug à mão para falha de CI: ela já existe (`ci-automatico`). Detalhes em `docs/PEDIDOS-E-DECISOES.md` §5.26.
 - Publicação: o `deploy-pages` às vezes não enxerga o pacote recém-enviado ("No artifacts named github-pages"); o workflow já espera e tenta de novo. Se aparecer de novo, ler o log antes de rodar de novo.
 - Neste ambiente (sessão na nuvem) o `gh` só fala REST: `gh issue list/view` (GraphQL) é bloqueado; usar `gh api repos/...` ou as ferramentas do GitHub. Para rodar o E2E aqui sem baixar navegador: apontar `PLAYWRIGHT_BROWSERS_PATH` para uma pasta com links para o Chromium já instalado.
+- E2E da nuvem: `firestore-debug.log` é gerado pelos emuladores (está no `.gitignore`, não commitar). Mutações da nuvem têm o prefixo `nuvem:` no script e sobem o emulador sozinhas (`python e2e/verificar-mutacoes.py "nuvem:"`).
 - `verificar-mutacoes.py` troca **todas** as ocorrências do trecho: ao estragar o app à mão para provar um teste, estragar do mesmo jeito (trocar só uma pode não ser pego).
 
 ## Pendências combinadas

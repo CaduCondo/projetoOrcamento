@@ -79,7 +79,8 @@ Pirâmide: muitos testes rápidos embaixo, poucos e abrangentes em cima. **Tudo 
 | Unitário / regras de negócio | Node + jsdom | `tests/*.test.js` | ✅ (~170) |
 | Regras de segurança do banco | emulador do Firebase | `tests/rules/` | ✅ |
 | Integração (porteiro ↔ banco simulado) | Node, API da Pluggy simulada | `tests/pluggy-worker.test.js` | ✅ |
-| Funcional / ponta a ponta (E2E) | **Playwright** + **BDD** em português (Gherkin) | `e2e/features`, `e2e/steps` | ✅ (~55 cenários) |
+| Funcional / ponta a ponta (E2E) | **Playwright** + **BDD** em português (Gherkin) | `e2e/features`, `e2e/steps` | ✅ (~59 cenários) |
+| E2E da **nuvem**: app no Chrome + emuladores de login e banco, com as regras reais | Playwright + `firebase emulators:exec` | `e2e/nuvem/` (`npm run e2e:nuvem:emu`) | ✅ (11 cenários; trava a publicação) |
 | Regressão | os testes acima, a cada push; bug do CI vira issue e teste | CI | ✅ |
 | Qualidade dos testes (mutação) | `e2e/verificar-mutacoes.py` estraga o app de propósito | local | ✅ (manual) |
 | Celular | E2E em 375 px (sem rolagem lateral, toque ≥ 40 px) | `e2e/features/10-*` | ✅ |

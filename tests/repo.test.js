@@ -35,8 +35,10 @@ test('build: os três ambientes montam sem sobras de marcadores', () => {
     execFileSync(process.platform === 'win32' ? 'python' : 'python3', ['build.py', '--env', env, '--out', out], { cwd: ROOT, stdio: 'pipe' });
     const html = read(out);
     fs.rmSync(path.join(ROOT, out), { force: true });
-    for (const marcador of ['/*CSS*/', '/*APP*/', '/*CHARTJS*/', '/*SEED*/', '/*FIREBASE*/', "/*ENV*/", '<!--FBSDK-->'])
+    for (const marcador of ['/*CSS*/', '/*APP*/', '/*CHARTJS*/', '/*SEED*/', '/*FIREBASE*/', "/*ENV*/", '<!--FBSDK-->', '/*EMULADOR*/'])
       assert.ok(!html.includes(marcador), `${env}: sobrou ${marcador}`);
+    // o modo "emu" (só dos testes da nuvem) nunca pode vazar para o site publicado
+    assert.ok(!html.includes('useEmulator') && !html.includes('demo-orcamento') && !html.includes('chave-do-emulador'), `${env}: não pode ter nada de emulador`);
     assert.ok(html.includes(`const ENV="${env}"`) || html.includes(`const ENV='${env}'`), `${env}: ENV não definido`);
     assert.equal(html.includes('firebasejs'), env !== 'local', `${env}: SDK do Firebase só nos ambientes de nuvem`);
     assert.ok(!html.includes('const SEED={') && html.includes('const SEED=null'), `${env}: nenhum dado embutido`);

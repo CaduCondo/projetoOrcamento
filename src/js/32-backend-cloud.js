@@ -11,7 +11,7 @@ class CloudBackend {
   constructor(){firebase.initializeApp(FBCFG);
     /* App Check: prova ao Firebase que quem chama é o NOSSO site (scripts de fora são recusados). Liga quando a chave do reCAPTCHA v3 estiver em src/config. */
     if(FBCFG.appCheckKey&&firebase.appCheck)try{firebase.appCheck().activate(FBCFG.appCheckKey,true)}catch(e){console.error('App Check:',e)}
-    this.auth=firebase.auth();this.db=firebase.firestore();
+    this.auth=firebase.auth();this.db=firebase.firestore();/*EMULADOR*/
     this.uid=null;this.store=null;this.timer=null;this.chain=Promise.resolve()}
 
   /* ---- textos e comportamentos que as telas consultam ---- */
