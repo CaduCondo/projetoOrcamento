@@ -1,0 +1,16 @@
+# Atualização automática de dependências: o Dependabot abre um PR por semana e o CI testa antes de qualquer merge.
+version: 2
+updates:
+  - package-ecosystem: npm            # ferramentas de teste (não vão para o site)
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    open-pull-requests-limit: 3
+    labels: [enhancement, backlog, qualidade]
+    groups:
+      ferramentas-de-teste:
+        patterns: ['*']
+  - package-ecosystem: github-actions # versões das ações usadas no CI
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    open-pull-requests-limit: 3
+    labels: [enhancement, backlog, qualidade]

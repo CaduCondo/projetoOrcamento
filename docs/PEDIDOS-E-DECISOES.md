@@ -271,3 +271,8 @@ Pedido do dono: processo de desenvolvimento muito bem feito, seguro, com testes 
 - Modelos de issue pedem cenário BDD, resultado esperado e obtido, evidência e o teste de regressão que vai nascer.
 - O que ainda falta (issues de backlog): varredura de segurança no CI, teste de intrusão automatizado, limite de pedidos e teste de carga do porteiro, App Check, CSP/XSS, Page Objects, redução do estado global.
 
+### 5.30 Segurança no CI (issue #52)
+- Novo workflow **Segurança** (`.github/workflows/seguranca.yml`), separado do CI de publicação (não trava o site por falha antiga de ferramenta de teste): **CodeQL** (análise de código, com as consultas de segurança e qualidade), **npm audit** (reprova por qualquer falha no que vai para o site e por falha crítica nas ferramentas; as altas das ferramentas aparecem no resumo) e **gitleaks** (procura chaves/senhas no histórico inteiro). Roda em todo envio, PR e toda segunda-feira. **Dependabot** abre PR semanal (npm e ações do GitHub).
+- Primeira execução (27/11/2026): os três passaram. Alertas do CodeQL ficam na aba Security do GitHub.
+- Achado: o site usa o Firebase SDK 10.12.5 carregado de endereço de fora, sem SRI → issue própria (atualizar + `integrity`).
+
