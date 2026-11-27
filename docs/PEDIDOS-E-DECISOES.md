@@ -233,13 +233,13 @@ Pedido do dono: testes funcionais E2E de cada funcionalidade, **sem falso positi
 **Decisão:** botão "✏️ Editar nome" ao lado do título da janela. Pergunta o novo nome (recusa vazio ou nome já usado por outra categoria do mesmo tipo). Se a categoria já existia em meses anteriores, pergunta: **"Em todos os meses"** (corrige o nome em todas as versões, os valores não mudam) ou **"Só de mês/ano em diante"** (mesma regra do cadastro: o passado guarda o nome antigo). Categoria nova, sem passado, muda direto.
 **Defeito achado no caminho:** duas perguntas seguidas (`askChoice`) se cancelavam pelo evento `close`; corrigido em `46-ui-dialogs.js`.
 
-### 5.23 Celular: testes automáticos de largura e de toque (issue #11)
+### 5.25 Celular: testes automáticos de largura e de toque (issue #11)
 - Novo `e2e/features/10-celular.feature`: com 375 px de largura, **nenhuma das 6 telas** passa da largura do celular (sem rolagem para o lado) e **todo botão** visível tem pelo menos **40 px de altura**. Ficam fora da regra só os cabeçalhos que ordenam tabelas/listas e as células da planilha da tela Ano (dezenas de valores lado a lado).
 - Ajustados no visual: botões do topo (＋ ano, ?, Sair, e-mail), meses e "＋ Lançar" da tela Mês passaram de 32–36 px para 40 px.
 - Provado por mutação (`verificar-mutacoes.py`): estragando o CSS de propósito, os dois cenários reprovam.
 - Falta: conferir num celular de verdade (por isso a issue #11 continua aberta).
 
-### 5.24 CI que avisa sozinho: relatório, bugs e e-mail (issues #15 e #16)
+### 5.26 CI que avisa sozinho: relatório, bugs e e-mail (issues #15 e #16)
 Pedido do dono: o processo tem que ser **automático**, sem depender de alguém abrir o relatório, e os testes têm que ter **certeza** de testar de verdade (sem falso positivo).
 - **E-mail com o resultado:** ao fim de cada execução (push em `main`/`dev`), o CI comenta na issue fixa **"📬 Resultados do CI"** mencionando o dono; o GitHub manda o e-mail (resumo por etapa, quantos cenários passaram, links). O título do aviso diz a verdade: ✅ tudo passou · ⚠️ testes passaram mas a publicação falhou · ❌ algo reprovou. Para receber: no GitHub, Settings → Notifications, deixar e-mail ligado para "Participating, @mentions".
 - **Relatório abrível:** quando tudo passa, o relatório do Playwright (passo a passo e foto de cada cenário) fica em `https://caducondo.github.io/projetoOrcamento/relatorio/dev/` (e `/relatorio/main/`). Fica só o último de cada ambiente. Quando algo reprova, o site não é publicado; o relatório, as fotos e o trace vão num `.zip` (link no aviso, vale 14 dias).
@@ -248,11 +248,26 @@ Pedido do dono: o processo tem que ser **automático**, sem depender de alguém 
 - **Correções no caminho:** o aviso dizia "tudo passou" mesmo com a publicação falhando (agora testado); a publicação falhava às vezes com "No artifacts named github-pages" (o GitHub demora a listar o pacote novo): agora o CI espera o pacote aparecer e tenta de novo uma vez.
 - Código: `tools/ci/relatar.js` (regras testadas em `tests/ci-relatar.test.js`) e `.github/workflows/ci-deploy.yml`.
 
-### 5.25 Menu da foto e do nome no topo (issue #49)
+### 5.27 Menu da foto e do nome no topo (issue #49)
 Pedido do dono (olhando o celular): "?" e "Sair" ficavam perdidos numa linha de baixo. A foto com o nome virou um **menu que abre para baixo**, no celular e no computador:
 - **Meu cadastro** (mostra o seu nome; leva ao cadastro), **Usuários** (só para o administrador), **Ajuda desta tela** (mostra de novo a explicação guiada) e **Sair**.
 - Abre ao tocar na foto/nome; fecha ao tocar de novo, tocar fora, apertar **Esc** ou escolher uma opção. Opções com pelo menos 44 px de altura.
 - Topo no celular: ano, "＋ ano" e foto+nome numa linha só. Em telas médias (701–1240 px) o nome some e fica só foto e seta, por falta de espaço.
 - O passo "Ajuda" do tour agora aponta para a foto/nome (o botão "?" não existe mais solto).
 - Testes: `tests/smoke-profile.test.js` (abre/fecha, itens, administrador x usuário comum) e `e2e/features/11-menu-usuario.feature` (Chrome de verdade, 1280/800/375 px); 6 mutações em `verificar-mutacoes.py`, todas detectadas.
+
+### 5.28 Endereço do porteiro lembrado em todos os aparelhos (issue #50)
+Pedido do dono: no celular o campo "Endereço do porteiro (Cloudflare)" vinha vazio (só o computador o lembrava) e ele teria que digitar.
+- **Por que era assim:** o endereço ficava só no navegador de cada aparelho (`localStorage`).
+- **É seguro guardar?** Sim: o endereço do porteiro **não é segredo** (como a chave pública do Firebase). A proteção está no porteiro, que só atende quem tem login válido do Firebase **com o e-mail do dono**, vindo do site permitido. Por isso o endereço **não** vai para o código nem para o repositório (público); fica na nuvem **da própria pessoa**.
+- **Como ficou:** ao digitar, o endereço é guardado no aparelho e em `users/{uid}/config/banco` (formato `{json}`, que as regras do banco atuais já permitem: não precisa publicar regra nova). Ao abrir "Buscar do banco": aparelho vazio busca na nuvem e preenche sozinho; aparelho com endereço que a nuvem não tem, envia. Sem internet, vale o do aparelho.
+- **Regras:** só endereços `https://` (até 300 caracteres) vão para a nuvem; quem escolheu **guardar só no aparelho** nunca grava nada no banco; "apagar dados da nuvem" apaga o endereço também.
+- Testes: 4 em `tests/smoke-admin.test.js`, provados por mutação manual (puxar da nuvem, modo só aparelho, aceitar `http`, apagar junto).
+
+### 5.29 Processo de engenharia (issue #51)
+Pedido do dono: processo de desenvolvimento muito bem feito, seguro, com testes de várias camadas e o quadro **backlog → todo → wip → wtt → done → em-producao**.
+- Nova documentação: `docs/ENGENHARIA.md` (arquitetura, ameaças e controles, estratégia de testes, processo, checklist de segurança, o que falta) e `docs/REGRAS-DE-NEGOCIO.md`.
+- **Quadro de 6 estados** com etiquetas novas `todo`, `wtt` e `em-producao`. O CI promove **sozinho** `done` → `em-producao` (e fecha a issue) quando a `main` é publicada; bug do CI que volta a passar vira `done` e segue o mesmo caminho.
+- Modelos de issue pedem cenário BDD, resultado esperado e obtido, evidência e o teste de regressão que vai nascer.
+- O que ainda falta (issues de backlog): varredura de segurança no CI, teste de intrusão automatizado, limite de pedidos e teste de carga do porteiro, App Check, CSP/XSS, Page Objects, redução do estado global.
 

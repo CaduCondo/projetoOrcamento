@@ -23,6 +23,6 @@ class FirestoreStore {
   /* apaga TODOS os dados desta pessoa na nuvem (usado quando ela muda para "só no aparelho" e pede para apagar) */
   async deleteAll(){
     const base=this.userDoc(),ys=await base.collection('years').get(),batch=this.db.batch();
-    ys.forEach(d=>batch.delete(base.collection('years').doc(d.id)));batch.delete(base.collection('meta').doc('main'));
+    ys.forEach(d=>batch.delete(base.collection('years').doc(d.id)));batch.delete(base.collection('meta').doc('main'));batch.delete(base.collection('config').doc('banco'));
     await batch.commit();this.snap={meta:'',years:{}}}
 }

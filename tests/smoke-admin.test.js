@@ -221,3 +221,65 @@ test('Buscar do banco: só o administrador vê; busca pelo porteiro com o token 
   assert.equal(ana.$('[data-bank]'), null, 'quem não é administrador não vê');
   ana.close();
 });
+
+/* ---- endereço do porteiro lembrado em todos os aparelhos (#50) ---- */
+const PORTEIRO = 'https://orcamento-banco.exemplo.workers.dev';
+const docBanco = db => db.docs['users/uid2/config/banco'] && JSON.parse(db.docs['users/uid2/config/banco'].json).url;
+
+test('porteiro: o endereço digitado fica na nuvem do dono e aparece sozinho num aparelho novo', async () => {
+  const { db, adm } = await cenario();
+  adm.click('[data-tab="aj"]'); adm.click('[data-bank]');
+  assert.equal(adm.$('#bkurl').value, '', 'aparelho novo: começa vazio');
+  adm.type('#bkurl', PORTEIRO); adm.change('#bkurl', PORTEIRO);
+  await adm.waitFor(() => docBanco(db) === PORTEIRO, 3000, 'gravou na nuvem');
+  assert.deepEqual(Object.keys(db.docs['users/uid2/config/banco']), ['json'], 'só o campo json (as regras do banco já permitem)');
+  // outro aparelho (navegador novo, sem nada guardado): entra com a mesma conta
+  adm.close(); db.current = null;
+  const outro = abrir(db);
+  await outro.waitFor(() => outro.$('#lf'), 3000, 'login');
+  outro.type('#lem', 'dono@exemplo.com'); outro.type('#lpw', SENHA); outro.submit('#lf');
+  await outro.waitFor(() => outro.ev('user') === 'dono@exemplo.com' && outro.$('[data-usecat]'), 4000, 'entrou');
+  assert.equal(outro.ev("BankSync.url()"), '', 'este aparelho ainda não conhece o endereço');
+  outro.click('[data-tab="aj"]'); outro.click('[data-bank]');
+  await outro.waitFor(() => outro.$('#bkurl').value === PORTEIRO, 3000, 'o campo se preenche sozinho');
+  assert.equal(outro.ev("BankSync.url()"), PORTEIRO, 'e fica guardado neste aparelho também');
+  outro.close();
+});
+
+test('porteiro: trocar o endereço vale nos dois lugares; endereço que não é https não vai para a nuvem', async () => {
+  const { db, adm } = await cenario();
+  adm.click('[data-tab="aj"]'); adm.click('[data-bank]');
+  adm.type('#bkurl', PORTEIRO); adm.change('#bkurl', PORTEIRO);
+  await adm.waitFor(() => docBanco(db) === PORTEIRO, 3000, 'primeiro endereço');
+  adm.type('#bkurl', 'https://novo.exemplo.workers.dev'); adm.change('#bkurl', 'https://novo.exemplo.workers.dev');
+  await adm.waitFor(() => docBanco(db) === 'https://novo.exemplo.workers.dev', 3000, 'troca na nuvem');
+  assert.equal(adm.ev('BankSync.url()'), 'https://novo.exemplo.workers.dev');
+  adm.type('#bkurl', 'http://inseguro.exemplo.com'); adm.change('#bkurl', 'http://inseguro.exemplo.com');
+  await adm.sleep(50);
+  assert.equal(docBanco(db), 'https://novo.exemplo.workers.dev', 'http (sem cadeado) não é guardado na nuvem');
+  adm.close();
+});
+
+test('porteiro: quem guarda só no aparelho nunca grava o endereço na nuvem, e apagar os dados da nuvem apaga o endereço também', async () => {
+  const { db, adm } = await cenario();
+  adm.ev("BankSync.setUrl('" + PORTEIRO + "')");
+  await adm.waitFor(() => docBanco(db) === PORTEIRO, 3000, 'na nuvem (modo nuvem)');
+  await adm.ev('backend.store.deleteAll()');
+  assert.equal(db.docs['users/uid2/config/banco'], undefined, 'apagar os dados da nuvem leva o endereço junto');
+  adm.ev("backend.store = new DeviceStore('uid2')");                      // simula a escolha "só neste aparelho"
+  adm.ev("BankSync.setUrl('" + PORTEIRO + "')"); await adm.sleep(50);
+  assert.equal(db.docs['users/uid2/config/banco'], undefined, 'só no aparelho: nada vai para o banco');
+  assert.equal(adm.ev('BankSync.url()'), PORTEIRO, 'mas fica no aparelho');
+  adm.close();
+});
+
+test('porteiro: sem internet usa o que está no aparelho, sem erro', async () => {
+  const { db, adm } = await cenario();
+  adm.ev("BankSync.setUrl('" + PORTEIRO + "')"); await adm.waitFor(() => docBanco(db) === PORTEIRO, 3000, 'gravou');
+  db.failDirect = true;                                                    // o banco "cai"
+  adm.click('[data-tab="aj"]'); adm.click('[data-bank]'); await adm.sleep(80);
+  assert.equal(adm.$('#bkurl').value, PORTEIRO, 'o campo continua preenchido pelo aparelho');
+  assert.deepEqual(adm.dom.errors || [], []);
+  adm.close();
+});
+
