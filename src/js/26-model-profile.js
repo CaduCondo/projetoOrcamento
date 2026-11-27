@@ -1,7 +1,11 @@
 /* Perfil (cadastro) do usuário: nome, nascimento, profissão, foto e onde guardar os dados.
    storage: null (ainda não escolheu; por enquanto os dados ficam na nuvem) · 'cloud' (banco de dados) · 'local' (arquivo no aparelho) */
 const MAX_LEMBRETES=3;                       // quantas vezes lembrar de completar o cadastro
-const MAX_FOTO=120000;                       // tamanho máximo da foto (texto) guardada no cadastro
+const MAX_FOTO=120000;
+/* A foto vira o src de um <img>: só aceita imagem em base64 (data URL). Qualquer outra coisa (aspas, javascript:, endereço de fora) é recusada,
+   porque o cadastro de OUTRA pessoa pode chegar ao navegador do administrador e um texto malicioso viraria código. */
+const FOTO_RE=/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/]+={0,2}$/;
+const fotoSegura=f=>typeof f==='string'&&f.length<=MAX_FOTO+10000&&FOTO_RE.test(f);                       // tamanho máximo da foto (texto) guardada no cadastro
 let profile=null;                            // perfil de quem está logado
 
 const defaultProfile=()=>({nome:'',nascimento:'',profissao:'',foto:'',storage:null,lembretes:0,criadoEm:null});
@@ -26,6 +30,7 @@ function validateProfile(p,hoje=new Date()){
     if(d>hoje)return'A data de nascimento não pode ser no futuro.';
     if(d.getFullYear()<1900)return'Data de nascimento inválida.'}
   if(p.foto&&p.foto.length>MAX_FOTO)return'A foto ficou grande demais. Escolha outra imagem.';
+  if(p.foto&&!fotoSegura(p.foto))return'Essa foto não é uma imagem válida. Escolha outra.';
   return null}
 const cleanProfile=p=>({...p,nome:(p.nome||'').trim().replace(/\s+/g,' '),profissao:(p.profissao||'').trim().replace(/\s+/g,' ')});
 

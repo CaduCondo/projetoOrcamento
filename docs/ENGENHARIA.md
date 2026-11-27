@@ -57,7 +57,7 @@ Regras de trabalho do dia a dia (comandos, armadilhas, ambientes) ficam no [CLAU
 | Rota de API (porteiro) usada por estranho | token do Firebase conferido (assinatura do Google, validade, projeto, **e-mail do dono**), origem permitida, período máximo, campos mínimos | ✅ testado (`tests/pluggy-worker.test.js`) |
 | Porteiro sob ataque de volume | limite de pedidos por origem/IP | 📋 issue |
 | Chave secreta do banco (Pluggy) | só nos "Segredos" do Cloudflare; nunca no site nem no repositório | 🟡 **girar o segredo que vazou** (ação do dono) |
-| Script malicioso na página (XSS) | o código usa `esc()` nos textos de usuário que entram no HTML (conferido por amostragem, não em cada ponto) | 🟡 sem teste automático dedicado de XSS e sem CSP (issue) |
+| Script malicioso na página (XSS) | `esc()` nos textos; foto só base64; ícone/cor/ids/tipo validados na entrada (`saneIds`, `icoOk`, `corOk`, `fotoSegura`); regra do banco para a foto; **testes** em `tests/smoke-xss.test.js` e `e2e/features/12-seguranca.feature` | ✅ (falta a política de conteúdo/CSP: issue; a regra da foto precisa ser publicada pelo dono) |
 | Dependências com falha conhecida | workflow **Segurança** (`.github/workflows/seguranca.yml`): `npm audit` (o que vai para o site reprova por qualquer falha; ferramentas de teste reprovam só por falha crítica), CodeQL e Dependabot semanal | ✅ (alertas do CodeQL: aba Security do GitHub) |
 | Scripts de fora (Firebase SDK) alterados | versão fixa; falta atualizar para a série atual e usar SRI (`integrity=`) | 📋 issue |
 | Segredo ou dado pessoal no repositório público | `.gitignore` + teste de higiene (`tests/repo.test.js`) + varredura de segredos no histórico inteiro (gitleaks, workflow Segurança) | ✅ |

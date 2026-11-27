@@ -276,3 +276,12 @@ Pedido do dono: processo de desenvolvimento muito bem feito, seguro, com testes 
 - Primeira execução (27/11/2026): os três passaram. Alertas do CodeQL ficam na aba Security do GitHub.
 - Achado: o site usa o Firebase SDK 10.12.5 carregado de endereço de fora, sem SRI → issue própria (atualizar + `integrity`).
 
+### 5.31 Texto de fora nunca vira código: testes de XSS e correções (issue #56)
+Pedido do dono: sistema que não pode ser invadido; testes de intrusão. Primeira rodada: **injeção de código por texto** (XSS) em tudo que o usuário, um backup importado ou o cadastro de OUTRA pessoa pode escrever.
+- **Testes novos:** `tests/smoke-xss.test.js` (5 testes: textos perigosos em categoria, lançamento, patrimônio, regra, perfil; identificadores vindos de backup; perfil de outra pessoa visto pelo administrador; foto; ícone e cor) e `e2e/features/12-seguranca.feature` (no Chrome de verdade: o texto aparece escrito, nada roda, nada vira elemento; recarregando também).
+- **O que o teste achou (falhas reais):** (1) a **foto do perfil** entrava crua no `src` do `<img>` (um cadastro gravado direto no banco por um atacante com login poderia virar código no navegador de quem visse a foto, inclusive o administrador); (2) **ícone** e **cor** da categoria entravam crus no HTML (vêm de backup importado); (3) **identificador** e **tipo** da categoria vindos de backup entravam em atributos.
+- **Correções:** foto só vale se for imagem em base64 (`fotoSegura`, também no cadastro e na regra do banco); ícone só da lista e cor só hexadecimal (`icoOk`/`corOk`); ao carregar ou importar dados, `saneIds` troca ids estranhos por ids novos (os lançamentos acompanham), força o tipo `receber`/`pagar` e descarta lançamento órfão com id estranho.
+- **Regra do banco** (`firestore.rules`): `foto` só aceita `data:image/(png|jpeg|webp|gif);base64,...` (testada no emulador). **Precisa ser publicada no Firebase de teste e de produção** (SEGURANCA.md, etapa 1). Enquanto não for, a defesa do app já protege quem usa esta versão.
+- **Provado por mutação:** tirar cada proteção (ícone, cor, foto, ids, o `esc` geral) reprova os testes; no Chrome, estragar o `esc` reprova o cenário.
+- **Fica para a issue de CSP:** política de conteúdo (precisa ser conferida pelo dono no `/dev/` com login e nuvem, para não quebrar o app).
+

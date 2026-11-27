@@ -39,6 +39,7 @@ MUTACOES = [
     ('src/js/70-events.js', 'if(item)fecharMenuUsuario(false);', '', 'Escolher Ajuda desta tela'),
     ('src/css/styles.css', 'width:100%;min-height:44px;padding:8px 12px', 'width:100%;min-height:0;padding:0 12px', 'opções fáceis de tocar'),
     ('src/css/theme.css', '.userchip .uname{max-width:88px}', '.userchip .uname{max-width:600px}', 'topo cabe numa linha'),
+    ('src/js/10-format.js', "replace(/[&<>\"]/g", "replace(/[&\"]/g", 'digitado no nome da categoria'),
 ]
 
 def rodar(cmd):
