@@ -72,6 +72,8 @@ const ICONE_POR_PALAVRA=[[/mercado|supermerc|feira|padaria|acougue|hortifruti/,'
   [/carro|veicul|ipva|seguro auto/,'🚗'],[/combust|gasolina|posto/,'⛽'],[/transporte|onibus|metro|uber|taxi|passagem/,'🚌'],[/farmac|remedio|saude|plano de saude|medic|dentista/,'💊'],
   [/escola|curso|faculdade|educa|mensalidade/,'🎓'],[/lazer|cinema|streaming|netflix|spotify|jogo|viagem/,'🎬'],[/internet|vivo|claro|tim\b|celular|telefone/,'🌐'],[/cartao|fatura|itau/,'💳'],
   [/salario|pagamento|renda|receita/,'💰'],[/rendimento|investimento|poupanca|aplicacao/,'📈'],[/pet|veterin|racao/,'🐶'],[/roupa|vestuario|calcado/,'👕'],[/presente|doacao/,'🎁'],[/academia|esporte/,'🏋️']];
-const catIco=c=>c.ico||(ICONE_POR_PALAVRA.find(([r])=>r.test(normName(c.nome)))||[])[1]||'';
+/* ícone e cor só valem se forem das listas (ou cor hexadecimal): vêm de backup importado e entram no HTML, então nada de texto livre */
+const icoOk=i=>ICONES.includes(i)?i:'',corOk=c=>/^#[0-9a-fA-F]{3,8}$/.test(c||'')?c:'';
+const catIco=c=>icoOk(c.ico)||(ICONE_POR_PALAVRA.find(([r])=>r.test(normName(c.nome)))||[])[1]||'';
 /* a "bolinha" da categoria: ícone sobre a cor escolhida (sem escolha: a cor do tipo e o ícone sugerido pelo nome) */
-const catBadge=c=>{const i=catIco(c);return `<span class="cico ${c.cor?'':c.tipo}" ${c.cor?`style="background:${c.cor}"`:''}>${i||'<i></i>'}</span>`};
+const catBadge=c=>{const i=catIco(c),cor=corOk(c.cor);return `<span class="cico ${cor?'':c.tipo==='receber'?'receber':'pagar'}" ${cor?`style="background:${cor}"`:''}>${esc(i)||'<i></i>'}</span>`};

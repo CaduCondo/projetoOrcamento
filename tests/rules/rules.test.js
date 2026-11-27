@@ -57,14 +57,23 @@ test('documentos de lançamentos só aceitam o campo "json" (nada de lixo ou de 
   await assertSucceeds(db.doc('users/ana/meta/main').set({ json: 'ok' }));
 });
 
+test('cadastro: a foto só pode ser imagem em base64 (texto com aspas, javascript:, endereço de fora ou svg é recusado: um cadastro malicioso não pode virar código no navegador do administrador)', async () => {
+  const db = dbOf(ANA);
+  for (const ruim of ['x" onerror="alert(1)', 'javascript:alert(1)', 'https://exemplo.com/foto.png', 'data:text/html;base64,PHNjcmlwdD4=', 'data:image/svg+xml;base64,PHN2Zz4=', 'data:image/jpeg;base64,AAAA" onerror="1', 'data:image/jpeg;base64,AAAA onerror=1', 'x'.repeat(100)])
+    await assertFails(db.doc('profiles/ana').set(perfil(ANA, { foto: ruim })), 'recusar foto: ' + ruim.slice(0, 40));
+  await assertSucceeds(db.doc('profiles/ana').set(perfil(ANA, { foto: '' })), 'sem foto continua valendo');
+});
+
 test('cadastro: dono lê e grava; e-mail precisa ser o da conta; só campos conhecidos; foto limitada', async () => {
   const db = dbOf(ANA);
   await assertSucceeds(db.doc('profiles/ana').get());
   await assertSucceeds(db.doc('profiles/ana').set(perfil(ANA, { nome: 'Ana Maria', storage: 'local' })));
   await assertFails(db.doc('profiles/ana').set(perfil(ANA, { email: 'outro@exemplo.com' })), 'não finge ser outro e-mail');
   await assertFails(db.doc('profiles/ana').set({ ...perfil(ANA), poder: 'admin' }), 'campo desconhecido');
-  await assertFails(db.doc('profiles/ana').set(perfil(ANA, { foto: 'x'.repeat(130001) })), 'foto grande demais');
-  await assertSucceeds(db.doc('profiles/ana').set(perfil(ANA, { foto: 'x'.repeat(130000) })));
+  const fotoOk = n => 'data:image/jpeg;base64,' + 'A'.repeat(n - 23);                           // imagem em base64 com n caracteres no total
+  await assertFails(db.doc('profiles/ana').set(perfil(ANA, { foto: fotoOk(130001) })), 'foto grande demais');
+  await assertSucceeds(db.doc('profiles/ana').set(perfil(ANA, { foto: fotoOk(130000) })));
+  await assertSucceeds(db.doc('profiles/ana').set(perfil(ANA, { foto: 'data:image/png;base64,iVBORw0KGgo=' })), 'png em base64');
   await assertFails(db.doc('profiles/bia').get(), 'não lê o cadastro de outra pessoa');
   await assertFails(db.doc('profiles/bia').set(perfil(BIA, { nome: 'Invadida' })), 'não grava o cadastro de outra pessoa');
   await assertFails(db.collection('profiles').get(), 'não lista todos os cadastros');

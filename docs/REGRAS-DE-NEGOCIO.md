@@ -52,6 +52,7 @@ Convenção: **RN-xx** = regra de negócio (para citar em issues e testes).
 - **RN-42 Ambiente de teste** mostra faixa laranja e usa banco separado do de produção.
 - **RN-43 Zerar meus dados** existe só no ambiente de teste/local, pede para digitar APAGAR, e **nunca** é feito pelo assistente: o dono clica.
 - **RN-44 Honestidade com o usuário:** o que a tela promete é o que o sistema faz.
+- **RN-45 Texto de fora nunca vira código:** nome, descrição, perfil, backup importado e o cadastro de outra pessoa aparecem sempre como **texto**. Foto de perfil só pode ser imagem em base64; ícone só da lista; cor só hexadecimal; identificadores de categoria só com letras, números, `_` e `-` (senão o app troca por um novo). (§5.31)
 
 ---
 

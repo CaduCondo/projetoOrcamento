@@ -25,7 +25,9 @@ service cloud.firestore {
       allow create, update: if isOwner(uid)
           && request.resource.data.keys().hasOnly(['email', 'nome', 'nascimento', 'profissao', 'foto', 'storage', 'lembretes', 'criadoEm'])
           && request.resource.data.email == request.auth.token.email
-          && request.resource.data.get('foto', '').size() <= 130000;
+          && request.resource.data.get('foto', '').size() <= 130000
+          // A foto vira o src de um <img> no navegador de quem vê o cadastro (inclusive o administrador): só imagem em base64.
+          && request.resource.data.get('foto', '').matches('^(data:image/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+={0,2})?$');
       allow delete: if isOwner(uid);
     }
 

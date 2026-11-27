@@ -6,7 +6,7 @@ const hojeYM=()=>{const d=new Date();return[d.getFullYear(),d.getMonth()]};
 const CategoryDialog={
   mode:'new',tipo:null,id:null,
   openNew(tipo,nome=''){Object.assign(this,{mode:'new',tipo,id:null,ico:'',cor:''});this.draw({nome,dia:'',fixa:false});dlg3.showModal();setTimeout(()=>el('cfn')?.focus(),0)},
-  openEdit(id){if(readOnly)return;const c=catById(id);Object.assign(this,{mode:'edit',tipo:c.tipo,id,ico:c.ico||'',cor:c.cor||''});this.draw({nome:c.nome,dia:c.dia??'',fixa:!!c.fixa});dlg3.showModal()},
+  openEdit(id){if(readOnly)return;const c=catById(id);Object.assign(this,{mode:'edit',tipo:c.tipo,id,ico:icoOk(c.ico),cor:corOk(c.cor)});this.draw({nome:c.nome,dia:c.dia??'',fixa:!!c.fixa});dlg3.showModal()},
   draw(v){const novo=this.mode==='new',pagar=this.tipo==='pagar',c=novo?null:catById(this.id),[y,m]=hojeYM(),st=c?statsComHistorico()[c.id]:null;
     const dica=pagar?'Dia em que essa conta vence.':'Dia em que esse dinheiro entra.';
     dlg3.innerHTML=`<form id="cf" novalidate>

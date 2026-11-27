@@ -9,7 +9,7 @@ const Photo={
         c.getContext('2d').drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,FOTO_PX,FOTO_PX);ok(c.toDataURL('image/jpeg',0.8))};
       img.src=fr.result};
     fr.readAsDataURL(file)})}};
-const avatar=(p,email,cls='')=>p&&p.foto?`<img class="avatar ${cls}" src="${p.foto}" alt="Foto de perfil">`:`<span class="avatar ${cls}" aria-hidden="true">${esc(profileInitial(p||{},email))}</span>`;
+const avatar=(p,email,cls='')=>p&&fotoSegura(p.foto)?`<img class="avatar ${cls}" src="${p.foto}" alt="Foto de perfil">`:`<span class="avatar ${cls}" aria-hidden="true">${esc(profileInitial(p||{},email))}</span>`;
 
 const TXT_NUVEM='Seus dados ficam guardados com segurança na sua conta e aparecem em qualquer aparelho onde você entrar com seu e-mail e senha. Só você e o administrador do sistema (que apenas visualiza, nunca altera, e só para dar suporte) conseguem vê-los.';
 const TXT_LOCAL='Seus lançamentos não vão para a nuvem: ficam num arquivo CSV (abre no Excel) neste aparelho. Ninguém do sistema consegue ver esses dados — guardamos só o seu cadastro (e-mail, nome e esta escolha). Você só vê seus dados nos aparelhos onde tiver o arquivo; para usar em outro lugar, leve o arquivo e carregue em Ajustes → Importar arquivo.';

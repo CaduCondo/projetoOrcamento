@@ -20,6 +20,8 @@ Sem isso, o “registro de erros” não funciona.
 7. Clique em **Publicar**. Deve aparecer “Regras publicadas” (ou parecido).
 8. Volte ao começo do console (logo do Firebase, canto superior esquerdo) e repita os passos 4 a 7 no projeto **gerenciarorcamento** (produção).
 
+⚠️ **Em 27/11/2026 as regras ganharam uma proteção nova para a foto do cadastro (só aceita imagem).** Se você já publicou as regras antes, publique de novo (mesmo passo).
+
 ✅ Deu certo se: no app, em **Ajustes**, o quadro “🛠 Erros registrados” mostra “Nenhum erro registrado” (e não uma mensagem de erro).
 
 ---
