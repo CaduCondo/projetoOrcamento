@@ -1,0 +1,64 @@
+name: Segurança
+
+# Varreduras de segurança, separadas do CI de publicação (não travam o site por falhas antigas de ferramentas de teste).
+# Rodam em todo envio, em todo PR e toda segunda-feira. Resultados: aba Security do GitHub e e-mail de falha do GitHub.
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+  schedule:
+    - cron: '17 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  codeql:
+    name: Análise de código (CodeQL)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-and-quality
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript
+
+  dependencias:
+    name: Dependências (npm audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: 'O que vai para o site (dependências de produção) - qualquer falha reprova'
+        run: npm audit --omit=dev --audit-level=low
+      - name: 'Ferramentas de desenvolvimento - falha CRÍTICA reprova; as altas só aparecem no resumo'
+        run: |
+          npm audit --audit-level=critical || exit 1
+          {
+            echo "### Dependências de desenvolvimento (não vão para o site)"
+            npm audit --json | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8'));const v=d.metadata.vulnerabilities;console.log('Altas: '+v.high+' · moderadas: '+v.moderate+' · críticas: '+v.critical)"
+            echo "Atualizações semanais chegam por PR do Dependabot."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  segredos:
+    name: Segredos no repositório (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
