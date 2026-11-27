@@ -9,7 +9,11 @@ Padrão: --env local --out dist/index.html
 """
 import argparse, glob, json, os, shutil
 
-SDK_VERSION = '10.12.5'
+# Versão do Firebase SDK e o SRI (hash de integridade) de cada arquivo ficam em src/config/firebase-sdk.json (gerado por tools/atualizar-sdk.py).
+# O navegador só executa o script de fora se o conteúdo bater com o hash: protege o site caso o endereço de fora seja comprometido.
+with open('src/config/firebase-sdk.json', encoding='utf-8') as _f:
+    SDK = json.load(_f)
+SDK_VERSION = SDK['version']
 
 def build(env, out, vendor=True):
     def read(path):
@@ -26,8 +30,12 @@ def build(env, out, vendor=True):
     if env in ('dev', 'prod'):
         cfg = json.loads(read(f'src/config/firebase.{env}.json'))
         js = js.replace('/*FIREBASE*/null', json.dumps(cfg))
-        sdk = ''.join(f'<script src="https://www.gstatic.com/firebasejs/{SDK_VERSION}/firebase-{n}-compat.js"></script>\n'
-                      for n in ('app', 'auth', 'firestore') + (('app-check',) if cfg.get('appCheckKey') else ()))   # App Check: só quando a chave do reCAPTCHA estiver na configuração
+        nomes = ('app', 'auth', 'firestore') + (('app-check',) if cfg.get('appCheckKey') else ())   # App Check: só quando a chave do reCAPTCHA estiver na configuração
+        faltam = [n for n in nomes if n not in SDK['sri']]
+        if faltam:
+            raise SystemExit(f'firebase-sdk.json sem hash (SRI) para: {faltam}. Rode: python tools/atualizar-sdk.py {SDK_VERSION}')
+        sdk = ''.join(f'<script src="https://www.gstatic.com/firebasejs/{SDK_VERSION}/firebase-{n}-compat.js" integrity="{SDK["sri"][n]}" crossorigin="anonymous"></script>\n'
+                      for n in nomes)
     js = js.replace('/*FIREBASE*/null', 'null')  # no modo local não há Firebase (nos outros, já foi trocado acima)
     js = js.replace("/*ENV*/'local'", json.dumps(env)).replace('/*SEED*/null', 'null')
     html = html.replace('<!--FBSDK-->', sdk).replace('/*APP*/', js.replace('</script>', '<\\/script>'))
