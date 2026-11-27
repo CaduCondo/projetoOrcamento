@@ -21,3 +21,13 @@ e2e/.estado/
 *.xls
 tools/planilha/saida/
 orcamento-carga/
+
+# E2E da nuvem (gerados a cada execução)
+e2e/.features-gen-nuvem/
+e2e/.sdk/
+e2e/resultado-nuvem.json
+test-results-nuvem/
+playwright-report-nuvem/
+firestore-debug.log
+ui-debug.log
+firebase-debug.log

@@ -85,9 +85,60 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  e2e-nuvem:
+    name: Testes da nuvem (Chrome + emuladores do Firebase)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      artefato-url: ${{ steps.relatorio.outputs.artifact-url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4          # os emuladores do Firebase (Firestore) precisam de Java
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - name: Versão do Playwright (para o cache do navegador)
+        id: pw
+        run: echo "versao=$(npx playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: cache-navegador
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.versao }}
+      - name: Instalar o Chrome do Playwright
+        if: steps.cache-navegador.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Instalar só as bibliotecas do sistema (navegador já em cache)
+        if: steps.cache-navegador.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - name: Rodar os cenários da nuvem (app de verdade no Chrome, emuladores de login e banco, regras reais)
+        run: npm run e2e:nuvem:emu
+      - name: Conferir que nenhum cenário da nuvem foi pulado ou esquecido
+        run: npm run e2e:nuvem:ver
+      - name: Guardar relatório, fotos e resultado (sempre, passando ou não)
+        id: relatorio
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-nuvem-relatorio
+          path: |
+            playwright-report-nuvem/
+            test-results-nuvem/
+            e2e/resultado-nuvem.json
+          if-no-files-found: ignore
+          retention-days: 14
+
   publicar:
     name: Publicar site
-    needs: [testes, e2e]
+    needs: [testes, e2e, e2e-nuvem]
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
     runs-on: ubuntu-latest
     permissions:
@@ -117,16 +168,22 @@ jobs:
         with:
           name: e2e-relatorio
           path: relatorio-baixado
+      - uses: actions/download-artifact@v4
+        with:
+          name: e2e-nuvem-relatorio
+          path: relatorio-baixado-nuvem
       - name: Trazer o último relatório do outro ambiente (para os dois relatórios ficarem sempre abertos)
         continue-on-error: true                     # se não houver (ou expirou), o outro relatório fica de fora desta vez
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           outro=$([ "$GITHUB_REF_NAME" = main ] && echo dev || echo main)
-          id=$(gh run list --repo "${{ github.repository }}" --branch "$outro" --event push --status success --limit 5 --json databaseId --jq '.[].databaseId' | while read r; do
-                 gh api "repos/${{ github.repository }}/actions/runs/$r/artifacts" --jq '.artifacts[]|select(.name=="e2e-relatorio" and .expired==false)|.id' | grep -q . && echo "$r" && break
-               done)
-          if [ -n "$id" ]; then gh run download "$id" --repo "${{ github.repository }}" -n e2e-relatorio -D relatorio-outro && echo "relatório de $outro trazido da execução $id"; else echo "sem relatório recente de $outro"; fi
+          for artefato in e2e-relatorio e2e-nuvem-relatorio; do
+            id=$(gh run list --repo "${{ github.repository }}" --branch "$outro" --event push --status success --limit 5 --json databaseId --jq '.[].databaseId' | while read r; do
+                   gh api "repos/${{ github.repository }}/actions/runs/$r/artifacts" --jq ".artifacts[]|select(.name==\"$artefato\" and .expired==false)|.id" | grep -q . && echo "$r" && break
+                 done)
+            if [ -n "$id" ]; then gh run download "$id" --repo "${{ github.repository }}" -n "$artefato" -D "relatorio-outro/$artefato" && echo "$artefato de $outro trazido da execução $id"; else echo "sem $artefato recente de $outro"; fi
+          done
       - name: Montar o site (produção na raiz, teste em /dev/, relatório em /relatorio/<branch>/)
         run: |
           mkdir -p _site/dev _site/relatorio
@@ -134,7 +191,9 @@ jobs:
           (cd dev  && python build.py --env dev  --out ../_site/dev/index.html)
           if [ -d relatorio-baixado/playwright-report ]; then cp -r relatorio-baixado/playwright-report "_site/relatorio/${GITHUB_REF_NAME}"; fi
           outro=$([ "$GITHUB_REF_NAME" = main ] && echo dev || echo main)
-          if [ -d relatorio-outro/playwright-report ]; then cp -r relatorio-outro/playwright-report "_site/relatorio/$outro"; fi
+          if [ -d relatorio-baixado-nuvem/playwright-report-nuvem ]; then cp -r relatorio-baixado-nuvem/playwright-report-nuvem "_site/relatorio/${GITHUB_REF_NAME}-nuvem"; fi
+          if [ -d relatorio-outro/e2e-relatorio/playwright-report ]; then cp -r relatorio-outro/e2e-relatorio/playwright-report "_site/relatorio/$outro"; fi
+          if [ -d relatorio-outro/e2e-nuvem-relatorio/playwright-report-nuvem ]; then cp -r relatorio-outro/e2e-nuvem-relatorio/playwright-report-nuvem "_site/relatorio/$outro-nuvem"; fi
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
@@ -163,7 +222,7 @@ jobs:
 
   avisar:
     name: Avisar o resultado (issues e e-mail)
-    needs: [testes, e2e, publicar]
+    needs: [testes, e2e, e2e-nuvem, publicar]
     if: always() && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
@@ -176,6 +235,11 @@ jobs:
         with:
           name: e2e-relatorio
           path: relatorio-baixado
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: e2e-nuvem-relatorio
+          path: relatorio-baixado-nuvem
       - name: Abrir/fechar issues de bug e comentar o resultado
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -184,9 +248,13 @@ jobs:
           SHA: ${{ github.sha }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           ARTEFATO_URL: ${{ needs.e2e.outputs.artefato-url }}
+          ARTEFATO_NUVEM_URL: ${{ needs.e2e-nuvem.outputs.artefato-url }}
           PAGINA_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/relatorio/${{ github.ref_name }}/
+          PAGINA_NUVEM_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/relatorio/${{ github.ref_name }}-nuvem/
           R_TESTES: ${{ needs.testes.result }}
           R_E2E: ${{ needs.e2e.result }}
+          R_E2E_NUVEM: ${{ needs.e2e-nuvem.result }}
           R_PUBLICAR: ${{ needs.publicar.result }}
           RESULTADO_JSON: relatorio-baixado/e2e/resultado.json
+          RESULTADO_NUVEM_JSON: relatorio-baixado-nuvem/e2e/resultado-nuvem.json
         run: node tools/ci/relatar.js

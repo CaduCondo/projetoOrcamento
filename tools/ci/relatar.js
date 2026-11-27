@@ -45,10 +45,12 @@ function issuesParaProducao(abertas) {
   return abertas.filter(i => !i.pull_request && (i.labels || []).some(l => (l.name || l) === 'done') && !(i.labels || []).some(l => ['epic'].includes(l.name || l))).map(i => i.number);
 }
 
-function resumo({ branch, jobs, cenarios, falhas, runUrl, artefatoUrl, paginaUrl, sha, promovidas = [] }) {
+function resumo({ branch, jobs, cenarios, falhas, runUrl, artefatoUrl, paginaUrl, artefatoNuvemUrl, paginaNuvemUrl, sha, promovidas = [] }) {
   const ico = r => ({ success: '✅', failure: '❌', cancelled: '⚪', skipped: '⏭️' }[r] || '❔');
-  const total = cenarios.length, reprov = cenarios.filter(c => !c.ok).length;
-  const testesOk = jobs.testes === 'success' && jobs.e2e === 'success';
+  const local = cenarios.filter(c => !c.nuvem), nuvem = cenarios.filter(c => c.nuvem);
+  const total = local.length, reprov = local.filter(c => !c.ok).length;
+  const nuvemOk = jobs.e2eNuvem === undefined || jobs.e2eNuvem === 'success';       // sem informação (aviso antigo) não reprova
+  const testesOk = jobs.testes === 'success' && jobs.e2e === 'success' && nuvemOk;
   const titulo = !testesOk ? '❌ Algo reprovou' : jobs.publicar === 'failure' ? '⚠️ Os testes passaram, mas a publicação do site falhou' : '✅ Tudo passou';
   const linhas = [
     `${titulo} em \`${branch}\` (${String(sha || '').slice(0, 7)})`,
@@ -56,6 +58,7 @@ function resumo({ branch, jobs, cenarios, falhas, runUrl, artefatoUrl, paginaUrl
     `| Etapa | Resultado |`, `|---|---|`,
     `| Testes de lógica e regras do banco | ${ico(jobs.testes)} ${jobs.testes} |`,
     `| Testes de ponta a ponta (Chrome) | ${ico(jobs.e2e)} ${jobs.e2e}${total ? ` — ${total - reprov} de ${total} cenários passaram` : ''} |`,
+    ...(jobs.e2eNuvem === undefined ? [] : [`| Testes da nuvem (Chrome + emuladores do Firebase) | ${ico(jobs.e2eNuvem)} ${jobs.e2eNuvem}${nuvem.length ? ` — ${nuvem.filter(c => c.ok).length} de ${nuvem.length} cenários passaram` : ''} |`]),
     `| Publicação do site | ${ico(jobs.publicar)} ${jobs.publicar} |`,
     '',
   ];
@@ -67,7 +70,9 @@ function resumo({ branch, jobs, cenarios, falhas, runUrl, artefatoUrl, paginaUrl
   if (promovidas.length) linhas.push(`🚀 **No ar na produção** (issues fechadas): ${promovidas.map(n => '#' + n).join(', ')}`, '');
   linhas.push(`- [Ver esta execução](${runUrl})`);
   if (paginaUrl && jobs.publicar === 'success') linhas.push(`- [Relatório dos testes (passo a passo e fotos)](${paginaUrl})`);
+  if (paginaNuvemUrl && jobs.publicar === 'success') linhas.push(`- [Relatório dos testes da nuvem](${paginaNuvemUrl})`);
   if (artefatoUrl) linhas.push(`- [Baixar relatório e fotos das falhas (.zip)](${artefatoUrl})`);
+  if (artefatoNuvemUrl) linhas.push(`- [Baixar relatório e fotos da nuvem (.zip)](${artefatoNuvemUrl})`);
   linhas.push('', '@CaduCondo', '', '---', '_Gerado automaticamente pelo CI (tools/ci/relatar.js)._');
   return linhas.join('\n');
 }
@@ -95,21 +100,24 @@ function gh(args, entrada) {
 function principal() {
   const env = process.env;
   const branch = env.BRANCH, repo = env.REPO, runUrl = env.RUN_URL, sha = env.SHA;
-  const jobs = { testes: env.R_TESTES || 'skipped', e2e: env.R_E2E || 'skipped', publicar: env.R_PUBLICAR || 'skipped' };
+  const jobs = { testes: env.R_TESTES || 'skipped', e2e: env.R_E2E || 'skipped', e2eNuvem: env.R_E2E_NUVEM || undefined, publicar: env.R_PUBLICAR || 'skipped' };
   let cenarios = [];
   try { cenarios = lerCenarios(JSON.parse(fs.readFileSync(env.RESULTADO_JSON || 'e2e/resultado.json', 'utf8'))); } catch { /* execução não chegou a gerar o arquivo */ }
+  try { cenarios.push(...lerCenarios(JSON.parse(fs.readFileSync(env.RESULTADO_NUVEM_JSON || 'e2e/resultado-nuvem.json', 'utf8'))).map(c => ({ ...c, nuvem: true, funcionalidade: '[nuvem] ' + c.funcionalidade }))); } catch { /* sem resultado da nuvem */ }
   const temResultado = cenarios.length > 0;
 
   /* o que está reprovado agora: cenários + etapas inteiras que quebraram sem listar cenário */
   const falhas = cenarios.filter(c => !c.ok).map(c => ({ chave: c.nome, ...c }));
-  const falhouCenario = falhas.length > 0;
+  const falhouCenario = falhas.some(f => !f.nuvem);
+  const falhouNuvem = falhas.some(f => f.nuvem);
   if (jobs.testes === 'failure') falhas.push({ chave: 'Testes de lógica ou regras do banco reprovaram', funcionalidade: 'Testes de lógica', nome: 'npm test / npm run test:rules', erro: 'Veja o log da etapa "Testes" na execução.' });
   if (jobs.e2e === 'failure' && !falhouCenario)
     falhas.push({ chave: 'Testes de ponta a ponta não executaram ou não conferem', funcionalidade: 'Testes de ponta a ponta', nome: 'npm run e2e / npm run e2e:ver', erro: 'Nenhum cenário reprovado individualmente: veja o log (instalação, montagem do app ou conferência da quantidade de cenários).' });
 
+  if (jobs.e2eNuvem === 'failure' && !falhouNuvem) falhas.push({ chave: 'Testes da nuvem não executaram ou não conferem', funcionalidade: '[nuvem]', nome: 'npm run e2e:nuvem:emu / npm run e2e:nuvem:ver', erro: 'Nenhum cenário da nuvem reprovado individualmente: veja o log (emuladores, montagem do app ou conferência da quantidade de cenários).' });
   if (jobs.publicar === 'failure') falhas.push({ chave: 'Publicação do site falhou', funcionalidade: 'Publicação', nome: 'Publicar site (GitHub Pages)', erro: 'Os testes passaram, mas o site não foi publicado. Veja o log da etapa "Publicar site" (pode ser instabilidade do GitHub: tente rodar de novo).' });
   const abertas = JSON.parse(gh(['issue', 'list', '--repo', repo, '--label', 'ci-automatico', '--state', 'open', '--limit', '200', '--json', 'number,title,labels']) || '[]');
-  const GENERICAS = { 'Testes de lógica ou regras do banco reprovaram': () => jobs.testes === 'success', 'Testes de ponta a ponta não executaram ou não conferem': () => jobs.e2e === 'success', 'Publicação do site falhou': () => jobs.publicar === 'success' };
+  const GENERICAS = { 'Testes de lógica ou regras do banco reprovaram': () => jobs.testes === 'success', 'Testes de ponta a ponta não executaram ou não conferem': () => jobs.e2e === 'success', 'Testes da nuvem não executaram ou não conferem': () => jobs.e2eNuvem === 'success', 'Publicação do site falhou': () => jobs.publicar === 'success' };
   const podeFechar = titulo => {
     const chave = titulo.replace(/^\[CI\/[^\]]+\] /, '');
     if (GENERICAS[chave]) return GENERICAS[chave]();
@@ -141,7 +149,7 @@ function principal() {
   /* issue fixa que dispara o e-mail */
   const fixa = JSON.parse(gh(['issue', 'list', '--repo', repo, '--search', 'Resultados do CI in:title', '--state', 'all', '--limit', '20', '--json', 'number,title,state']) || '[]').find(i => i.title === '📬 Resultados do CI');
   let numero = fixa && fixa.number;
-  const corpo = resumo({ branch, jobs, cenarios, falhas, runUrl, artefatoUrl: env.ARTEFATO_URL, paginaUrl: env.PAGINA_URL, sha, promovidas });
+  const corpo = resumo({ branch, jobs, cenarios, falhas, runUrl, artefatoUrl: env.ARTEFATO_URL, paginaUrl: env.PAGINA_URL, artefatoNuvemUrl: env.ARTEFATO_NUVEM_URL, paginaNuvemUrl: env.PAGINA_NUVEM_URL, sha, promovidas });
   if (!numero) {
     const url = gh(['issue', 'create', '--repo', repo, '--title', '📬 Resultados do CI', '--label', 'qualidade', '--body-file', '-'],
       'Cada execução dos testes no GitHub comenta aqui o resultado (o GitHub manda por e-mail para quem está mencionado). Não fechar.').trim();

@@ -80,12 +80,18 @@ async function changePasswordForm(){
   if(err)return showMsg('pwerr',err);showMsg('pwerr','');
   try{await backend.changePassword(a,n)}catch(e){return showMsg('pwerr',e.message)}
   el('pwa').value=el('pwn').value=el('pwc').value='';syncPasswordUi();showMsg('pwok','Senha alterada ✓')}
+/* trocar ou tirar a foto redesenha o formulário: o que a pessoa já digitou (e ainda não salvou) não pode sumir */
+const CAMPOS_PERFIL=['pfn','pfb','pfp'];
+async function comFormularioPreservado(trocar){
+  const digitado=Object.fromEntries(CAMPOS_PERFIL.map(id=>[id,el(id)?.value]));
+  await trocar();
+  CAMPOS_PERFIL.forEach(id=>{if(el(id)&&digitado[id]!==undefined)el(id).value=digitado[id]})}
 async function setPhoto(file){
   try{const url=await Photo.fromFile(file),p={...profile,foto:url},err=validateProfile(p);if(err)return showMsg('pferr',err);
-    profile=p;await backend.saveProfile(profile);render()}catch(e){showMsg('pferr',e.message)}}
+    await comFormularioPreservado(async()=>{profile=p;await backend.saveProfile(profile);render()})}catch(e){showMsg('pferr',e.message)}}
 app.addEventListener('click',async e=>{const b=e.target.closest('[data-pf],[data-pw],[data-dv]');if(!b)return;
   if(b.dataset.pf==='salvar')saveProfileForm();
-  else if(b.dataset.pf==='foto-remover'){profile={...profile,foto:''};await backend.saveProfile(profile);render()}
+  else if(b.dataset.pf==='foto-remover')await comFormularioPreservado(async()=>{profile={...profile,foto:''};await backend.saveProfile(profile);render()});
   else if(b.dataset.pw==='trocar')changePasswordForm();
   else if(b.dataset.dv==='pick'){const ds=backend.store;if(ds instanceof DeviceStore&&await ds.pickFile()){await backend.flush();await ds.write(S);noticeClear('arquivo');noticeClear('permissao');fillDeviceStatus();snackbar('Arquivo escolhido. A partir de agora o sistema grava nele a cada mudança.')}}
   else if(b.dataset.dv==='download'){const ds=backend.store;(ds instanceof DeviceStore?ds:new DeviceStore('x')).downloadCsv(S)}});

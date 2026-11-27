@@ -12,7 +12,10 @@
     "test:rules": "firebase emulators:exec --only firestore --project demo-orcamento \"node --test tests/rules/rules.test.js\"",
     "test:all": "npm test && npm run test:rules",
     "e2e": "python build.py --env local --out dist/e2e/index.html && bddgen && playwright test",
-    "e2e:ver": "node e2e/conferir.js"
+    "e2e:ver": "node e2e/conferir.js",
+    "e2e:nuvem": "python build.py --env emu --out dist/e2e-nuvem/index.html && bddgen -c playwright.nuvem.config.js && playwright test -c playwright.nuvem.config.js",
+    "e2e:nuvem:emu": "firebase emulators:exec --only auth,firestore --project demo-orcamento \"npm run e2e:nuvem\"",
+    "e2e:nuvem:ver": "node e2e/conferir.js nuvem/features resultado-nuvem.json 8"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",

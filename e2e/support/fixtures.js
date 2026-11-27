@@ -9,7 +9,9 @@ const test = base.extend({
   page: async ({ page }, use) => {
     const erros = [];
     page.on('pageerror', e => erros.push('pageerror: ' + e.message));
-    page.on('console', m => { if (m.type() === 'error') erros.push('console.error: ' + m.text()); });
+    /* o navegador registra no console o "400" do servidor de login quando a senha está errada: é esperado (o app mostra a mensagem), não é erro do app */
+    const loginRecusado = m => /status of 400/.test(m.text()) && /accounts:signInWithPassword/.test(m.location().url || '');
+    page.on('console', m => { if (m.type() === 'error' && !loginRecusado(m)) erros.push('console.error: ' + m.text()); });
     await page.addInitScript(() => { window.__noTour = true; });
     await use(page);
     expectBase(erros, 'o app não pode gerar erro de JavaScript').toEqual([]);

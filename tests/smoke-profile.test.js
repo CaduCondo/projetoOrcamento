@@ -270,3 +270,18 @@ test('menu da foto/nome: abre, mostra Meu cadastro, Ajuda e Sair (sem Usuários 
   await app.waitFor(() => app.$('#lf') && app.ev('user') === null, 3000, 'saiu pelo menu');
   app.close();
 });
+
+test('escolher uma foto não apaga o que foi digitado e ainda não salvo no cadastro (nem ao tirar a foto)', async () => {
+  const db = createDb(); const app = abrir(db); await criarConta(app);
+  app.click('[data-tab="perfil"]');
+  app.type('#pfn', 'Ana Digitada'); app.type('#pfb', '1990-05-01'); app.type('#pfp', 'Contadora');
+  app.ev("Photo.fromFile=async()=>'data:image/jpeg;base64,AAAA'");            // a conversão da imagem precisa de canvas; aqui só interessa o formulário
+  await app.ev('setPhoto({})');
+  await app.waitFor(() => app.$('.userchip img.avatar'), 3000, 'foto no topo');
+  assert.equal(app.$('#pfn').value, 'Ana Digitada', 'o nome digitado continua no campo');
+  assert.equal(app.$('#pfb').value, '1990-05-01'); assert.equal(app.$('#pfp').value, 'Contadora');
+  app.click('[data-pf="foto-remover"]');
+  await app.waitFor(() => !app.$('.userchip img.avatar'), 3000, 'foto fora do topo');
+  assert.equal(app.$('#pfn').value, 'Ana Digitada', 'tirar a foto também não apaga o que foi digitado');
+  app.close();
+});

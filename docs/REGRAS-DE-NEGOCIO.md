@@ -43,7 +43,8 @@ Convenção: **RN-xx** = regra de negócio (para citar em issues e testes).
 - **RN-32 Administrador** (só o dono, criado à mão no console) **só lê**: vê os dados de quem guarda na nuvem em modo somente leitura; quem guarda só no aparelho aparece com o olho riscado e não tem dados no banco. A tela diz isso com honestidade. (§5.3)
 - **RN-33 Trocar de modo** (nuvem ↔ aparelho) pede confirmação e explica o que vai acontecer; ao ir para o aparelho, pergunta se apaga os dados da nuvem.
 - **RN-34 Senha forte** no cadastro e na troca de senha: mínimo 6 caracteres, 1 maiúscula, 1 minúscula, 2 números, 1 caractere especial, e as duas senhas iguais.
-- **RN-35 Cadastro (perfil):** nome, nascimento, profissão, foto (reduzida antes de salvar), troca de senha; quem só criou usuário e senha é lembrado **até 3 vezes**.
+- **RN-35 Cadastro (perfil):** escolher ou tirar a foto **não** apaga o que já foi digitado e ainda não salvo (nome, nascimento, profissão).
+- **RN-35b Cadastro (perfil):** nome, nascimento, profissão, foto (reduzida antes de salvar), troca de senha; quem só criou usuário e senha é lembrado **até 3 vezes**.
 - **RN-36 Dados pessoais fora do repositório:** planilhas, backups e dados reais **nunca** vão para o GitHub (público); exemplos e testes usam dados inventados.
 
 ## 5. Telas e uso

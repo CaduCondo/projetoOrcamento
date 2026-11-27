@@ -27,8 +27,14 @@ def build(env, out, vendor=True):
     pdf = lambda n: (read(f'src/vendor/{n}') if vendor else '').replace('</script>', '<\\/script>')
     html = html.replace('/*PDFLIB*/', pdf('pdf.min.js')).replace('/*PDFWORKER*/', pdf('pdf.worker.min.js'))
     sdk = ''
-    if env in ('dev', 'prod'):
-        cfg = json.loads(read(f'src/config/firebase.{env}.json'))
+    emulador = ''
+    if env == 'emu':
+        # SÓ para os testes E2E da nuvem (npm run e2e:nuvem): projeto de demonstração e emuladores locais de Auth e Firestore.
+        # Nunca é publicado (o CI publica só prod e dev) e há teste que garante que prod/dev não contêm nada disto.
+        cfg = {'apiKey': 'chave-do-emulador', 'authDomain': 'localhost', 'projectId': 'demo-orcamento', 'appId': '1:1:web:emulador'}
+        emulador = "this.auth.useEmulator('http://127.0.0.1:9099',{disableWarnings:true});this.db.useEmulator('127.0.0.1',8080);"
+    if env in ('dev', 'prod', 'emu'):
+        cfg = cfg if env == 'emu' else json.loads(read(f'src/config/firebase.{env}.json'))
         js = js.replace('/*FIREBASE*/null', json.dumps(cfg))
         nomes = ('app', 'auth', 'firestore') + (('app-check',) if cfg.get('appCheckKey') else ())   # App Check: só quando a chave do reCAPTCHA estiver na configuração
         faltam = [n for n in nomes if n not in SDK['sri']]
@@ -36,6 +42,7 @@ def build(env, out, vendor=True):
             raise SystemExit(f'firebase-sdk.json sem hash (SRI) para: {faltam}. Rode: python tools/atualizar-sdk.py {SDK_VERSION}')
         sdk = ''.join(f'<script src="https://www.gstatic.com/firebasejs/{SDK_VERSION}/firebase-{n}-compat.js" integrity="{SDK["sri"][n]}" crossorigin="anonymous"></script>\n'
                       for n in nomes)
+    js = js.replace('/*EMULADOR*/', emulador)
     js = js.replace('/*FIREBASE*/null', 'null')  # no modo local não há Firebase (nos outros, já foi trocado acima)
     js = js.replace("/*ENV*/'local'", json.dumps(env)).replace('/*SEED*/null', 'null')
     html = html.replace('<!--FBSDK-->', sdk).replace('/*APP*/', js.replace('</script>', '<\\/script>'))
@@ -50,7 +57,7 @@ def build(env, out, vendor=True):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--env', choices=['local', 'dev', 'prod'], default='local')
+    ap.add_argument('--env', choices=['local', 'dev', 'prod', 'emu'], default='local')
     ap.add_argument('--out', default='dist/index.html')
     ap.add_argument('--no-vendor', action='store_true', help='só para testes: não embute o Chart.js nem o leitor de PDF')
     a = ap.parse_args()

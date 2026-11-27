@@ -81,3 +81,20 @@ test('o aviso lista as issues que foram para produção', () => {
   const r = resumo({ branch: 'main', jobs: { testes: 'success', e2e: 'success', publicar: 'success' }, cenarios: [], falhas: [], runUrl: 'u', sha: 'a', promovidas: [49, 11] });
   assert.match(r, /No ar na produção.*#49, #11/);
 });
+
+test('testes da nuvem: aparecem no aviso com a contagem própria, e reprovar na nuvem faz o aviso dizer que algo reprovou', () => {
+  const nuvem = [{ nome: 'A', ok: true, nuvem: true }, { nome: 'B', ok: false, nuvem: true }];
+  const r = resumo({ branch: 'dev', jobs: { testes: 'success', e2e: 'success', e2eNuvem: 'failure', publicar: 'skipped' }, cenarios: nuvem, falhas: [{ chave: 'B', nuvem: true }], runUrl: 'u', sha: 'a', artefatoNuvemUrl: 'https://x/nuvem.zip' });
+  assert.match(r, /^❌ Algo reprovou/);
+  assert.match(r, /Testes da nuvem.*failure — 1 de 2 cenários passaram/);
+  assert.match(r, /x\/nuvem\.zip/);
+  const ok = resumo({ branch: 'dev', jobs: { testes: 'success', e2e: 'success', e2eNuvem: 'success', publicar: 'success' }, cenarios: [{ nome: 'A', ok: true, nuvem: true }], falhas: [], runUrl: 'u', sha: 'a', paginaNuvemUrl: 'https://x/rel-nuvem/' });
+  assert.match(ok, /^✅ Tudo passou/);
+  assert.match(ok, /x\/rel-nuvem/);
+});
+
+test('aviso sem informação da nuvem (execução antiga) não inventa linha nem reprova', () => {
+  const r = resumo({ branch: 'dev', jobs: { testes: 'success', e2e: 'success', publicar: 'success' }, cenarios: [], falhas: [], runUrl: 'u', sha: 'a' });
+  assert.match(r, /^✅ Tudo passou/);
+  assert.doesNotMatch(r, /Testes da nuvem/);
+});

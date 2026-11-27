@@ -40,7 +40,18 @@ MUTACOES = [
     ('src/css/styles.css', 'width:100%;min-height:44px;padding:8px 12px', 'width:100%;min-height:0;padding:0 12px', 'opções fáceis de tocar'),
     ('src/css/theme.css', '.userchip .uname{max-width:88px}', '.userchip .uname{max-width:600px}', 'topo cabe numa linha'),
     ('src/js/10-format.js', "replace(/[&<>\"]/g", "replace(/[&\"]/g", 'digitado no nome da categoria'),
+    # ---- E2E da NUVEM (emuladores do Firebase). Mexem também em firestore.rules: o emulador lê as regras ao subir. ----
+    ('src/js/34-firestore-store.js', 'await batch.commit();this.snap=cur;return n}', 'this.snap=cur;return n}', 'nuvem:Criar conta, lançar'),
+    ('firestore.rules', 'allow read: if isOwner(uid) || isAdmin();', 'allow read: if true;', 'nuvem:Uma pessoa não lê nem altera'),
+    ('firestore.rules', 'allow write: if false;', 'allow write: if true;', 'nuvem:Uma pessoa não lê nem altera'),
+    ('firestore.rules', ".matches('^(data:image/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+={0,2})?$')", '.size() >= 0', 'nuvem:O banco recusa um cadastro cuja foto'),
+    ('src/js/67-ui-bank.js', 'await d.set({json:JSON.stringify({url:u})})', 'void 0', 'nuvem:Informei o endereço no computador'),
+    ('src/js/65-ui-admin.js', '[data-mv],[data-lf],[data-ltag],#lq,', '', 'nuvem:O administrador vê os dados'),
 ]
+
+def rodar_lista(args):
+    return subprocess.run(args, cwd=RAIZ, shell=False, capture_output=True, text=True, encoding='utf-8', errors='replace')
+
 
 def rodar(cmd):
     return subprocess.run(cmd if SHELL else shlex.split(cmd), cwd=RAIZ, shell=SHELL, capture_output=True, text=True, encoding='utf-8', errors='replace')
@@ -59,11 +70,16 @@ def main():
             continue
         try:
             caminho.write_text(original.replace(velho, novo), encoding='utf-8', newline='')
+            nuvem = cenario.startswith('nuvem:')
             b = rodar('python build.py --env local --out dist/e2e/index.html')
             if b.returncode:
                 resultado.append((cenario, arq, 'O app estragado nem compila (ok, mas troque a mutação)'))
                 continue
-            t = rodar(f'npx playwright test -g "{cenario}" --workers=3')
+            if nuvem:      # sobe os emuladores, monta o site em modo emu e roda só o cenário filtrado
+                interno = f'python build.py --env emu --out dist/e2e-nuvem/index.html && npx bddgen -c playwright.nuvem.config.js && npx playwright test -c playwright.nuvem.config.js -g "{cenario[6:]}"'
+                t = rodar_lista(['npx', 'firebase', 'emulators:exec', '--only', 'auth,firestore', '--project', 'demo-orcamento', interno])
+            else:
+                t = rodar(f'npx playwright test -g "{cenario}" --workers=3')
             resultado.append((cenario, arq, 'OK: o teste reprovou' if t.returncode else 'PERIGO: o teste PASSOU com o app estragado'))
         finally:
             caminho.write_text(original, encoding='utf-8', newline='')

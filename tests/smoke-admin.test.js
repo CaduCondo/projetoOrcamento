@@ -283,3 +283,17 @@ test('porteiro: sem internet usa o que está no aparelho, sem erro', async () =>
   adm.close();
 });
 
+test('administrador em modo leitura: os botões que só mudam a visão (Por categoria / Lançamentos, filtros, busca) continuam funcionando; os que alteram dados ficam bloqueados', async () => {
+  const { adm } = await cenario();
+  adm.click('[data-adm="abrir"]'); await adm.waitFor(() => adm.$$('.urow').length === 2, 3000, 'lista');
+  adm.click('[data-adm-user="uid1"]'); await adm.waitFor(() => adm.ev('readOnly') === true, 3000, 'leitura');
+  adm.click('[data-tab="mes"]');
+  assert.equal(adm.$('[data-mv="lanc"]').disabled, false, 'o botão Lançamentos não pode ficar bloqueado');
+  adm.click('[data-mv="lanc"]');
+  assert.ok(adm.$('#ll'), 'a lista de lançamentos abre');
+  assert.equal(adm.$('#lq').disabled, false, 'a busca funciona');
+  assert.ok(adm.$$('[data-lf]').every(b => !b.disabled), 'os filtros funcionam');
+  assert.equal(adm.$('[data-lnew]').disabled, true, 'novo lançamento continua bloqueado');
+  adm.close();
+});
+
