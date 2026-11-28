@@ -16,7 +16,8 @@ const PdfReader={
   /* PDF -> linhas de texto na ordem em que o banco escreveu (cada quebra de linha do PDF vira uma linha) */
   async lines(file){
     await PdfReader.load();let doc,cancelou=false;
-    try{const task=pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())});
+    /* isEvalSupported:false = defesa oficial contra a CVE-2024-4367 (o pdf.js 3.11.174 embutido executaria código de um PDF malicioso ao montar fontes) */
+    try{const task=pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer()),isEvalSupported:false});
       task.onPassword=(update,reason)=>{PdfReader.askPassword(reason).then(p=>{if(p==null){cancelou=true;task.destroy().catch(()=>{})}else update(p)})};
       doc=await task.promise}
     catch(e){throw new Error(cancelou?'Importação cancelada: o PDF precisa da senha.':'Não consegui abrir este PDF.')}

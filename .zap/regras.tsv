@@ -1,8 +1,18 @@
 # Regras do OWASP ZAP (varredura baseline) para o site do Meu Orçamento no GitHub Pages.
 # Formato (separado por TAB):  id-da-regra   ação (IGNORE | WARN | FAIL)   comentário
-# Só vão para cá avisos que não dá para corrigir NESTE site e que têm justificativa escrita. Nada é ignorado "para ficar verde".
-# O site é estático no GitHub Pages: não dá para configurar cabeçalhos HTTP (CSP, X-Frame-Options...). A CSP vai por <meta> (issue #66).
-10020	WARN	Cabeçalho anti-clickjacking (X-Frame-Options/frame-ancestors): o GitHub Pages não permite configurar cabeçalhos; o app não tem formulário sensível exposto a clique escondido além do login.
-10021	WARN	X-Content-Type-Options ausente: cabeçalho do GitHub Pages, fora do nosso controle.
-10038	WARN	Content-Security-Policy ausente: tratado na issue #66 (política por <meta>, precisa ser conferida pelo dono no /dev/).
-10049	IGNORE	Conteúdo armazenável em cache (site estático público, sem dado pessoal na resposta).
+# IGNORE só para o que NÃO dá para corrigir neste site e tem justificativa escrita; WARN deixa o aviso visível (algo a corrigir ou já mitigado).
+# Nada é ignorado "para ficar verde". Primeira varredura: 28/11/2026 (issue #53).
+#
+# --- não dá para corrigir: o GitHub Pages não deixa configurar cabeçalhos HTTP ---
+10020	IGNORE	Anti-clickjacking (X-Frame-Options/frame-ancestors): cabeçalho do GitHub Pages, fora do nosso controle; frame-ancestors não vale em <meta>. O site não guarda ação irreversível que um clique escondido faça sem login.
+10021	IGNORE	X-Content-Type-Options: cabeçalho do GitHub Pages.
+10049	IGNORE	Conteúdo armazenável em cache: site estático público, sem dado pessoal na resposta.
+10098	IGNORE	Cross-Domain Misconfiguration (Access-Control-Allow-Origin: *): é o padrão do GitHub Pages para arquivos públicos; nenhuma resposta do site é privada.
+90004	IGNORE	COOP/COEP/CORP: cabeçalhos do GitHub Pages; sem recurso que dependa de isolamento de origem.
+# --- a corrigir (issue #66, política de conteúdo por <meta>; precisa ser conferida pelo dono no /dev/) ---
+10038	WARN	Content-Security-Policy ausente: issue #66.
+10055	WARN	CSP (detalhes): issue #66.
+# --- achados reais ---
+10003	WARN	Biblioteca vulnerável: pdf.js 3.11.174 (CVE-2024-4367). MITIGADO em produção com isEvalSupported:false (teste E2E 12-seguranca e mutação); atualizar a biblioteca: issue de atualização do pdf.js e das fontes.
+10110	WARN	Funções JS perigosas (eval): vêm do pdf.js embutido; com isEvalSupported:false o app não as usa. Some com a atualização do pdf.js.
+90003	WARN	SRI ausente no CSS do Google Fonts (não aceita SRI): resolver hospedando as fontes no próprio site (mesma issue).

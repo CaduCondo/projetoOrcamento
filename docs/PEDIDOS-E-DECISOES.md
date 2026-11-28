@@ -302,3 +302,9 @@ Pedido do dono: sistema que não pode ser invadido e processo com teste de carga
 - **Ferramenta:** o plano citava o k6, mas ele é um programa externo que não pude baixar neste ambiente; o script em Node cumpre o papel sem instalar nada e roda igual no CI. Se um dia quisermos o k6 (gráficos, cenários mais longos), é uma issue nova.
 - **Ação do dono:** colar o `worker.js` novo no Cloudflare (`docs/BANCO-DIRETO.md`, "Atualizar o porteiro"). Enquanto não colar, o porteiro de produção segue sem os limites.
 
+### 5.34 Varredura de intrusão automática (OWASP ZAP) e o primeiro achado real (issue #53)
+- **Workflow `Intrusão (ZAP)`** (`.github/workflows/intrusao.yml`): toda terça-feira e sob demanda, o ZAP em modo **baseline** (só observa) varre o `/dev/` e abre uma issue com os achados. Nunca contra a produção, o Firebase/Google ou o porteiro. `.zap/regras.tsv` separa o que **não dá para corrigir** no GitHub Pages (cabeçalhos; ignorado com justificativa escrita) do que fica **visível** (WARN).
+- **Limite honesto:** o site é HTML estático com JavaScript; a varredura enxerga as respostas HTTP e a página inicial, não o que só aparece depois do login. Complementa os testes de XSS/isolamento e o teste de intrusão manual.
+- **Achado real:** o leitor de PDF embutido (**pdf.js 3.11.174**) tem a **CVE-2024-4367** (PDF malicioso executa código ao montar fontes). Corrigido com a defesa oficial para essa versão, `isEvalSupported:false` ao abrir o PDF (`66-ui-import.js`). Cenário E2E no Chrome de verdade confere que o PDF continua sendo lido e que o app abre o PDF com a opção ligada; provado por mutação. Exposição já era baixa (o app só extrai texto, não desenha a página), mas a mitigação custa nada.
+- **Outros achados:** Google Fonts sem SRI (o CSS das fontes não aceita SRI) e `eval` dentro do próprio pdf.js. Viram uma issue: atualizar o pdf.js para a série 4.x e hospedar as fontes no próprio site.
+
