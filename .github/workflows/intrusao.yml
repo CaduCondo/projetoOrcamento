@@ -1,0 +1,29 @@
+name: Intrusão (ZAP)
+
+# Varredura automática de segurança (OWASP ZAP, modo "baseline" = só observa, não ataca) contra o ambiente de TESTE publicado em /dev/.
+# Nunca roda contra a produção, contra Firebase/Google ou contra o porteiro (o endereço dele é privado e não está no repositório).
+# Limite honesto: o site é um arquivo HTML estático com JavaScript; a varredura enxerga a resposta HTTP e a página inicial, não o que só aparece
+# depois do login. Por isso ela complementa (não substitui) os testes de XSS/isolamento e o teste de intrusão manual (docs/ENGENHARIA.md §6).
+on:
+  schedule:
+    - cron: '43 10 * * 2'          # toda terça-feira
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  zap:
+    name: Varredura baseline do /dev/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: 'https://caducondo.github.io/projetoOrcamento/dev/'
+          rules_file_name: '.zap/regras.tsv'
+          allow_issue_writing: true
+          issue_title: '🛡️ Varredura de intrusão (ZAP) no /dev/'
+          fail_action: false
+          artifact_name: zap-relatorio
