@@ -77,7 +77,7 @@ jobs:
       - name: Guardar relatório, fotos e resultado (sempre, passando ou não)
         id: relatorio
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-relatorio
           path: |
@@ -128,7 +128,7 @@ jobs:
       - name: Guardar relatório, fotos e resultado (sempre, passando ou não)
         id: relatorio
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-nuvem-relatorio
           path: |
