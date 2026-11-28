@@ -85,7 +85,7 @@ Pirâmide: muitos testes rápidos embaixo, poucos e abrangentes em cima. **Tudo 
 | Qualidade dos testes (mutação) | `e2e/verificar-mutacoes.py` estraga o app de propósito | local | ✅ (manual) |
 | Celular | E2E em 375 px (sem rolagem lateral, toque ≥ 40 px) | `e2e/features/10-*` | ✅ |
 | Segurança estática (SAST), dependências e segredos | CodeQL, `npm audit`, gitleaks, Dependabot | workflow Segurança (push, PR e toda segunda) | ✅ |
-| Intrusão (pentest) automatizado | OWASP ZAP (varredura baseline) contra o `/dev/` | CI semanal | 📋 |
+| Intrusão (pentest) automatizado | OWASP ZAP (varredura baseline) contra o `/dev/` | `.github/workflows/intrusao.yml`, toda terça | ✅ (primeiro achado real: pdf.js, mitigado) |
 | Intrusão manual | checklist OWASP ASVS, ver §6 | a cada versão grande | 📋 |
 | Carga e estresse | script em Node (`npm run carga:porteiro`) só no **porteiro** (nosso único servidor), com Google e Pluggy simulados: uso normal, abuso com login falso e verdadeiro, estresse com rampa | `tools/carga/porteiro.js`, roda no CI | ✅ |
 

@@ -40,6 +40,7 @@ MUTACOES = [
     ('src/css/styles.css', 'width:100%;min-height:44px;padding:8px 12px', 'width:100%;min-height:0;padding:0 12px', 'opções fáceis de tocar'),
     ('src/css/theme.css', '.userchip .uname{max-width:88px}', '.userchip .uname{max-width:600px}', 'topo cabe numa linha'),
     ('src/js/10-format.js', "replace(/[&<>\"]/g", "replace(/[&\"]/g", 'digitado no nome da categoria'),
+    ('src/js/66-ui-import.js', ',isEvalSupported:false});', '});', 'leitor de PDF abre o arquivo sem executar código'),
     # ---- E2E da NUVEM (emuladores do Firebase). Mexem também em firestore.rules: o emulador lê as regras ao subir. ----
     ('src/js/34-firestore-store.js', 'await batch.commit();this.snap=cur;return n}', 'this.snap=cur;return n}', 'nuvem:Criar conta, lançar'),
     ('firestore.rules', 'allow read: if isOwner(uid) || isAdmin();', 'allow read: if true;', 'nuvem:Uma pessoa não lê nem altera'),

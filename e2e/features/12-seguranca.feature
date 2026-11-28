@@ -19,3 +19,9 @@ Funcionalidade: Texto digitado nunca vira código
       | <svg onload=window.__pwn=2>            |
       | <script>window.__pwn=3</script>        |
       | </dialog><b id=pwn4>negrito</b>        |
+
+  Cenário: O leitor de PDF abre o arquivo sem executar código dinâmico (CVE-2024-4367) e continua lendo o texto
+    Dado que tenho uma conta nova e vazia
+    Quando o leitor de PDF lê um PDF simples com o texto "Fatura de teste 123"
+    Então o texto lido do PDF é "Fatura de teste 123"
+    E o leitor de PDF foi aberto com a execução de código dinâmico desligada
