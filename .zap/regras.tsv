@@ -1,0 +1,8 @@
+# Regras do OWASP ZAP (varredura baseline) para o site do Meu Orçamento no GitHub Pages.
+# Formato (separado por TAB):  id-da-regra   ação (IGNORE | WARN | FAIL)   comentário
+# Só vão para cá avisos que não dá para corrigir NESTE site e que têm justificativa escrita. Nada é ignorado "para ficar verde".
+# O site é estático no GitHub Pages: não dá para configurar cabeçalhos HTTP (CSP, X-Frame-Options...). A CSP vai por <meta> (issue #66).
+10020	WARN	Cabeçalho anti-clickjacking (X-Frame-Options/frame-ancestors): o GitHub Pages não permite configurar cabeçalhos; o app não tem formulário sensível exposto a clique escondido além do login.
+10021	WARN	X-Content-Type-Options ausente: cabeçalho do GitHub Pages, fora do nosso controle.
+10038	WARN	Content-Security-Policy ausente: tratado na issue #66 (política por <meta>, precisa ser conferida pelo dono no /dev/).
+10049	IGNORE	Conteúdo armazenável em cache (site estático público, sem dado pessoal na resposta).
