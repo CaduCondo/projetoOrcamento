@@ -166,11 +166,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/download-artifact@v4          # relatório dos testes desta execução
+      - uses: actions/download-artifact@v8          # relatório dos testes desta execução
         with:
           name: e2e-relatorio
           path: relatorio-baixado
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: e2e-nuvem-relatorio
           path: relatorio-baixado-nuvem
@@ -232,12 +232,12 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         continue-on-error: true                     # se os testes nem chegaram a rodar, não há relatório
         with:
           name: e2e-relatorio
           path: relatorio-baixado
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         continue-on-error: true
         with:
           name: e2e-nuvem-relatorio
