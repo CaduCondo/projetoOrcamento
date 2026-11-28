@@ -59,6 +59,18 @@ Você também precisa de **duas informações** (não são secretas, mas guarde 
 4. Clique em **Conectar e listar contas**. Devem aparecer a conta corrente e os cartões.
 5. Escolha a conta (e a fatura, se for cartão) → **Ver lançamentos para conferir** → confira a soma com o total da fatura → **Importar**.
 
+## Atualizar o porteiro quando o código dele mudar (3 min)
+Sempre que o arquivo `tools/pluggy-worker/worker.js` mudar (por exemplo, quando ele ganhou o **limite de pedidos**), o porteiro que está no Cloudflare continua com o código antigo até você colar o novo:
+1. https://dash.cloudflare.com → **Workers & Pages** → `orcamento-banco` → **Edit code**.
+2. Clique no editor, **Ctrl+A** (seleciona tudo).
+3. No VS Code, abra `tools/pluggy-worker/worker.js`, **Ctrl+A**, **Ctrl+C**.
+4. Volte ao editor do Cloudflare e **Ctrl+V** (cola por cima) → **Deploy**.
+5. As chaves e variáveis já guardadas **não mudam** (ficam em Settings).
+✅ Deu certo se: em **Ajustes → Buscar do banco** a busca continua funcionando. Para ver o limite funcionando, nada a fazer: ele só aparece se alguém abusar (a resposta é "Muitos pedidos. Espere N segundos").
+
+### Limites de pedidos (opcional ajustar)
+Valores padrão, que atendem o uso normal com folga: **60 pedidos por minuto por endereço (IP)** e **10 buscas a cada 5 minutos por conta**. Para mudar, em **Settings → Variables and Secrets** crie (tipo **Text**): `LIMITE_IP_POR_MIN`, `LIMITE_BUSCAS`, `JANELA_BUSCAS_SEG`. Valor inválido volta ao padrão (o limite nunca desliga). Para contagem global entre servidores, dá para ligar o recurso **Rate Limiting** do Cloudflare com o nome `LIMITADOR` (opcional).
+
 ## Se der erro
 - **“Não consegui falar com o porteiro”**: endereço errado ou sem internet. Confira o endereço (sem espaços, com `https://`).
 - **“Não autorizado”**: o e-mail do login do app tem que ser exatamente o de `ALLOWED_EMAILS`, e o projeto precisa estar em `PROJECT_IDS`.

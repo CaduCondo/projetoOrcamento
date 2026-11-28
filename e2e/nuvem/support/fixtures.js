@@ -4,7 +4,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { expect: expectBase } = require('@playwright/test');
-const { test: base } = require('../../support/fixtures');
+const { test: base, ruidoEsperado } = require('../../support/fixtures');
 
 const SDK = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '..', 'src', 'config', 'firebase-sdk.json'), 'utf8'));
 
@@ -28,7 +28,7 @@ const test = base.extend({
       await servirSdk(ctx);
       const page = await ctx.newPage();
       page.on('pageerror', e => erros.push('pageerror: ' + e.message));
-      page.on('console', m => { if (m.type() === 'error') erros.push('console.error: ' + m.text()); });
+      page.on('console', m => { if (m.type() === 'error' && !ruidoEsperado(m)) erros.push('console.error: ' + m.text() + (m.location().url ? ' [' + m.location().url.replace(/\?.*$/, '') + ']' : '')); });
       await page.addInitScript(() => { window.__noTour = true; });
       abertos.push(ctx);
       return page;

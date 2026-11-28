@@ -111,5 +111,6 @@ CI (`.github/workflows/ci-deploy.yml`): jobs `testes` + `e2e` → só então `pu
 
 ## Pendências combinadas
 - Subcategorias: **adiadas** pelo dono ("não faz sentido por enquanto"; o nome padronizado já é digitado no lançamento).
+- Mudou `tools/pluggy-worker/worker.js`? O Cloudflare só usa o código novo depois que o dono cola (`docs/BANCO-DIRETO.md`, "Atualizar o porteiro"): avisar e ensinar. Carga do porteiro: `npm run carga:porteiro`.
 - Segurança (tarefas do dono, ver `docs/SEGURANCA.md`): publicar `firestore.rules` no Firebase de teste e de produção (a regra nova da foto, §5.31), girar o segredo Pluggy vazado, restringir a chave de API.
 - Ligar o quadro de colunas do GitHub Projects (precisa do `gh auth refresh -s project`).
